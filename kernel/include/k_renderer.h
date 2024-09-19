@@ -10,10 +10,16 @@ public:
 			   unsigned int clearColor, unsigned int color);
 	void putc(unsigned int color, char chr, unsigned int xOff,
 			  unsigned int yOff);
-	void SetColor(unsigned int color) { color = color; }
+	void SetColor(unsigned int color) { l_color = color; }
 	void SetClearColor(unsigned int color) {l_clear_color = color;}
 	void Print(const char *str);
 	void ClearScreen();
+	void SetCursorPosition(unsigned int x, unsigned int y){
+		cursorPostiton.x = x;
+		cursorPostiton.y = y;
+	}
+
+	k_math::point GetCursorPosition(){ return cursorPostiton; }
 
 private:
 	FrameBuffer_t *l_frameBuffer;

@@ -26,6 +26,10 @@ typedef struct {
 } PSF1_FONT;
 
 typedef struct {
+	EFI_MEMORY_DESCRIPTOR *memMap;
+	UINTN mMapSize;
+	UINTN mMapDescriptorSize;
+
 	FrameBuffer_t *frameBuffer;
 	PSF1_FONT *initialFont;
 } BootInfo_t;
@@ -170,7 +174,7 @@ EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
 												(void **) &phdrs);
 		Kernel->Read(Kernel, &size, phdrs);
 	}
-
+	
 	for (Elf64_Phdr *phdr = phdrs;
 		 (char *) phdr < (char *) phdrs + header.e_phnum * header.e_phentsize;
 		 phdr = (Elf64_Phdr *) ((char *) phdr + header.e_phentsize)) {
@@ -189,7 +193,6 @@ EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
 		}
 	}
 
-
 	Print(L"Kernel loaded\n\r");
 
 	PSF1_FONT *initialFont = LoadInitialPSF1Font(NULL, L"zap-light18.psf",
@@ -201,9 +204,6 @@ EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
 			  initialFont->header->char_size);
 	}
 
-	void (*kernelStart)(BootInfo_t *) =
-			((__attribute__((sysv_abi)) void (*)(BootInfo_t *)) header.e_entry);
-
 	FrameBuffer_t *fb = InitializeGOP();
 
 	Print(L"Framebuffer addr: 0x%x\n\r", fb->base_addr);
@@ -212,10 +212,31 @@ EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
 	Print(L"Framebuffer height: %d\n\r", fb->height);
 	Print(L"Framebuffer pps: %d\n\r", fb->pixel_per_scanline);
 
+	EFI_MEMORY_DESCRIPTOR *Map = NULL;
+	UINTN MapSize, MapKey;
+	UINTN DescriptorSize;
+	UINT32 DescriptorVersion;
+	{
+
+		systemTable->BootServices->GetMemoryMap(
+				&MapSize, Map, &MapKey, &DescriptorSize, &DescriptorVersion);
+		systemTable->BootServices->AllocatePool(EfiLoaderData, MapSize,
+												(void **) &Map);
+		systemTable->BootServices->GetMemoryMap(
+				&MapSize, Map, &MapKey, &DescriptorSize, &DescriptorVersion);
+	}
+
 	BootInfo_t bootInfo;
 	bootInfo.frameBuffer = fb;
 	bootInfo.initialFont = initialFont;
+	bootInfo.memMap = Map;
+	bootInfo.mMapSize = MapSize;
+	bootInfo.mMapDescriptorSize = DescriptorSize;
 
+	void (*kernelStart)(BootInfo_t *) =
+			((__attribute__((sysv_abi)) void (*)(BootInfo_t *)) header.e_entry);
+
+	systemTable->BootServices->ExitBootServices(imageHandle, MapKey);
 	kernelStart(&bootInfo);
 
 	return EFI_SUCCESS;// Exit the UEFI application
