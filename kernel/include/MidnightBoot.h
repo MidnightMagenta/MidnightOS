@@ -23,8 +23,8 @@ typedef struct {
 } PSF1_FONT;
 
 typedef struct {
-	FrameBuffer_t* frameBuffer;
-	PSF1_FONT* initialFont;
+	FrameBuffer_t *frameBuffer;
+	PSF1_FONT *initialFont;
 } BootInfo_t;
 
 

@@ -1,6 +1,7 @@
 start_time=$(date +%s%3N)
 
 cd gnu-efi
+make -j6
 make bootloader
 echo -e "\e[32m\e[1mBootloader built\e[0m"
 cd ../kernel

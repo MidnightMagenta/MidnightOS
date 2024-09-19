@@ -26,8 +26,8 @@ typedef struct {
 } PSF1_FONT;
 
 typedef struct {
-	FrameBuffer_t* frameBuffer;
-	PSF1_FONT* initialFont;
+	FrameBuffer_t *frameBuffer;
+	PSF1_FONT *initialFont;
 } BootInfo_t;
 
 FrameBuffer_t frameBuffer;
@@ -94,7 +94,9 @@ PSF1_FONT *LoadInitialPSF1Font(EFI_FILE *directory, CHAR16 *path,
 	}
 
 	UINTN glyphBufferSize = fontHeader->char_size * 256;
-	if (fontHeader->mode == 1) { glyphBufferSize = fontHeader->char_size * 512; }
+	if (fontHeader->mode == 1) {
+		glyphBufferSize = fontHeader->char_size * 512;
+	}
 
 	void *glyphBuffer;
 	{
@@ -130,66 +132,58 @@ EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
 	InitializeLib(imageHandle, systemTable);
 	Print(L"String blah blah blah \n\r");
 
-	EFI_FILE* Kernel = LoadFile(NULL, L"kernel.elf", imageHandle, systemTable);
-	if (Kernel == NULL){
+	EFI_FILE *Kernel = LoadFile(NULL, L"kernel.elf", imageHandle, systemTable);
+	if (Kernel == NULL) {
 		Print(L"Could not load kernel \n\r");
-	}
-	else{
+	} else {
 		Print(L"Kernel Loaded Successfully \n\r");
 	}
 
 	Elf64_Ehdr header;
 	{
 		UINTN FileInfoSize;
-		EFI_FILE_INFO* FileInfo;
+		EFI_FILE_INFO *FileInfo;
 		Kernel->GetInfo(Kernel, &gEfiFileInfoGuid, &FileInfoSize, NULL);
-		systemTable->BootServices->AllocatePool(EfiLoaderData, FileInfoSize, (void**)&FileInfo);
-		Kernel->GetInfo(Kernel, &gEfiFileInfoGuid, &FileInfoSize, (void**)&FileInfo);
+		systemTable->BootServices->AllocatePool(EfiLoaderData, FileInfoSize,
+												(void **) &FileInfo);
+		Kernel->GetInfo(Kernel, &gEfiFileInfoGuid, &FileInfoSize,
+						(void **) &FileInfo);
 
 		UINTN size = sizeof(header);
 		Kernel->Read(Kernel, &size, &header);
 	}
 
-	if (
-		memcmp(&header.e_ident[EI_MAG0], ELFMAG, SELFMAG) != 0 ||
+	if (memcmp(&header.e_ident[EI_MAG0], ELFMAG, SELFMAG) != 0 ||
 		header.e_ident[EI_CLASS] != ELFCLASS64 ||
-		header.e_ident[EI_DATA] != ELFDATA2LSB ||
-		header.e_type != ET_EXEC ||
-		header.e_machine != EM_X86_64 ||
-		header.e_version != EV_CURRENT
-	)
-	{
+		header.e_ident[EI_DATA] != ELFDATA2LSB || header.e_type != ET_EXEC ||
+		header.e_machine != EM_X86_64 || header.e_version != EV_CURRENT) {
 		Print(L"kernel format is bad\r\n");
-	}
-	else
-	{
+	} else {
 		Print(L"kernel header successfully verified\r\n");
 	}
 
-	Elf64_Phdr* phdrs;
+	Elf64_Phdr *phdrs;
 	{
 		Kernel->SetPosition(Kernel, header.e_phoff);
 		UINTN size = header.e_phnum * header.e_phentsize;
-		systemTable->BootServices->AllocatePool(EfiLoaderData, size, (void**)&phdrs);
+		systemTable->BootServices->AllocatePool(EfiLoaderData, size,
+												(void **) &phdrs);
 		Kernel->Read(Kernel, &size, phdrs);
 	}
 
-	for (
-		Elf64_Phdr* phdr = phdrs;
-		(char*)phdr < (char*)phdrs + header.e_phnum * header.e_phentsize;
-		phdr = (Elf64_Phdr*)((char*)phdr + header.e_phentsize)
-	)
-	{
-		switch (phdr->p_type){
-			case PT_LOAD:
-			{
+	for (Elf64_Phdr *phdr = phdrs;
+		 (char *) phdr < (char *) phdrs + header.e_phnum * header.e_phentsize;
+		 phdr = (Elf64_Phdr *) ((char *) phdr + header.e_phentsize)) {
+		switch (phdr->p_type) {
+			case PT_LOAD: {
 				int pages = (phdr->p_memsz + 0x1000 - 1) / 0x1000;
 				Elf64_Addr segment = phdr->p_paddr;
-				systemTable->BootServices->AllocatePages(AllocateAddress, EfiLoaderData, pages, &segment);
+				systemTable->BootServices->AllocatePages(
+						AllocateAddress, EfiLoaderData, pages, &segment);
 
 				Kernel->SetPosition(Kernel, phdr->p_offset);
 				UINTN size = phdr->p_filesz;
-				Kernel->Read(Kernel, &size, (void*)segment);
+				Kernel->Read(Kernel, &size, (void *) segment);
 				break;
 			}
 		}
@@ -203,11 +197,12 @@ EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
 	if (initialFont == NULL) {
 		Print(L"Could not load initial font\n\r");
 	} else {
-		Print(L"Initial font loaded successfully. Char size: %d\n\r", initialFont->header->char_size);
+		Print(L"Initial font loaded successfully. Char size: %d\n\r",
+			  initialFont->header->char_size);
 	}
 
-	void (*kernelStart)(BootInfo_t *) = ((__attribute__((sysv_abi)) void (*)(
-			BootInfo_t *)) header.e_entry);
+	void (*kernelStart)(BootInfo_t *) =
+			((__attribute__((sysv_abi)) void (*)(BootInfo_t *)) header.e_entry);
 
 	FrameBuffer_t *fb = InitializeGOP();
 
