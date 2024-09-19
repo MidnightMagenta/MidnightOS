@@ -27,7 +27,7 @@ void putc(unsigned int color, char chr, unsigned int xOff, unsigned int yOff) {
 	unsigned int *pixPtr = (unsigned int *) l_frameBuffer->base_addr;
 	char *fontPtr = l_font->glyphs + (chr * l_font->header->char_size);
 
-	for (unsigned long y = yOff; y < yOff + 16; y++) {
+	for (unsigned long y = yOff; y < yOff + l_font->header->char_size; y++) {
 		for (unsigned long x = xOff; x < xOff + 8; x++) {
 			if ((*fontPtr & (0b10000000 >> (x - xOff))) > 0) {
 				*(unsigned int *) (pixPtr + x +
@@ -41,11 +41,10 @@ void putc(unsigned int color, char chr, unsigned int xOff, unsigned int yOff) {
 
 void k_print(char *str) {
 	char *chr = str;
-	unsigned int x = 0;
 	while (*chr != 0) {
 		if (*chr == '\n') {
 			cursor_x = 0;
-			cursor_y += 16;
+			cursor_y += l_font->header->char_size;
 			chr++;
 			continue;
 		}
@@ -53,7 +52,7 @@ void k_print(char *str) {
 		putc(l_color, *chr, cursor_x, cursor_y);
 		if ((cursor_x += 8) >= l_frameBuffer->width) {
 			cursor_x = 0;
-			if((cursor_y += 16)>= l_frameBuffer->height){
+			if((cursor_y += l_font->header->char_size)>= l_frameBuffer->height){
 				ClearScreen();
 				cursor_y = 0;
 			}

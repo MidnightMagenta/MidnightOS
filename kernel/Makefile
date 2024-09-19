@@ -38,6 +38,7 @@ setup:
 	@mkdir $(OBJDIR)
 
 buildimg:
+	cp fonts/zap-light18.psf bin
 	dd if=/dev/zero of=$(BUILDDIR)/$(OSNAME).img bs=512 count=93750
 	mformat -i $(BUILDDIR)/$(OSNAME).img
 	mmd -i $(BUILDDIR)/$(OSNAME).img ::/EFI
@@ -45,12 +46,20 @@ buildimg:
 	mcopy -i $(BUILDDIR)/$(OSNAME).img $(BOOTEFI) ::/EFI/BOOT
 	mcopy -i $(BUILDDIR)/$(OSNAME).img startup.nsh ::
 	mcopy -i $(BUILDDIR)/$(OSNAME).img $(BUILDDIR)/kernel.elf ::
-	mcopy -i $(BUILDDIR)/$(OSNAME).img $(BUILDDIR)/zap-light16.psf ::
+	mcopy -i $(BUILDDIR)/$(OSNAME).img $(BUILDDIR)/zap-light18.psf ::
 
 run:
 	qemu-system-x86_64 \
-	-drive file=$(BUILDDIR)/$(OSNAME).img \
-	-m 256M \
+	-drive file=$(BUILDDIR)/$(OSNAME).img,format=raw \
+	-enable-kvm \
+	-cpu host \
+	-m 4G \
 	-drive if=pflash,format=raw,unit=0,file="$(OVMFDIR)/OVMF_CODE-pure-efi.fd",readonly=on \
 	-drive if=pflash,format=raw,unit=1,file="$(OVMFDIR)/OVMF_VARS-pure-efi.fd" \
 	-net none \
+
+clean:
+	@echo "!==== CLEANING BUILD FILES"
+	rm -rf $(BUILDDIR)/* $(OBJDIR)/*
+
+.PHONY: all kernel link setup buildimg run clean

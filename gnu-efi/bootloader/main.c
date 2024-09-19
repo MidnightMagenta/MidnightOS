@@ -198,7 +198,7 @@ EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
 
 	Print(L"Kernel loaded\n\r");
 
-	PSF1_FONT *initialFont = LoadInitialPSF1Font(NULL, L"zap-light16.psf",
+	PSF1_FONT *initialFont = LoadInitialPSF1Font(NULL, L"zap-light18.psf",
 												 imageHandle, systemTable);
 	if (initialFont == NULL) {
 		Print(L"Could not load initial font\n\r");
