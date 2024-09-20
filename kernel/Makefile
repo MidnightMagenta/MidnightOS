@@ -10,7 +10,7 @@ CFLAGS = -Iinclude -O0 -g -Wall -Wextra -ffreestanding -fshort-wchar
 LDFLAGS = -T $(LDS) -static -Bsymbolic -nostdlib
 
 SRCDIR := src
-OBJDIR := buil/objs
+OBJDIR := build/objs
 BUILDDIR = build/bin
 BOOTEFI := $(GNUEFI)/x86_64/bootloader/main.efi
 

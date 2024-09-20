@@ -6,3 +6,4 @@
 /kernel/bin
 /debug
 gnu-efi/x86_64/bootloader/main.efi
+kernel/build
