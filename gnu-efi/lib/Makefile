@@ -37,15 +37,13 @@
 SRCDIR = .
 
 VPATH = $(SRCDIR)
+TOPDIR = $(SRCDIR)/..
 
 include $(SRCDIR)/../Make.defaults
 
-TOPDIR = $(SRCDIR)/..
-
-CDIR = $(TOPDIR)/..
-FILES = boxdraw smbios console crc data debug dpath  \
-        error event exit guid hand hw init lock   \
-        misc print sread str cmdline \
+FILES = boxdraw smbios console crc data debug dpath \
+        entry error event exit guid hand hw init lock \
+        misc pause print sread str cmdline\
 	runtime/rtlock runtime/efirtlib runtime/rtstr runtime/vm runtime/rtdata  \
 	$(ARCH)/initplat $(ARCH)/math $(ARCH)/setjmp
 
@@ -62,9 +60,9 @@ FILES += $(ARCH)/uldiv $(ARCH)/ldivmod $(ARCH)/div $(ARCH)/llsl $(ARCH)/llsr \
 	 $(ARCH)/mullu
 endif
 
-OBJS  = $(FILES:%=%.o)
+OBJS  = $(FILES:%=%.o) ctors.o
 
-SUBDIRS = ia32 x86_64 ia64 aarch64 arm mips64el runtime
+SUBDIRS = ia32 x86_64 ia64 aarch64 arm mips64el riscv64 loongarch64 runtime
 
 LIBDIRINSTALL = $(INSTALLROOT)$(LIBDIR)
 
@@ -72,13 +70,15 @@ all: libsubdirs libefi.a
 
 .PHONY: libsubdirs
 libsubdirs:
-	for sdir in $(SUBDIRS); do mkdir -p $$sdir; done
+	@set -e ; for sdir in $(SUBDIRS); do mkdir -p $$sdir; done
+
+$(OBJS): libsubdirs
 
 libefi.a: $(OBJS)
 	$(AR) $(ARFLAGS) $@ $^
 
 clean:
-	rm -f libefi.a *~ $(OBJS) */*.o
+	@rm -vf libefi.a *~ $(OBJS) */*.o
 
 $(LIBDIRINSTALL):
 	mkdir -p $@
@@ -89,5 +89,3 @@ $(LIBDIRINSTALL)/libefi.a: libefi.a | $(LIBDIRINSTALL)
 install: $(LIBDIRINSTALL)/libefi.a
 
 include $(SRCDIR)/../Make.rules
-
-.PHONY: libsubdirs

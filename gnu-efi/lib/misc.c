@@ -98,7 +98,7 @@ ZeroMem (
     RtZeroMem (Buffer, Size);
 }
 
-VOID
+VOID EFIAPI
 SetMem (
     IN VOID     *Buffer,
     IN UINTN    Size,
@@ -108,10 +108,10 @@ SetMem (
     RtSetMem (Buffer, Size, Value);
 }
 
-VOID
+VOID EFIAPI
 CopyMem (
     IN VOID     *Dest,
-    IN CONST VOID     *Src,
+    IN VOID     *Src,
     IN UINTN    len
     )
 {
@@ -246,7 +246,7 @@ LibGetVariableAndSize (
     OUT UINTN               *VarSize
     )
 {
-    EFI_STATUS              Status;
+    EFI_STATUS              Status = EFI_SUCCESS;
     VOID                    *Buffer;
     UINTN                   BufferSize;
 
@@ -386,7 +386,9 @@ LibInsertToTailOfBootOrder (
 
     VarSize += sizeof(UINT16);
     NewBootOptionArray = AllocatePool (VarSize);
-    
+    if (!NewBootOptionArray)
+        return EFI_OUT_OF_RESOURCES;
+
     for (Index = 0; Index < ((VarSize/sizeof(UINT16)) - 1); Index++) {
         NewBootOptionArray[Index] = BootOptionArray[Index];
     }
@@ -403,9 +405,7 @@ LibInsertToTailOfBootOrder (
                 VarSize, (VOID*) NewBootOptionArray
                 );
 
-    if (NewBootOptionArray) {
-        FreePool (NewBootOptionArray);
-    }
+    FreePool (NewBootOptionArray);
     if (BootOptionArray) {
         FreePool (BootOptionArray);
     }

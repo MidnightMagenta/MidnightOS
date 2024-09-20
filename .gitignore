@@ -1,5 +1,8 @@
 *.o
+*.so
+*.efi
 *.elf
 *.img
 /kernel/bin
 /debug
+gnu-efi/x86_64/bootloader/main.efi

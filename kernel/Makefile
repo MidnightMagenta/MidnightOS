@@ -1,4 +1,3 @@
-
 OSNAME = MidnightOS
 
 GNUEFI = ../gnu-efi
@@ -7,12 +6,12 @@ LDS = kernel.ld
 LD = ld
 CC = gcc
 
-CFLAGS = -O0 -g -Wall -Wextra -ffreestanding -fshort-wchar
+CFLAGS = -Iinclude -O0 -g -Wall -Wextra -ffreestanding -fshort-wchar
 LDFLAGS = -T $(LDS) -static -Bsymbolic -nostdlib
 
 SRCDIR := src
-OBJDIR := lib
-BUILDDIR = bin
+OBJDIR := buil/objs
+BUILDDIR = build/bin
 BOOTEFI := $(GNUEFI)/x86_64/bootloader/main.efi
 
 rwildcard=$(foreach d,$(wildcard $(1:=/*)),$(call rwildcard,$d,$2) $(filter $(subst *,%,$2),$d))
@@ -37,17 +36,16 @@ setup:
 	@mkdir $(SRCDIR)
 	@mkdir $(OBJDIR)
 
-buildimg:
-	cp fonts/zap-light18.psf bin
+image:
 	dd if=/dev/zero of=$(BUILDDIR)/$(OSNAME).img bs=512 count=93750
 	mformat -F -i $(BUILDDIR)/$(OSNAME).img
 	mmd -i $(BUILDDIR)/$(OSNAME).img ::/efi
 	mmd -i $(BUILDDIR)/$(OSNAME).img ::/efi/boot
+	mmd -i $(BUILDDIR)/$(OSNAME).img ::/boot
 	mcopy -i $(BUILDDIR)/$(OSNAME).img $(BOOTEFI) ::/efi/boot
 	mren -i $(BUILDDIR)/$(OSNAME).img ::/efi/boot/main.efi ::/efi/boot/bootx64.efi
 	mcopy -i $(BUILDDIR)/$(OSNAME).img startup.nsh ::
-	mcopy -i $(BUILDDIR)/$(OSNAME).img $(BUILDDIR)/kernel.elf ::
-	mcopy -i $(BUILDDIR)/$(OSNAME).img $(BUILDDIR)/zap-light18.psf ::
+	mcopy -i $(BUILDDIR)/$(OSNAME).img $(BUILDDIR)/kernel.elf ::/boot
 
 run:
 	qemu-system-x86_64 \
@@ -62,5 +60,3 @@ run:
 clean:
 	@echo "!==== CLEANING BUILD FILES"
 	rm -rf $(BUILDDIR)/* $(OBJDIR)/*
-
-.PHONY: all kernel link setup buildimg run clean

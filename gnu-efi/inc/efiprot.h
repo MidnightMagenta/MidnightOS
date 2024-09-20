@@ -517,14 +517,20 @@ typedef struct {
 
 #define SIZE_OF_EFI_FILE_SYSTEM_INFO EFI_FIELD_OFFSET(EFI_FILE_SYSTEM_INFO,VolumeLabel)
 
-#define EFI_FILE_SYSTEM_VOLUME_LABEL_INFO_ID    \
+#define EFI_FILE_SYSTEM_VOLUME_LABEL_ID    \
     { 0xDB47D7D3,0xFE81, 0x11d3, {0x9A, 0x35, 0x00, 0x90, 0x27, 0x3F, 0xC1, 0x4D} }
 
 typedef struct {
     CHAR16                  VolumeLabel[1];
-} EFI_FILE_SYSTEM_VOLUME_LABEL_INFO;
+} EFI_FILE_SYSTEM_VOLUME_LABEL;
 
-#define SIZE_OF_EFI_FILE_SYSTEM_VOLUME_LABEL_INFO EFI_FIELD_OFFSET(EFI_FILE_SYSTEM_VOLUME_LABEL_INFO,VolumeLabel)
+#define SIZE_OF_EFI_FILE_SYSTEM_VOLUME_LABEL_INFO EFI_FIELD_OFFSET(EFI_FILE_SYSTEM_VOLUME_LABEL,VolumeLabel)
+
+//
+// For compatibility with older versions of gnu-efi
+//
+#define EFI_FILE_SYSTEM_VOLUME_LABEL_INFO_ID EFI_FILE_SYSTEM_VOLUME_LABEL_ID
+#define EFI_FILE_SYSTEM_VOLUME_LABEL_INFO    EFI_FILE_SYSTEM_VOLUME_LABEL
 
 //
 // Load file protocol
@@ -1243,7 +1249,8 @@ typedef struct {
 
 typedef EFI_LOADED_IMAGE_PROTOCOL EFI_LOADED_IMAGE;
 
-
+#define EFI_LOADED_IMAGE_DEVICE_PATH_PROTOCOL_GUID \
+    {0xbc62157e, 0x3e33, 0x4fec, {0x99, 0x20, 0x2d, 0x3b, 0x36, 0xd7, 0x50, 0xdf} }
 
 /*
  * Random Number Generator Protocol
@@ -1420,5 +1427,40 @@ typedef struct _EFI_EBC_PROTOCOL {
   EFI_EBC_REGISTER_ICACHE_FLUSH RegisterICacheFlush;
   EFI_EBC_GET_VERSION           GetVersion;
 } EFI_EBC_PROTOCOL;
+
+INTERFACE_DECL(_EFI_MEMORY_ATTRIBUTE_PROTOCOL);
+
+typedef
+EFI_STATUS
+(EFIAPI *EFI_GET_MEMORY_ATTRIBUTES)(
+  IN struct _EFI_MEMORY_ATTRIBUTE_PROTOCOL      *This,
+  IN EFI_PHYSICAL_ADDRESS                       BaseAddress,
+  IN UINT64                                     Length,
+  OUT UINT64                                    *Attributes
+  );
+
+typedef
+EFI_STATUS
+(EFIAPI *EFI_SET_MEMORY_ATTRIBUTES)(
+  IN struct _EFI_MEMORY_ATTRIBUTE_PROTOCOL      *This,
+  IN EFI_PHYSICAL_ADDRESS                       BaseAddress,
+  IN UINT64                                     Length,
+  IN UINT64                                     Attributes
+  );
+
+typedef
+EFI_STATUS
+(EFIAPI *EFI_CLEAR_MEMORY_ATTRIBUTES)(
+  IN struct _EFI_MEMORY_ATTRIBUTE_PROTOCOL      *This,
+  IN EFI_PHYSICAL_ADDRESS                       BaseAddress,
+  IN UINT64                                     Length,
+  IN UINT64                                     Attributes
+  );
+
+typedef struct _EFI_MEMORY_ATTRIBUTE_PROTOCOL {
+  EFI_GET_MEMORY_ATTRIBUTES     GetMemoryAttributes;
+  EFI_SET_MEMORY_ATTRIBUTES     SetMemoryAttributes;
+  EFI_CLEAR_MEMORY_ATTRIBUTES   ClearMemoryAttributes;
+} EFI_MEMORY_ATTRIBUTE_PROTOCOL;
 
 #endif

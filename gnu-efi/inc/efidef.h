@@ -20,19 +20,39 @@ Revision History
 
 --*/
 
-typedef UINT16          CHAR16;
-typedef UINT8           CHAR8;
-typedef UINT8           BOOLEAN;
+#if !defined(__cplusplus)
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
+typedef _Bool BOOLEAN;
+#else
+typedef unsigned char BOOLEAN;
+#endif
+#else
+typedef bool BOOLEAN;
+#endif
+
 #ifndef CONST
    #define CONST const
 #endif
 #ifndef TRUE
+#if defined(__cplusplus) || (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L)
+    #define TRUE    true
+    #define FALSE   false
+#else
     #define TRUE    ((BOOLEAN) 1)
     #define FALSE   ((BOOLEAN) 0)
 #endif
+#endif
 
 #ifndef NULL
+#if (defined(__cplusplus) && __cplusplus >= 201103L) || (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L)
+    #define NULL    nullptr
+#else
+#if !defined(__cplusplus)
     #define NULL    ((VOID *) 0)
+#else
+    #define NULL    0
+#endif
+#endif
 #endif
 
 typedef UINTN           EFI_STATUS;
@@ -162,23 +182,36 @@ typedef enum {
     EfiMemoryMappedIO,
     EfiMemoryMappedIOPortSpace,
     EfiPalCode,
+    EfiPersistentMemory,
+    EfiUnacceptedMemoryType,
     EfiMaxMemoryType
 } EFI_MEMORY_TYPE;
 
-// possible caching types for the memory range
-#define EFI_MEMORY_UC           0x0000000000000001
-#define EFI_MEMORY_WC           0x0000000000000002
-#define EFI_MEMORY_WT           0x0000000000000004
-#define EFI_MEMORY_WB           0x0000000000000008
-#define EFI_MEMORY_UCE          0x0000000000000010  
 
-// physical memory protection on range 
-#define EFI_MEMORY_WP           0x0000000000001000
-#define EFI_MEMORY_RP           0x0000000000002000
-#define EFI_MEMORY_XP           0x0000000000004000
+// Memory cacheability attribute
+#define EFI_MEMORY_UC            0x0000000000000001
+#define EFI_MEMORY_WC            0x0000000000000002
+#define EFI_MEMORY_WT            0x0000000000000004
+#define EFI_MEMORY_WB            0x0000000000000008
+#define EFI_MEMORY_UCE           0x0000000000000010
 
-// range requires a runtime mapping
-#define EFI_MEMORY_RUNTIME      0x8000000000000000
+// Physical memory protection attribute
+#define EFI_MEMORY_WP            0x0000000000001000
+#define EFI_MEMORY_RP            0x0000000000002000
+#define EFI_MEMORY_XP            0x0000000000004000
+#define EFI_MEMORY_RO            0x0000000000020000
+
+// Runtime memory attribute
+#define EFI_MEMORY_NV            0x0000000000008000
+#define EFI_MEMORY_RUNTIME       0x8000000000000000
+
+// Other memory attribute
+#define EFI_MEMORY_MORE_RELIABLE 0x0000000000010000
+#define EFI_MEMORY_SP            0x0000000000040000
+#define EFI_MEMORY_CPU_CRYPTO    0x0000000000080000
+#define EFI_MEMORY_ISA_VALID     0x4000000000000000
+#define EFI_MEMORY_ISA_MASK      0x0FFFF00000000000
+
 
 #define EFI_MEMORY_DESCRIPTOR_VERSION  1
 typedef struct {
@@ -194,7 +227,7 @@ typedef struct {
 // International Language
 //
 
-typedef UINT8   ISO_639_2;
+typedef CHAR8 ISO_639_2;
 #define ISO_639_2_ENTRY_SIZE    3
 
 //
@@ -216,5 +249,10 @@ typedef UINT8   ISO_639_2;
                                                 0x0000000000000008
 #define EFI_OS_INDICATIONS_CAPSULE_RESULT_VAR_SUPPORTED \
                                                 0x0000000000000010
+#define EFI_OS_INDICATIONS_START_OS_RECOVERY    0x0000000000000020
+#define EFI_OS_INDICATIONS_START_PLATFORM_RECOVERY \
+                                                0x0000000000000040
+#define EFI_OS_INDICATIONS_JSON_CONFIG_DATA_REFRESH \
+                                                0x0000000000000080
 
 #endif
