@@ -1,11 +1,11 @@
 start_time=$(date +%s%3N)
 
 cd gnu-efi
-make
-make bootloader
+make -j6
+make bootloader -j6
 cd ..
 cd kernel
-make
+make -j6
 make image
 cd ..
 end_time=$(date +%s%3N)

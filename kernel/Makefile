@@ -37,7 +37,6 @@ setup:
 	@mkdir $(OBJDIR)
 
 image:
-	dd if=/dev/zero of=$(BUILDDIR)/$(OSNAME).img bs=512 count=93750
 	mformat -F -i $(BUILDDIR)/$(OSNAME).img
 	mmd -i $(BUILDDIR)/$(OSNAME).img ::/efi
 	mmd -i $(BUILDDIR)/$(OSNAME).img ::/efi/boot
@@ -57,6 +56,13 @@ run:
 	-drive if=pflash,format=raw,unit=1,file="$(OVMFDIR)/OVMF_VARS-pure-efi.fd" \
 	-net none \
 
+makeImage:
+	dd if=/dev/zero of=$(BUILDDIR)/$(OSNAME).img bs=512 count=1953125
+
 clean:
 	@echo "!==== CLEANING BUILD FILES"
-	rm -rf $(BUILDDIR)/* $(OBJDIR)/*
+	find $(BUILDDIR) -type f ! -name "$(OSNAME).img" -exec rm -f {} +
+	find $(OBJDIR) -type f -exec rm -f {} +
+
+cleanImage:
+	rm -rf $(BUILDDIR)/$(OSNAME).img
