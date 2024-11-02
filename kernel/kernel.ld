@@ -1,9 +1,6 @@
-OUTPUT_FORMAT(elf64-x86-64)
 ENTRY(_start)
 
-SECTIONS{
-	. = 0xFFFF800000000000;
-	
+SECTIONS{	
 	.text : ALIGN(0x1000){
 		*(.text)
 	}
