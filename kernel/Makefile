@@ -59,7 +59,7 @@ image:
 	mcopy -i $(BUILDDIR)/$(OSNAME).img $(BOOTEFI) ::/efi/boot
 	mren -i $(BUILDDIR)/$(OSNAME).img ::/efi/boot/main.efi ::/efi/boot/bootx64.efi
 	mcopy -i $(BUILDDIR)/$(OSNAME).img startup.nsh ::
-	mcopy -i $(BUILDDIR)/$(OSNAME).img $(BUILDDIR)/MidnightOS.bin ::
+	mcopy -i $(BUILDDIR)/$(OSNAME).img $(BUILDDIR)/kernel.elf ::/boot
 
 run:
 	qemu-system-x86_64 \
@@ -77,7 +77,7 @@ makeImage:
 clean:
 	@echo "!==== CLEANING BUILD FILES"
 	rm -rf $(OBJS)
-	rm -rf $(BUILDDIR)/MidnightOS.bin
+	rm -rf $(BUILDDIR)/kernel.elf
 
 cleanImage:
 	rm -rf $(BUILDDIR)/$(OSNAME).img
