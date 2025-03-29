@@ -9,8 +9,7 @@ DATA_DIR = $(abspath files)
 OVMF_BINARIES_DIR = ovmf-bins
 GNU_EFI_DIR = gnu-efi
 
-EFI_TARGET = loader.efi
-BOOTLOADERL3_ELF_TARGET = bootloaderl3.elf
+EFI_TARGET = bootx64.efi
 KERNEL_ELF_TARGET = kernel.elf
 
 EMU = qemu-system-x86_64
@@ -51,7 +50,7 @@ partial: build update-img
 
 all: init-img build-gnu-efi partial
 
-build: build-bootloader build-bootloader-l3 build-kernel
+build: build-bootloader build-kernel
 
 build-gnu-efi:
 	$(MAKE) -C $(GNU_EFI_DIR) all
@@ -60,18 +59,6 @@ build-bootloader:
 	@mkdir -p $(BUILD_DIR)
 	$(MAKE) -C $(SOURCE_DIR)/bootloader EFI_TARGET="$(EFI_TARGET)" BUILD_DIR="$(BUILD_DIR)/bootloader" all
 	$(MAKE) -C $(SOURCE_DIR)/bootloader EFI_TARGET="$(EFI_TARGET).debug" BUILD_DIR="$(BUILD_DIR)/bootloader" all
-
-build-bootloader-l3:
-	@mkdir -p $(BUILD_DIR)
-	$(MAKE) -C $(SOURCE_DIR)/bootloader_l3 	ELF_TARGET="$(BOOTLOADERL3_ELF_TARGET)" \
-											BUILD_DIR="$(BUILD_DIR)/bootloader_l3" \
-											CC="$(CC)" \
-											LD="$(LD)" \
-											AC="$(AC)" \
-											CFLAGS="$(CFLAGS)" \
-											LDFLAGS="$(LDFLAGS)" \
-											ACFLAGS="$(ACFLAGS)" \
-											all
 
 build-kernel:
 	@mkdir -p $(BUILD_DIR)
@@ -91,8 +78,7 @@ update-img:
 	mmd -i $(BUILD_DIR)/$(OS_NAME).img ::/EFI/BOOT
 	mmd -i $(BUILD_DIR)/$(OS_NAME).img ::/BOOT
 	mcopy -i $(BUILD_DIR)/$(OS_NAME).img $(BUILD_DIR)/bootloader/$(EFI_TARGET) ::/EFI/BOOT
-	mren -i $(BUILD_DIR)/$(OS_NAME).img ::/EFI/BOOT/$(EFI_TARGET) ::/EFI/BOOT/bootx64.efi
-	mcopy -i $(BUILD_DIR)/$(OS_NAME).img $(BUILD_DIR)/bootloader_l3/$(BOOTLOADERL3_ELF_TARGET) ::/BOOT
+	mcopy -i $(BUILD_DIR)/$(OS_NAME).img $(BUILD_DIR)/kernel/$(KERNEL_ELF_TARGET) ::/BOOT
 	mcopy -si $(BUILD_DIR)/$(OS_NAME).img $(DATA_DIR)/* ::
 
 init-img:

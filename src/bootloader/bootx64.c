@@ -42,6 +42,34 @@ int memcmp(const void *aptr, const void *bptr, size_t n) {
 	return 0;
 }
 
+int VerifyElfHeader(Elf64_Ehdr header) {
+	if (memcmp(&header.e_ident[EI_MAG0], ELFMAG, SELFMAG) != 0) {
+		Print(L"Invalid kernel binary elf magic\n\r");
+		return 0;
+	}
+	if (header.e_ident[EI_CLASS] != ELFCLASS64) {
+		Print(L"kernel binary is not 64 bit format\n\r");
+		return 0;
+	}
+	if (header.e_ident[EI_DATA] != ELFDATA2LSB) {
+		Print(L"kernel binary has incorrect endianness\n\r");
+		return 0;
+	}
+	if (header.e_type != ET_EXEC) {
+		Print(L"kernel binary is not executable\n\r");
+		return 0;
+	}
+	if (header.e_machine != EM_X86_64) {
+		Print(L"kernel binary not x86_64 architecture\n\r");
+		return 0;
+	}
+	if (header.e_version != EV_CURRENT) {
+		Print(L"Invalid kernal binary elf version\n\r");
+		return 0;
+	}
+	return 1;
+}
+
 EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
 	EFI_STATUS status;
 
@@ -49,100 +77,44 @@ EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
 #if VERBOSE_REPORTING
 	Print(L"Bootloader started\n\r");
 #endif
-	//Open the bootloader_l3.elf file
-	EFI_FILE *bootloader_l3 = OpenFile(NULL, L"\\boot\\bootloaderl3.elf", imageHandle, systemTable, &status);
-	//if the file hasn't been opened successfully, print an error.
-	if (status != EFI_SUCCESS) {
-		Print(L"Could not open bootloader_l3.elf: ");
-		switch (status) {
-			case EFI_NOT_FOUND:
-				Print(L"File not found. Code: 0x%lx\n\r", status);
-				break;
-			case EFI_NO_MEDIA:
-				Print(L"The device has no medium. Code: 0x%lx\n\r", status);
-				break;
-			case EFI_MEDIA_CHANGED:
-				Print(L"The device has a different medium or the medium is no longer supported. Code: 0x%lx\n\r", status);
-				break;
-			case EFI_DEVICE_ERROR:
-				Print(L"The device has reported an error. Code: 0x%lx\n\r", status);
-				break;
-			case EFI_VOLUME_CORRUPTED:
-				Print(L"The file system strctures are corrupted. Code: 0x%lx\n\r", status);
-				break;
-			case EFI_ACCESS_DENIED:
-				Print(L"Access denied. Code: 0x%lx\n\r", status);
-				break;
-			case EFI_OUT_OF_RESOURCES:
-				Print(L"Not enough resources to open the file. Code: 0x%lx\n\r", status);
-				break;
-			default:
-				Print(L"Unknown error. Code: 0x%lx\n\r", status);
-				break;
-		}
-
-		return status;
-	} else if (!bootloader_l3) {
-		Print(L"Failed to open bootloader_l3.elf\n\r");
+	//Open the kernel.elf file
+	EFI_FILE *kernel = OpenFile(NULL, L"\\boot\\kernel.elf", imageHandle, systemTable, &status);
+	HandleError(L"Could not open the file: 0x%lx", status);
+	if (!kernel) {
+		Print(L"Failed to open kernel.elf\n\r");
 		return EFI_LOAD_ERROR;
 	}
+
 #if VERBOSE_REPORTING
-	else {
-		Print(L"bootloader_l3.elf opened successfully\n\r");
-	}
+	Print(L"kernel.elf opened successfully\n\r");
 #endif
 
 	UINTN fileInfoSize = 0;
 	EFI_FILE_INFO *fileInfo;
-	status = bootloader_l3->GetInfo(bootloader_l3, &gEfiFileInfoGuid, &fileInfoSize, NULL);
+	status = kernel->GetInfo(kernel, &gEfiFileInfoGuid, &fileInfoSize, NULL);
 	if (status != EFI_BUFFER_TOO_SMALL) {
 		Print(L"Failed to get file info size: 0x%lx", status);
 		return status;
 	}
 	status = systemTable->BootServices->AllocatePool(EfiLoaderData, fileInfoSize, (void **) &fileInfo);
 	HandleError(L"Failed to allocate memory pool: 0x%lx", status);
-	status = bootloader_l3->GetInfo(bootloader_l3, &gEfiFileInfoGuid, &fileInfoSize, (void **) &fileInfo);
+	status = kernel->GetInfo(kernel, &gEfiFileInfoGuid, &fileInfoSize, (void **) &fileInfo);
 	HandleError(L"Failed to get file info: 0x%lx", status);
 
 	Elf64_Ehdr header;
 	UINTN headerSize = sizeof(header);
-	bootloader_l3->Read(bootloader_l3, &headerSize, &header);
-
-	if (memcmp(&header.e_ident[EI_MAG0], ELFMAG, SELFMAG) != 0) {
-		Print(L"Invalid bootloader_l3 binary elf magic\n\r");
-		return EFI_LOAD_ERROR;
-	}
-	if (header.e_ident[EI_CLASS] != ELFCLASS64) {
-		Print(L"bootloader_l3 binary is not 64 bit format\n\r");
-		return EFI_LOAD_ERROR;
-	}
-	if (header.e_ident[EI_DATA] != ELFDATA2LSB) {
-		Print(L"bootloader_l3 binary has incorrect endianness\n\r");
-		return EFI_LOAD_ERROR;
-	}
-	if (header.e_type != ET_EXEC) {
-		Print(L"bootloader_l3 binary is not executable\n\r");
-		return EFI_LOAD_ERROR;
-	}
-	if (header.e_machine != EM_X86_64) {
-		Print(L"bootloader_l3 binary not x86_64 architecture\n\r");
-		return EFI_LOAD_ERROR;
-	}
-	if (header.e_version != EV_CURRENT) {
-		Print(L"Invalid kernal binary elf version\n\r");
-		return EFI_LOAD_ERROR;
-	}
-
+	kernel->Read(kernel, &headerSize, &header);
+	if (!VerifyElfHeader(header)) { return EFI_LOAD_ERROR; }
 #if VERBOSE_REPORTING
-	Print(L"bootloader_l3 binary elf header successfully verified\n\r");
+	Print(L"kernel binary elf header successfully verified\n\r");
 #endif
 
-	bootloader_l3->SetPosition(bootloader_l3, header.e_phoff);
+	kernel->SetPosition(kernel, header.e_phoff);
 	Elf64_Phdr *phdrs = NULL;
 	UINTN size = header.e_phnum * header.e_phentsize;
 	status = systemTable->BootServices->AllocatePool(EfiLoaderData, size, (void **) &phdrs);
 	HandleError(L"Failed to allocate memory pool for p headers: 0x%lx", status);
-	status = bootloader_l3->Read(bootloader_l3, &size, phdrs);
+	status = kernel->Read(kernel, &size, phdrs);
 	HandleError(L"Failed to read p headers: 0x%lx", status);
 	if (!phdrs) {
 		Print(L"Failed to read p headers: phdrs == nullptr\n\r");
@@ -150,7 +122,7 @@ EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
 	}
 
 #if VERBOSE_REPORTING
-	Print(L"bootloader_l3 p headers successfully loaded\n\r");
+	Print(L"kernel p headers successfully loaded\n\r");
 #endif
 
 	UINTN totalSegmentsSize = 0;
@@ -202,20 +174,20 @@ EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
 			int pageCount = (phdr->p_memsz + 0x1000 - 1) / 0x1000;
 			systemTable->BootServices->AllocatePages(AllocateAddress, EfiLoaderData, pageCount, &endAddress);
 
-			status = bootloader_l3->SetPosition(bootloader_l3, phdr->p_offset);
-			HandleError(L"Failed to set position in bootloader_l3.elf file protocol: 0x%lx\n\r", status);
+			status = kernel->SetPosition(kernel, phdr->p_offset);
+			HandleError(L"Failed to set position in kernel.elf file protocol: 0x%lx\n\r", status);
 			UINTN size = phdr->p_filesz;
-			status = bootloader_l3->Read(bootloader_l3, &size, (void *) endAddress);
+			status = kernel->Read(kernel, &size, (void *) endAddress);
 			HandleError(L"Failed to read segment: 0x%lx\n\r", status);
 			endAddress += pageCount * 0x1000;
 		}
 	}
 
 #if VERBOSE_REPORTING
-	Print(L"bootloader_l3 segments loaded successfully\n\r");
+	Print(L"kernel segments loaded successfully\n\r");
 #endif
 
-	bootloader_l3->Close(bootloader_l3);
+	kernel->Close(kernel);
 
 	void (*_start)(bootInfot_t *) = ((__attribute__((sysv_abi)) void (*)(bootInfot_t *)) header.e_entry);
 
