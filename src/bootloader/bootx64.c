@@ -6,7 +6,7 @@
 
 #define HandleError(fmt, status)                                                                                                                     \
 	if (status != EFI_SUCCESS) {                                                                                                                     \
-		Print(fmt L": 0x%lx\n\r", status);                                                                                                                          \
+		Print(fmt L": 0x%lx\n\r", status);                                                                                                           \
 		return status;                                                                                                                               \
 	}
 #define ALIGN_ADDR(val, alignment, castType) ((castType) val + ((castType) alignment - 1)) & (~((castType) alignment - 1))
@@ -52,27 +52,27 @@ int memcmp(const void *aptr, const void *bptr, size_t n) {
 }
 
 int VerifyElfHeader(Elf64_Ehdr header) {
-	if (memcmp(&header.e_ident[EI_MAG0], ELFMAG, SELFMAG) != 0) {
+	if (memcmp(&header.e_ident[EI_MAG0], ELFMAG, SELFMAG) != 0) {//verify the file is ELF
 		Print(L"Invalid kernel binary elf magic\n\r");
 		return 0;
 	}
-	if (header.e_ident[EI_CLASS] != ELFCLASS64) {
+	if (header.e_ident[EI_CLASS] != ELFCLASS64) {//check if 64 bit
 		Print(L"kernel binary is not 64 bit format\n\r");
 		return 0;
 	}
-	if (header.e_ident[EI_DATA] != ELFDATA2LSB) {
+	if (header.e_ident[EI_DATA] != ELFDATA2LSB) {//check if little endian
 		Print(L"kernel binary has incorrect endianness\n\r");
 		return 0;
 	}
-	if (header.e_type != ET_EXEC) {
+	if (header.e_type != ET_EXEC) {//check if executable
 		Print(L"kernel binary is not executable\n\r");
 		return 0;
 	}
-	if (header.e_machine != EM_X86_64) {
+	if (header.e_machine != EM_X86_64) {//check if x86_64
 		Print(L"kernel binary not x86_64 architecture\n\r");
 		return 0;
 	}
-	if (header.e_version != EV_CURRENT) {
+	if (header.e_version != EV_CURRENT) {//check if kernel version is current
 		Print(L"Invalid kernal binary elf version\n\r");
 		return 0;
 	}
@@ -81,9 +81,11 @@ int VerifyElfHeader(Elf64_Ehdr header) {
 
 EFI_STATUS GetPhdrs(EFI_SYSTEM_TABLE *systemTable, Elf64_Ehdr ehdr, EFI_FILE *elfFile, Elf64_Phdr **phdrs) {
 	EFI_STATUS status;
+	//allocate a buffer for phdrs
 	UINTN phdrBuffSize = ehdr.e_phnum * ehdr.e_phentsize;
 	status = systemTable->BootServices->AllocatePool(EfiLoaderData, phdrBuffSize, (void **) phdrs);
 	HandleError(L"Failed to allocate phdr buffer", status);
+	//read the phdrs from the file
 	status = elfFile->Read(elfFile, &phdrBuffSize, *phdrs);
 	HandleError(L"Failed to read phdrs", status);
 	return EFI_SUCCESS;
@@ -133,11 +135,13 @@ EFI_STATUS LoadKernel(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable, Elf
 
 		while ((char *) phdr < (char *) phdrs + ehdr.e_phnum * ehdr.e_phentsize &&
 			   (char *) sectionInfo < (char *) *sectionInfos + phdrCount * sizeof(loadedSectionsInfo_t)) {
-			if (phdr->p_type == PT_LOAD) {
+			if (phdr->p_type == PT_LOAD) {//check if the segment is loadable
+				//calculate and allocate the required number of pages for the segment
 				int pageCount = (phdr->p_memsz + 0x1000 - 1) / 0x1000;
 				status = systemTable->BootServices->AllocatePages(AllocateAnyPages, EfiLoaderData, pageCount, &sectionInfo->paddr);
 				if (status != EFI_SUCCESS) { return status; }
 
+				//read the segment from the file
 				status = kernel->SetPosition(kernel, phdr->p_offset);
 				if (status != EFI_SUCCESS) { return status; }
 				UINTN size = phdr->p_memsz;
@@ -145,6 +149,7 @@ EFI_STATUS LoadKernel(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable, Elf
 
 				if (status != EFI_SUCCESS) { return status; }
 
+				//put required data into the section info structures for mapping later
 				sectionInfo->vaddr = phdr->p_vaddr;
 				sectionInfo->pageCount = pageCount;
 				sectionInfo->flags = phdr->p_flags;
@@ -153,8 +158,10 @@ EFI_STATUS LoadKernel(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable, Elf
 					  L"with flags: 0x%x\n\r\t number of pages for segment: %d\n\r",
 					  sectionInfo->paddr, sectionInfo->vaddr, sectionInfo->flags, sectionInfo->pageCount);
 
+				//increment section info pointer to the next entry
 				sectionInfo = (loadedSectionsInfo_t *) ((char *) sectionInfo + sizeof(loadedSectionsInfo_t));
 			}
+			//increment phdr pointer to the next entry
 			phdr = (Elf64_Phdr *) ((char *) phdr + ehdr.e_phentsize);
 		}
 	}
@@ -177,26 +184,29 @@ EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
 	EFI_STATUS status;
 	InitializeLib(imageHandle, systemTable);
 
+	//structues obtained from loading the kernel file
 	loadedSectionsInfo_t *sectionInfos = NULL;
 	UINTN sectionInfoCount = 0;
 	Elf64_Ehdr ehdr;
 
+	//load the kernel into memory, and retrieve necessary structures
 	status = LoadKernel(imageHandle, systemTable, &ehdr, &sectionInfoCount, &sectionInfos);
 	HandleError(L"Failed to load kernel", status);
 
+	//find the entry point of the kernel
 	void (*_start)() = ((__attribute__((sysv_abi)) void (*)()) ehdr.e_entry);
 	Print(L"Found entry symbol at 0x%lx\n\r", (Elf64_Addr) _start);
 
+	//allocate memory for PML4 (1 page, 512 entries)
+	uint64_t *pml4 = NULL;
+	systemTable->BootServices->AllocatePages(AllocateAnyPages, EfiLoaderData, 1, (void *) pml4);
+
+	//obtain the memory map to prepare the paging structures
 	memMap_t map;
 	status = GetMap(systemTable, &map);
 	HandleError(L"Failed to obtain memory map", status);
 
-	uint64_t *pml4 = NULL;
-	systemTable->BootServices->AllocatePages(AllocateAnyPages, EfiLoaderData, 1, (void *) pml4);
-
-	status = EFI_LOAD_ERROR;
-
-	Print(L"EOF\n\r");
+	Print(L"EOF\n\r"); //TODO: remove later | EOF printing to ensure full execution
 
 	return EFI_SUCCESS;
 }
