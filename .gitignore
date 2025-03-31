@@ -5,6 +5,7 @@
 *.lib
 *.img
 
+temp_dump/
 build/
 .vscode/
 **/tmp/

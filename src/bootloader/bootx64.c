@@ -4,32 +4,41 @@
 
 #define VERBOSE_REPORTING 1
 
-#define HandleError(fmt, status)                                                                                                                               \
-	if (status != EFI_SUCCESS) {                                                                                                                               \
-		Print(fmt, status);                                                                                                                                    \
-		return status;                                                                                                                                         \
+#define HandleError(fmt, status)                                                                                                                     \
+	if (status != EFI_SUCCESS) {                                                                                                                     \
+		Print(fmt L": 0x%lx\n\r", status);                                                                                                                          \
+		return status;                                                                                                                               \
 	}
 #define ALIGN_ADDR(val, alignment, castType) ((castType) val + ((castType) alignment - 1)) & (~((castType) alignment - 1))
 
+#define PT_ENTRY(addr) (addr >> 12) & 0x1FF
+#define PD_ENTRY(addr) (addr >> 21) & 0x1FF
+#define PDPE_ENTRY(addr) (addr >> 30) & 0x1FF
+#define PML4_ENTRY(addr) (addr >> 39) & 0x1FF
+
+typedef struct {
+	Elf64_Addr paddr;
+	Elf64_Addr vaddr;
+	UINTN pageCount;
+	Elf64_Word flags;
+} loadedSectionsInfo_t;
+
 typedef struct {
 	EFI_MEMORY_DESCRIPTOR *map;
-	UINTN mapSize;
-	UINTN mapDescriptorSize;
-	uint64_t *bootstrapPML4;
-} bootInfot_t;
+	UINTN size;
+	UINTN key;
+	UINTN descriptorSize;
+	UINT32 descriptorVersion;
+} memMap_t;
 
-EFI_FILE *OpenFile(EFI_FILE *directory, CHAR16 *path, EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable, EFI_STATUS *status) {
+EFI_STATUS OpenFile(EFI_FILE *directory, CHAR16 *path, EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable, EFI_FILE **file) {
 	EFI_LOADED_IMAGE_PROTOCOL *loadedImage;
 	EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *fileSystem;
 	systemTable->BootServices->HandleProtocol(imageHandle, &gEfiLoadedImageProtocolGuid, (void **) &loadedImage);
 	systemTable->BootServices->HandleProtocol(loadedImage->DeviceHandle, &gEfiSimpleFileSystemProtocolGuid, (void **) &fileSystem);
 
 	if (!directory) { fileSystem->OpenVolume(fileSystem, &directory); }
-
-	EFI_FILE *file;
-	*status = directory->Open(directory, &file, path, EFI_FILE_MODE_READ, EFI_FILE_READ_ONLY);
-
-	return file;
+	return directory->Open(directory, file, path, EFI_FILE_MODE_READ, EFI_FILE_READ_ONLY);
 }
 
 int memcmp(const void *aptr, const void *bptr, size_t n) {
@@ -70,141 +79,124 @@ int VerifyElfHeader(Elf64_Ehdr header) {
 	return 1;
 }
 
+EFI_STATUS GetPhdrs(EFI_SYSTEM_TABLE *systemTable, Elf64_Ehdr ehdr, EFI_FILE *elfFile, Elf64_Phdr **phdrs) {
+	EFI_STATUS status;
+	UINTN phdrBuffSize = ehdr.e_phnum * ehdr.e_phentsize;
+	status = systemTable->BootServices->AllocatePool(EfiLoaderData, phdrBuffSize, (void **) phdrs);
+	HandleError(L"Failed to allocate phdr buffer", status);
+	status = elfFile->Read(elfFile, &phdrBuffSize, *phdrs);
+	HandleError(L"Failed to read phdrs", status);
+	return EFI_SUCCESS;
+}
+
+UINTN GetPT_LOAD_Count(Elf64_Phdr *phdrs, Elf64_Half phnum, Elf64_Half phentsize) {
+	UINTN phdrCount = 0;
+	for (Elf64_Phdr *phdr = phdrs; (char *) phdr < (char *) phdrs + phnum * phentsize; phdr = (Elf64_Phdr *) ((char *) phdr + phentsize)) {
+		if (phdr->p_type == PT_LOAD) { phdrCount++; }
+	}
+	return phdrCount;
+}
+
+EFI_STATUS LoadKernel(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable, Elf64_Ehdr *pEhdr, UINTN *sectionInfoCount,
+					  loadedSectionsInfo_t **sectionInfos) {
+	EFI_STATUS status;
+	//Open kernel.elf
+	EFI_FILE *kernel = NULL;
+	status = OpenFile(NULL, L"\\boot\\kernel.elf", imageHandle, systemTable, &kernel);
+	HandleError(L"Failed to open kernel file: 0x%lx\n\r", status);
+	if (!kernel) {
+		Print(L"Kernel is nullptr\n\r");
+		return EFI_LOAD_ERROR;
+	}
+	//obtain the elf header
+	Elf64_Ehdr ehdr;
+	UINTN ehdrSize = sizeof(ehdr);
+	kernel->Read(kernel, &ehdrSize, &ehdr);
+	if (!VerifyElfHeader(ehdr)) { return EFI_LOAD_ERROR; }
+	*pEhdr = ehdr;
+
+	//obtain the phdrs
+	Elf64_Phdr *phdrs = NULL;
+	status = GetPhdrs(systemTable, ehdr, kernel, &phdrs);
+	if (status != EFI_SUCCESS) { return status; }
+	UINTN phdrCount = GetPT_LOAD_Count(phdrs, ehdr.e_phnum, ehdr.e_phentsize);
+	*sectionInfoCount = phdrCount;
+
+	//allocate sufficient memory for section infos
+	status = systemTable->BootServices->AllocatePool(EfiLoaderData, phdrCount * sizeof(loadedSectionsInfo_t), (void **) sectionInfos);
+	if (status != EFI_SUCCESS) { return status; }
+
+	//load the kernel sections into memory
+	{
+		Elf64_Phdr *phdr = phdrs;
+		loadedSectionsInfo_t *sectionInfo = *sectionInfos;
+
+		while ((char *) phdr < (char *) phdrs + ehdr.e_phnum * ehdr.e_phentsize &&
+			   (char *) sectionInfo < (char *) *sectionInfos + phdrCount * sizeof(loadedSectionsInfo_t)) {
+			if (phdr->p_type == PT_LOAD) {
+				int pageCount = (phdr->p_memsz + 0x1000 - 1) / 0x1000;
+				status = systemTable->BootServices->AllocatePages(AllocateAnyPages, EfiLoaderData, pageCount, &sectionInfo->paddr);
+				if (status != EFI_SUCCESS) { return status; }
+
+				status = kernel->SetPosition(kernel, phdr->p_offset);
+				if (status != EFI_SUCCESS) { return status; }
+				UINTN size = phdr->p_memsz;
+				status = kernel->Read(kernel, &size, (void *) sectionInfo->paddr);
+
+				if (status != EFI_SUCCESS) { return status; }
+
+				sectionInfo->vaddr = phdr->p_vaddr;
+				sectionInfo->pageCount = pageCount;
+				sectionInfo->flags = phdr->p_flags;
+
+				Print(L"Loaded segment\n\r\t at paddr: 0x%lx\n\r\t expected vaddr: 0x%lx\n\r\t "
+					  L"with flags: 0x%x\n\r\t number of pages for segment: %d\n\r",
+					  sectionInfo->paddr, sectionInfo->vaddr, sectionInfo->flags, sectionInfo->pageCount);
+
+				sectionInfo = (loadedSectionsInfo_t *) ((char *) sectionInfo + sizeof(loadedSectionsInfo_t));
+			}
+			phdr = (Elf64_Phdr *) ((char *) phdr + ehdr.e_phentsize);
+		}
+	}
+
+	return EFI_SUCCESS;
+}
+
+EFI_STATUS GetMap(EFI_SYSTEM_TABLE *systemTable, memMap_t *map) {
+	map->map = NULL;
+	map->size = 0;
+
+	EFI_STATUS status = systemTable->BootServices->GetMemoryMap(&map->size, map->map, &map->key, &map->descriptorSize, &map->descriptorVersion);
+	if (map->size <= 0) { return EFI_BUFFER_TOO_SMALL; }
+	status = systemTable->BootServices->AllocatePool(EfiLoaderData, map->size + 10 * sizeof(EFI_MEMORY_DESCRIPTOR), (void **) &map->map);
+	status = systemTable->BootServices->GetMemoryMap(&map->size, map->map, &map->key, &map->descriptorSize, &map->descriptorVersion);
+	return status;
+}
+
 EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
 	EFI_STATUS status;
-
 	InitializeLib(imageHandle, systemTable);
-#if VERBOSE_REPORTING
-	Print(L"Bootloader started\n\r");
-#endif
-	//Open the kernel.elf file
-	EFI_FILE *kernel = OpenFile(NULL, L"\\boot\\kernel.elf", imageHandle, systemTable, &status);
-	HandleError(L"Could not open the file: 0x%lx", status);
-	if (!kernel) {
-		Print(L"Failed to open kernel.elf\n\r");
-		return EFI_LOAD_ERROR;
-	}
 
-#if VERBOSE_REPORTING
-	Print(L"kernel.elf opened successfully\n\r");
-#endif
+	loadedSectionsInfo_t *sectionInfos = NULL;
+	UINTN sectionInfoCount = 0;
+	Elf64_Ehdr ehdr;
 
-	UINTN fileInfoSize = 0;
-	EFI_FILE_INFO *fileInfo;
-	status = kernel->GetInfo(kernel, &gEfiFileInfoGuid, &fileInfoSize, NULL);
-	if (status != EFI_BUFFER_TOO_SMALL) {
-		Print(L"Failed to get file info size: 0x%lx", status);
-		return status;
-	}
-	status = systemTable->BootServices->AllocatePool(EfiLoaderData, fileInfoSize, (void **) &fileInfo);
-	HandleError(L"Failed to allocate memory pool: 0x%lx", status);
-	status = kernel->GetInfo(kernel, &gEfiFileInfoGuid, &fileInfoSize, (void **) &fileInfo);
-	HandleError(L"Failed to get file info: 0x%lx", status);
+	status = LoadKernel(imageHandle, systemTable, &ehdr, &sectionInfoCount, &sectionInfos);
+	HandleError(L"Failed to load kernel", status);
 
-	Elf64_Ehdr header;
-	UINTN headerSize = sizeof(header);
-	kernel->Read(kernel, &headerSize, &header);
-	if (!VerifyElfHeader(header)) { return EFI_LOAD_ERROR; }
-#if VERBOSE_REPORTING
-	Print(L"kernel binary elf header successfully verified\n\r");
-#endif
+	void (*_start)() = ((__attribute__((sysv_abi)) void (*)()) ehdr.e_entry);
+	Print(L"Found entry symbol at 0x%lx\n\r", (Elf64_Addr) _start);
 
-	kernel->SetPosition(kernel, header.e_phoff);
-	Elf64_Phdr *phdrs = NULL;
-	UINTN size = header.e_phnum * header.e_phentsize;
-	status = systemTable->BootServices->AllocatePool(EfiLoaderData, size, (void **) &phdrs);
-	HandleError(L"Failed to allocate memory pool for p headers: 0x%lx", status);
-	status = kernel->Read(kernel, &size, phdrs);
-	HandleError(L"Failed to read p headers: 0x%lx", status);
-	if (!phdrs) {
-		Print(L"Failed to read p headers: phdrs == nullptr\n\r");
-		return EFI_LOAD_ERROR;
-	}
+	memMap_t map;
+	status = GetMap(systemTable, &map);
+	HandleError(L"Failed to obtain memory map", status);
 
-#if VERBOSE_REPORTING
-	Print(L"kernel p headers successfully loaded\n\r");
-#endif
+	uint64_t *pml4 = NULL;
+	systemTable->BootServices->AllocatePages(AllocateAnyPages, EfiLoaderData, 1, (void *) pml4);
 
-	UINTN totalSegmentsSize = 0;
-	for (Elf64_Phdr *phdr = phdrs; (char *) phdr < (char *) phdrs + header.e_phnum * header.e_phentsize;
-		 phdr = (Elf64_Phdr *) ((char *) phdr + header.e_phentsize)) {
-		if (phdr->p_type == PT_LOAD) { totalSegmentsSize += ALIGN_ADDR(phdr->p_filesz, phdr->p_align, UINTN); }
-	}
-#if VERBOSE_REPORTING
-	Print(L"Total size to load: 0x%x\n\r", totalSegmentsSize);
-#endif
+	status = EFI_LOAD_ERROR;
 
-	EFI_MEMORY_DESCRIPTOR *map = NULL;
-	UINTN mapSize = 0, mapKey, descriptorSize;
-	UINT32 descriptorVersion;
-
-	status = systemTable->BootServices->GetMemoryMap(&mapSize, map, &mapKey, &descriptorSize, &descriptorVersion);
-	mapSize += descriptorSize * 5;
-	status = systemTable->BootServices->AllocatePool(EfiLoaderData, mapSize, (void **) &map);
-	HandleError(L"Failed to allocate memory pool for map: 0x%lx\n\r", status);
-	status = systemTable->BootServices->GetMemoryMap(&mapSize, map, &mapKey, &descriptorSize, &descriptorVersion);
-	HandleError(L"Failed to obtain memory map: 0x%lx\n\r", status);
-
-	Elf64_Addr beginAddress = 0;
-	Elf64_Addr endAddress = 0;
-
-	UINT8 memoryFound = 0;
-	for (EFI_MEMORY_DESCRIPTOR *descriptor = map; descriptor < (EFI_MEMORY_DESCRIPTOR *) ((UINTN) map + mapSize);
-		 descriptor = (EFI_MEMORY_DESCRIPTOR *) ((UINTN) descriptor + descriptorSize)) {
-		if (descriptor->Type == EfiConventionalMemory && descriptor->NumberOfPages > (totalSegmentsSize / 0x1000)) {
-			beginAddress = (Elf64_Addr) descriptor->PhysicalStart;
-			memoryFound = 1;
-			break;
-		}
-	}
-
-	if (!memoryFound) {
-		Print(L"Failed to find suitable memory\n\r");
-		return EFI_LOAD_ERROR;
-	}
-
-#if VERBOSE_REPORTING
-	Print(L"Found suitable memory\n\r");
-#endif
-
-	endAddress = beginAddress;
-	for (Elf64_Phdr *phdr = phdrs; (char *) phdr < (char *) phdrs + header.e_phnum * header.e_phentsize;
-		 phdr = (Elf64_Phdr *) ((char *) phdr + header.e_phentsize)) {
-		if (phdr->p_type == PT_LOAD) {
-			int pageCount = (phdr->p_memsz + 0x1000 - 1) / 0x1000;
-			systemTable->BootServices->AllocatePages(AllocateAddress, EfiLoaderData, pageCount, &endAddress);
-
-			status = kernel->SetPosition(kernel, phdr->p_offset);
-			HandleError(L"Failed to set position in kernel.elf file protocol: 0x%lx\n\r", status);
-			UINTN size = phdr->p_filesz;
-			status = kernel->Read(kernel, &size, (void *) endAddress);
-			HandleError(L"Failed to read segment: 0x%lx\n\r", status);
-			endAddress += pageCount * 0x1000;
-		}
-	}
-
-#if VERBOSE_REPORTING
-	Print(L"kernel segments loaded successfully\n\r");
-#endif
-
-	kernel->Close(kernel);
-
-	void (*_start)(bootInfot_t *) = ((__attribute__((sysv_abi)) void (*)(bootInfot_t *)) header.e_entry);
-
-#if VERBOSE_REPORTING
-	Print(L"Found entry symbol at: 0x%lx\n\r", _start);
-#endif
-
-	systemTable->BootServices->FreePool(map);
-	map = NULL;
-	mapSize = 0;
-
-	status = systemTable->BootServices->GetMemoryMap(&mapSize, map, &mapKey, &descriptorSize, &descriptorVersion);
-	mapSize += descriptorSize * 5;
-	status = systemTable->BootServices->AllocatePool(EfiLoaderData, mapSize, (void **) &map);
-	HandleError(L"Failed to allocate memory pool for map: 0x%lx\n\r", status);
-	status = systemTable->BootServices->GetMemoryMap(&mapSize, map, &mapKey, &descriptorSize, &descriptorVersion);
-	HandleError(L"Failed to obtain memory map: 0x%lx\n\r", status);
+	Print(L"EOF\n\r");
 
 	return EFI_SUCCESS;
 }
