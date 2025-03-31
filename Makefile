@@ -19,7 +19,7 @@ AC = nasm
 LD = ld
 
 EMU_BASE_FLAGS = -drive file=$(BUILD_DIR)/$(OS_NAME).img,format=raw \
-				-m 256M \
+				-m 2G \
 				-cpu qemu64 \
 				-vga std \
 				-drive if=pflash,format=raw,unit=0,file="$(OVMF_BINARIES_DIR)/OVMF_CODE-pure-efi.fd",readonly=on \
