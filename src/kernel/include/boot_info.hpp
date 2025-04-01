@@ -20,8 +20,17 @@ struct MemMap{
 	uint32_t descriptorVersion;
 };
 
+typedef struct {
+	void* bufferBase;
+	uint64_t bufferSize;
+	unsigned int width;
+	unsigned int height;
+	unsigned int pixelsPerScanline;
+} GOPFramebuffer;
+
 struct BootInfo{
-	MemMap map;
+	MemMap *map;
+    GOPFramebuffer *framebuffer;
 };
 
 #endif

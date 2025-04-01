@@ -37,7 +37,16 @@ typedef struct {
 } MemMap;
 
 typedef struct {
-	MemMap map;
+	void *bufferBase;
+	UINTN bufferSize;
+	unsigned int width;
+	unsigned int height;
+	unsigned int pixelsPerScanline;
+} GOPFramebuffer;
+
+typedef struct {
+	MemMap *map;
+	GOPFramebuffer *framebuffer;
 } BootInfo;
 
 EFI_STATUS OpenFile(EFI_FILE *directory, CHAR16 *path, EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable, EFI_FILE **file) {
@@ -170,6 +179,23 @@ EFI_STATUS LoadKernel(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable, Elf
 			phdr = (Elf64_Phdr *) ((char *) phdr + ehdr.e_phentsize);
 		}
 	}
+
+	return EFI_SUCCESS;
+}
+
+EFI_STATUS InitGOP(EFI_SYSTEM_TABLE *systemTable, GOPFramebuffer *framebuffer) {
+	EFI_GUID gopGuid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
+	EFI_GRAPHICS_OUTPUT_PROTOCOL *gop;
+	EFI_STATUS status;
+
+	status = systemTable->BootServices->LocateProtocol(&gopGuid, NULL, (void **) &gop);
+	HandleError(L"Failed to locate GOP", status);
+
+	framebuffer->bufferBase = (void *) gop->Mode->FrameBufferBase;
+	framebuffer->bufferSize = gop->Mode->FrameBufferSize;
+	framebuffer->width = gop->Mode->Info->HorizontalResolution;
+	framebuffer->height = gop->Mode->Info->VerticalResolution;
+	framebuffer->pixelsPerScanline = gop->Mode->Info->PixelsPerScanLine;
 
 	return EFI_SUCCESS;
 }
@@ -311,24 +337,38 @@ EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
 	pml4 = (uint64_t *) pml4Addr;
 	ZeroMem((void *) pml4, 0x1000);
 
+	GOPFramebuffer *framebuffer = NULL;
+	status = systemTable->BootServices->AllocatePool(EfiLoaderData, sizeof(framebuffer), (void **) &framebuffer);
+	HandleError(L"Failed to allocate memory for framebuffer info struct", status);
+	status = InitGOP(systemTable, framebuffer);
+	HandleError(L"Failed to initialize GOP", status);
+
 	//obtain the memory map to prepare the paging structures
-	MemMap map;
-	status = GetMap(systemTable, &map);
+	MemMap *map = NULL;
+	status = systemTable->BootServices->AllocatePool(EfiLoaderData, sizeof(MemMap), (void **) &map);
+	HandleError(L"Failed to allocate memory for memory map", status);
+
+	status = GetMap(systemTable, map); //get EFI memory map
 	HandleError(L"Failed to obtain memory map", status);
-	status = MapMemory(systemTable, pml4, &map, sectionInfos, sectionInfoCount);
+	status = MapMemory(systemTable, pml4, map, sectionInfos, sectionInfoCount); //map memory from EFI map and kernel code
 	HandleError(L"Failed to map memory", status);
-	status = GetMap(systemTable, &map);//get final memory map
+	status = CreateMap(systemTable, pml4, (EFI_VIRTUAL_ADDRESS) framebuffer->bufferBase, (EFI_PHYSICAL_ADDRESS) framebuffer->bufferBase,
+					   (framebuffer->bufferSize + 0x1000 - 1) / 0x1000); //add mapping for GOP framebuffer
+	HandleError(L"Failed to map memory for the framebuffer", status);
+	status = GetMap(systemTable, map); //get the final memory map from EFI
 	HandleError(L"Failed to obtain memory map", status);
 
+	//create the boot information structure
 	BootInfo bootInfo;
 	bootInfo.map = map;
+	bootInfo.framebuffer = framebuffer;
 
-	status = systemTable->BootServices->ExitBootServices(imageHandle, map.key);//exit boot services
+	status = systemTable->BootServices->ExitBootServices(imageHandle, map->key);//exit boot services
 	if (status != EFI_SUCCESS) { return status; }
 
-	SetCR3PML4((uint64_t) pml4 | PAGE_WSP);
+	SetCR3PML4((uint64_t) pml4 | PAGE_WSP);//set CR3 to the newly created paging map
 
-	_start(&bootInfo);
+	_start(&bootInfo); //call the kernel
 
 	return EFI_SUCCESS;
 }
