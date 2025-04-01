@@ -163,10 +163,6 @@ EFI_STATUS LoadKernel(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable, Elf
 				sectionInfo->pageCount = pageCount;
 				sectionInfo->flags = phdr->p_flags;
 
-				Print(L"Loaded segment\n\r\t at paddr: 0x%lx\n\r\t expected vaddr: 0x%lx\n\r\t "
-					  L"with flags: 0x%x\n\r\t number of pages for segment: %d\n\r",
-					  sectionInfo->paddr, sectionInfo->vaddr, sectionInfo->flags, sectionInfo->pageCount);
-
 				//increment section info pointer to the next entry
 				sectionInfo = (LoadedSectionInfo *) ((char *) sectionInfo + sizeof(LoadedSectionInfo));
 			}
@@ -305,8 +301,7 @@ EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
 	HandleError(L"Failed to load kernel", status);
 
 	//find the entry point of the kernel
-	void (*_start)(BootInfo*) = ((__attribute__((sysv_abi)) void (*)(BootInfo*)) ehdr.e_entry);
-	Print(L"Found entry symbol at 0x%lx\n\r", (Elf64_Addr) _start);
+	void (*_start)(BootInfo *) = ((__attribute__((sysv_abi)) void (*)(BootInfo *)) ehdr.e_entry);
 
 	//allocate memory for PML4 (1 page, 512 entries)
 	EFI_PHYSICAL_ADDRESS pml4Addr;
@@ -320,17 +315,10 @@ EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
 	MemMap map;
 	status = GetMap(systemTable, &map);
 	HandleError(L"Failed to obtain memory map", status);
-
 	status = MapMemory(systemTable, pml4, &map, sectionInfos, sectionInfoCount);
 	HandleError(L"Failed to map memory", status);
-
-	Print(L"pml4 addr: 0x%lx\n\r", pml4);
-
 	status = GetMap(systemTable, &map);//get final memory map
 	HandleError(L"Failed to obtain memory map", status);
-
-	EFI_PHYSICAL_ADDRESS addr = 0x00000FFE00000;
-	uint64_t *pdpe = (uint64_t *) (pml4[PML4_ENTRY(addr)] & ~0xFFF);
 
 	BootInfo bootInfo;
 	bootInfo.map = map;
