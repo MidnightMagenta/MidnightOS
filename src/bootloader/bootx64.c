@@ -19,7 +19,7 @@
 #define PAGE_PRESENT 1 << 0
 #define PAGE_WRITABLE 1 << 1
 #define PAGE_SUPERVISOR 1 << 2
-#define PAGE_WRITE_SUPERVISOR PAGE_PRESENT | PAGE_WRITABLE | PAGE_SUPERVISOR
+#define PAGE_WSP PAGE_PRESENT | PAGE_WRITABLE | PAGE_SUPERVISOR
 
 typedef struct {
 	Elf64_Addr paddr;
@@ -35,6 +35,10 @@ typedef struct {
 	UINTN descriptorSize;
 	UINT32 descriptorVersion;
 } MemMap;
+
+typedef struct {
+	MemMap map;
+} BootInfo;
 
 EFI_STATUS OpenFile(EFI_FILE *directory, CHAR16 *path, EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable, EFI_FILE **file) {
 	EFI_LOADED_IMAGE_PROTOCOL *loadedImage;
@@ -174,12 +178,13 @@ EFI_STATUS LoadKernel(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable, Elf
 	return EFI_SUCCESS;
 }
 
-EFI_STATUS CreateMap(EFI_SYSTEM_TABLE *systemTable, uint64_t *pml4, EFI_MEMORY_DESCRIPTOR *entry) {
+EFI_STATUS CreateMap(EFI_SYSTEM_TABLE *systemTable, uint64_t *pml4, EFI_VIRTUAL_ADDRESS vaddr, EFI_PHYSICAL_ADDRESS paddr, UINTN pageCount) {
 	EFI_STATUS status;
 	EFI_PHYSICAL_ADDRESS newPage = 0;
+	EFI_VIRTUAL_ADDRESS physicalAddress = paddr;
 
 	//itterate over the address space in increments of 1 page
-	for (uint64_t address = entry->PhysicalStart; address < entry->PhysicalStart + (entry->NumberOfPages * 0x1000); address += 0x1000) {
+	for (uint64_t address = vaddr; address < vaddr + (pageCount * 0x1000); address += 0x1000) {
 		//predefine paging structure pointers
 		uint64_t *pdpt = NULL;
 		uint64_t *pd = NULL;
@@ -190,9 +195,9 @@ EFI_STATUS CreateMap(EFI_SYSTEM_TABLE *systemTable, uint64_t *pml4, EFI_MEMORY_D
 			newPage = 0;
 			status = systemTable->BootServices->AllocatePages(AllocateAnyPages, EfiLoaderData, 1, &newPage);//allocate memory for the structure
 			if (status != EFI_SUCCESS) { return status; }
-			pml4[PML4_ENTRY(address)] = newPage | PAGE_WRITE_SUPERVISOR;//write the pointer to PDPT into PML4
-			uint64_t *temp = (uint64_t *) newPage;						//clear memory pointer to by the structure
-			SetMem(temp, 0x1000, 0);
+			pml4[PML4_ENTRY(address)] = newPage | PAGE_WSP;//write the pointer to PDPT into PML4
+			uint64_t *temp = (uint64_t *) newPage;		   //clear memory pointer to by the structure
+			ZeroMem((void *) temp, 0x1000);
 		}
 
 		pdpt = (uint64_t *) (pml4[PML4_ENTRY(address)] & ~0xFFF);//convert the PML4 entry to a PDPT pointer
@@ -201,9 +206,9 @@ EFI_STATUS CreateMap(EFI_SYSTEM_TABLE *systemTable, uint64_t *pml4, EFI_MEMORY_D
 			newPage = 0;
 			status = systemTable->BootServices->AllocatePages(AllocateAnyPages, EfiLoaderData, 1, &newPage);//allocate memory for the structure
 			if (status != EFI_SUCCESS) { return status; }
-			pdpt[PDPT_ENTRY(address)] = newPage | PAGE_WRITE_SUPERVISOR;//write the pointer to PD into PDPT
-			uint64_t *temp = (uint64_t *) newPage;						//clear memory pointer to by the structure
-			SetMem(temp, 0x1000, 0);
+			pdpt[PDPT_ENTRY(address)] = newPage | PAGE_WSP;//write the pointer to PD into PDPT
+			uint64_t *temp = (uint64_t *) newPage;		   //clear memory pointer to by the structure
+			ZeroMem((void *) temp, 0x1000);
 		}
 
 		pd = (uint64_t *) (pdpt[PDPT_ENTRY(address)] & ~0xFFF);//convert the PDPT entry to a PD pointer
@@ -212,41 +217,51 @@ EFI_STATUS CreateMap(EFI_SYSTEM_TABLE *systemTable, uint64_t *pml4, EFI_MEMORY_D
 			newPage = 0;
 			status = systemTable->BootServices->AllocatePages(AllocateAnyPages, EfiLoaderData, 1, &newPage);//allocate memory for the structure
 			if (status != EFI_SUCCESS) { return status; }
-			pd[PD_ENTRY(address)] = newPage | PAGE_WRITE_SUPERVISOR;//write the pointer to PT into PD
-			uint64_t *temp = (uint64_t *) newPage;					//clear memory pointer to by the structure
-			SetMem(temp, 0x1000, 0);
+			pd[PD_ENTRY(address)] = newPage | PAGE_WSP;//write the pointer to PT into PD
+			uint64_t *temp = (uint64_t *) newPage;	   //clear memory pointer to by the structure
+			ZeroMem((void *) temp, 0x1000);
 		}
 
-		pt = (uint64_t *) (pd[PD_ENTRY(address)] & ~0xFFF);		//convert the PD entry to a PT pointer
-		pt[PT_ENTRY(address)] = address | PAGE_WRITE_SUPERVISOR;//write the page base address into PDPT as a supervisor read write page
+		pt = (uint64_t *) (pd[PD_ENTRY(address)] & ~0xFFF);//convert the PD entry to a PT pointer
+		pt[PT_ENTRY(address)] = physicalAddress | PAGE_WSP;//write the page base address into PDPT as a supervisor read write page
+		physicalAddress += 0x1000;
 	}
 
 	return EFI_SUCCESS;
 }
 
-EFI_STATUS MapMemory(EFI_SYSTEM_TABLE *systemTable, uint64_t *pml4, MemMap *memMap, LoadedSectionInfo *sectionInfos) {
+EFI_STATUS MapMemory(EFI_SYSTEM_TABLE *systemTable, uint64_t *pml4, MemMap *memMap, LoadedSectionInfo *sectionInfos, UINTN sectionInfoCount) {
 	EFI_STATUS status;
 	//itterate over memory map entries, and pass relavent sections to be mapped
 	for (EFI_MEMORY_DESCRIPTOR *entry = memMap->map; (char *) entry < (char *) memMap->map + memMap->size;
 		 entry = (EFI_MEMORY_DESCRIPTOR *) ((char *) entry + memMap->descriptorSize)) {
-		switch (entry->Type) { //only create a map for relavent structures
+		switch (entry->Type) {//only create a map for relavent structures
 			case EfiLoaderCode:
-				status = CreateMap(systemTable, pml4, entry);
+				status = CreateMap(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
 				break;
 			case EfiLoaderData:
-				status = CreateMap(systemTable, pml4, entry);
+				status = CreateMap(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
 				break;
 			case EfiMemoryMappedIO:
-				status = CreateMap(systemTable, pml4, entry);
+				status = CreateMap(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
 				break;
 			case EfiMemoryMappedIOPortSpace:
-				status = CreateMap(systemTable, pml4, entry);
+				status = CreateMap(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
 				break;
 			case EfiACPIReclaimMemory:
-				status = CreateMap(systemTable, pml4, entry);
+				status = CreateMap(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
 				break;
 			case EfiACPIMemoryNVS:
-				status = CreateMap(systemTable, pml4, entry);
+				status = CreateMap(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
+				break;
+			case EfiRuntimeServicesCode:
+				status = CreateMap(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
+				break;
+			case EfiRuntimeServicesData:
+				status = CreateMap(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
+				break;
+			case EfiBootServicesData:
+				status = CreateMap(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
 				break;
 			default:
 				break;
@@ -254,7 +269,10 @@ EFI_STATUS MapMemory(EFI_SYSTEM_TABLE *systemTable, uint64_t *pml4, MemMap *memM
 		if (status != EFI_SUCCESS) { return status; }
 	}
 
-	//TODO: create mappings for kernel code
+	for (LoadedSectionInfo *sectionInfo = sectionInfos; sectionInfo < sectionInfos + sizeof(LoadedSectionInfo) * sectionInfoCount;
+		 sectionInfo = sectionInfo + sizeof(LoadedSectionInfo)) {
+		CreateMap(systemTable, pml4, sectionInfo->vaddr, sectionInfo->paddr, sectionInfo->pageCount);
+	}
 
 	return EFI_SUCCESS;
 }
@@ -271,6 +289,8 @@ EFI_STATUS GetMap(EFI_SYSTEM_TABLE *systemTable, MemMap *map) {
 	return status;
 }
 
+void SetCR3PML4(uint64_t pml4Addr) { __asm__ volatile("mov %0, %%rax; mov %%rax, %%cr3" ::"r"(pml4Addr)); }
+
 EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
 	EFI_STATUS status;
 	InitializeLib(imageHandle, systemTable);
@@ -285,7 +305,7 @@ EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
 	HandleError(L"Failed to load kernel", status);
 
 	//find the entry point of the kernel
-	void (*_start)() = ((__attribute__((sysv_abi)) void (*)()) ehdr.e_entry);
+	void (*_start)(BootInfo*) = ((__attribute__((sysv_abi)) void (*)(BootInfo*)) ehdr.e_entry);
 	Print(L"Found entry symbol at 0x%lx\n\r", (Elf64_Addr) _start);
 
 	//allocate memory for PML4 (1 page, 512 entries)
@@ -294,17 +314,33 @@ EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
 	status = systemTable->BootServices->AllocatePages(AllocateAnyPages, EfiLoaderData, 1, &pml4Addr);
 	HandleError(L"Failed to allocate PML4", status);
 	pml4 = (uint64_t *) pml4Addr;
-	SetMem(pml4, 0x1000, 0);
+	ZeroMem((void *) pml4, 0x1000);
 
 	//obtain the memory map to prepare the paging structures
 	MemMap map;
 	status = GetMap(systemTable, &map);
 	HandleError(L"Failed to obtain memory map", status);
 
-	status = MapMemory(systemTable, pml4, &map, sectionInfos);
+	status = MapMemory(systemTable, pml4, &map, sectionInfos, sectionInfoCount);
 	HandleError(L"Failed to map memory", status);
 
-	Print(L"EOF\n\r");//TODO: remove later | EOF printing to ensure full execution
+	Print(L"pml4 addr: 0x%lx\n\r", pml4);
+
+	status = GetMap(systemTable, &map);//get final memory map
+	HandleError(L"Failed to obtain memory map", status);
+
+	EFI_PHYSICAL_ADDRESS addr = 0x00000FFE00000;
+	uint64_t *pdpe = (uint64_t *) (pml4[PML4_ENTRY(addr)] & ~0xFFF);
+
+	BootInfo bootInfo;
+	bootInfo.map = map;
+
+	status = systemTable->BootServices->ExitBootServices(imageHandle, map.key);//exit boot services
+	if (status != EFI_SUCCESS) { return status; }
+
+	SetCR3PML4((uint64_t) pml4 | PAGE_WSP);
+
+	_start(&bootInfo);
 
 	return EFI_SUCCESS;
 }
