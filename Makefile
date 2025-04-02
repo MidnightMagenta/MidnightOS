@@ -14,7 +14,7 @@ KERNEL_ELF_TARGET = kernel.elf
 
 EMU = qemu-system-x86_64
 DBG = gdb
-CC = gcc
+CC = g++
 AC = nasm
 LD = ld
 
@@ -35,7 +35,7 @@ DBG_FLAGS = -ex "target remote localhost:1234" \
 			-ex "set step-mode on"
 
 CFLAGS = -g -ffreestanding -fshort-wchar -mno-red-zone -m64 -Wall -Werror -nostdlib \
-		-fno-builtin -fno-stack-protector -nostartfiles -nodefaultlibs -O0
+		-fno-builtin -fno-stack-protector -nostartfiles -nodefaultlibs -fno-exceptions -O0 
 
 ACFLAGS = -f elf64
 

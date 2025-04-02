@@ -1,12 +1,7 @@
-#include "../include/boot_info.hpp"
+#include "../include/kernel.hpp"
 
-extern "C" void kernel_entry(BootInfo* bootInfo) {
-    unsigned int y = 50;
-	unsigned int bbp = 4;
-    GOPFramebuffer *framebuffer = bootInfo->framebuffer;
-	for(unsigned int x = 0; x < framebuffer->width / 2 * bbp; x++){
-		*(unsigned int*)(x + (y * framebuffer->pixelsPerScanline * bbp) + (char*)framebuffer->bufferBase) = 0xFFFFFFFF;
-	}
-	__asm__("hlt");
-	return;
+void MdOS::Kernel::run(BootInfo *bootInfo) {
+	renderer.Initialize(bootInfo->framebuffer->bufferBase, bootInfo->framebuffer->bufferSize, bootInfo->framebuffer->width,
+						bootInfo->framebuffer->height, bootInfo->framebuffer->pixelsPerScanline);
+	renderer.ClearBuffer(MAKE_COLOR(25, 25, 25, 255));
 }
