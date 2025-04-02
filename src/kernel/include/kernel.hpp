@@ -8,6 +8,7 @@ namespace MdOS {
 class Kernel {
 public:
 	Kernel() {}
+	~Kernel() {}
 	void run(BootInfo *bootInfo);
 
 private:

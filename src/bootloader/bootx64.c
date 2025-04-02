@@ -21,6 +21,31 @@
 #define PAGE_SUPERVISOR 1 << 2
 #define PAGE_WSP PAGE_PRESENT | PAGE_WRITABLE | PAGE_SUPERVISOR
 
+#define PSF1_MAGIC 0x0436
+#define PSF2_MAGIC 0x864ab572
+
+typedef struct {
+	uint16_t magic;
+	uint8_t fontMode;
+	uint8_t charSize;
+} PSF1_Header;
+
+typedef struct {
+	uint32_t magic;
+	uint32_t version;
+	uint32_t headerSize;
+	uint32_t flags;
+	uint32_t glyphCount;
+	uint32_t bytesPerGlyph;
+	uint32_t height;
+	uint32_t width;
+} PSF2_Header;
+
+typedef struct {
+	PSF1_Header *header;
+	void *glyphs;
+} PSF1_Font;
+
 typedef struct {
 	Elf64_Addr paddr;
 	Elf64_Addr vaddr;
@@ -46,6 +71,7 @@ typedef struct {
 
 typedef struct {
 	MemMap *map;
+	PSF1_Font *basicFont;
 	GOPFramebuffer *framebuffer;
 } BootInfo;
 
@@ -180,6 +206,8 @@ EFI_STATUS LoadKernel(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable, Elf
 		}
 	}
 
+	kernel->Close(kernel);
+
 	return EFI_SUCCESS;
 }
 
@@ -198,6 +226,62 @@ EFI_STATUS InitGOP(EFI_SYSTEM_TABLE *systemTable, GOPFramebuffer *framebuffer) {
 	framebuffer->pixelsPerScanline = gop->Mode->Info->PixelsPerScanLine;
 
 	return EFI_SUCCESS;
+}
+
+EFI_STATUS GetPSF1Font(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable, CHAR16 *path, PSF1_Font *font) {
+	EFI_FILE *fontFile = NULL;
+	EFI_STATUS status = OpenFile(NULL, path, imageHandle, systemTable, &fontFile);
+	HandleError(L"Failed to open font file", status);
+
+	UINTN bytesToRead = 4;
+	uint32_t PSF_Magic;
+	fontFile->Read(fontFile, &bytesToRead, &PSF_Magic);
+
+	if ((PSF_Magic & 0xFFFF) != PSF1_MAGIC) {
+		Print(L"Failed to verify font magic: 0x%x\n\r", PSF_Magic);
+		fontFile->Close(fontFile);
+		return EFI_LOAD_ERROR;
+	}
+
+	//read PSF1 font
+	status = systemTable->BootServices->AllocatePool(EfiLoaderData, sizeof(PSF1_Header), (void **) &font->header);
+	HandleError(L"Failed to allocate font header memory", status);
+	fontFile->SetPosition(fontFile, 0);
+	bytesToRead = sizeof(PSF1_Header);
+	fontFile->Read(fontFile, &bytesToRead, font->header);
+
+	UINTN glyphBufferSize = font->header->charSize * 256;
+	if (font->header->fontMode == 1) { glyphBufferSize = font->header->charSize * 512; }
+
+	status = systemTable->BootServices->AllocatePool(EfiLoaderData, glyphBufferSize, (void **) &font->glyphs);
+	HandleError(L"Failed to allocate font buffer memory", status);
+	fontFile->SetPosition(fontFile, sizeof(PSF1_Header));
+	fontFile->Read(fontFile, &glyphBufferSize, font->glyphs);
+
+	fontFile->Close(fontFile);
+	return EFI_SUCCESS;
+}
+
+EFI_STATUS GetPSF2Font(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable, CHAR16 *path) {
+	EFI_FILE *fontFile = NULL;
+	EFI_STATUS status = OpenFile(NULL, path, imageHandle, systemTable, &fontFile);
+	HandleError(L"Failed to open font file", status);
+
+	UINTN bytesToRead = 4;
+	uint32_t PSF_Magic;
+	fontFile->Read(fontFile, &bytesToRead, &PSF_Magic);
+
+	if (PSF_Magic == PSF2_MAGIC) {
+		//read PSF2 font
+		//TODO: implement PSF2 font reading
+		Print(L"PSF2 fonts not supported. Magic: 0x%x\n\r", PSF_Magic);
+		fontFile->Close(fontFile);
+		return EFI_LOAD_ERROR;
+	} else {
+		Print(L"Failed to verify font magic: 0x%x\n\r", PSF_Magic);
+		fontFile->Close(fontFile);
+		return EFI_LOAD_ERROR;
+	}
 }
 
 EFI_STATUS CreateMap(EFI_SYSTEM_TABLE *systemTable, uint64_t *pml4, EFI_VIRTUAL_ADDRESS vaddr, EFI_PHYSICAL_ADDRESS paddr, UINTN pageCount) {
@@ -305,7 +389,8 @@ EFI_STATUS GetMap(EFI_SYSTEM_TABLE *systemTable, MemMap *map) {
 
 	EFI_STATUS status = systemTable->BootServices->GetMemoryMap(&map->size, map->map, &map->key, &map->descriptorSize, &map->descriptorVersion);
 	if (map->size <= 0) { return EFI_BUFFER_TOO_SMALL; }
-	status = systemTable->BootServices->AllocatePool(EfiLoaderData, map->size + 10 * sizeof(EFI_MEMORY_DESCRIPTOR), (void **) &map->map);
+	map->size += 10 * sizeof(EFI_MEMORY_DESCRIPTOR);
+	status = systemTable->BootServices->AllocatePool(EfiLoaderData, map->size, (void **) &map->map);
 	if (status != EFI_SUCCESS) { return status; }
 	status = systemTable->BootServices->GetMemoryMap(&map->size, map->map, &map->key, &map->descriptorSize, &map->descriptorVersion);
 	return status;
@@ -343,32 +428,39 @@ EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
 	status = InitGOP(systemTable, framebuffer);
 	HandleError(L"Failed to initialize GOP", status);
 
+	PSF1_Font *font = NULL;
+	systemTable->BootServices->AllocatePool(EfiLoaderData, sizeof(PSF1_Font), (void **) &font);
+	status = GetPSF1Font(imageHandle, systemTable, L"FONTS\\zap-light16.psf", font);
+	HandleError(L"Failed to read PSF font", status);
+
 	//obtain the memory map to prepare the paging structures
 	MemMap *map = NULL;
 	status = systemTable->BootServices->AllocatePool(EfiLoaderData, sizeof(MemMap), (void **) &map);
 	HandleError(L"Failed to allocate memory for memory map", status);
 
-	status = GetMap(systemTable, map); //get EFI memory map
+	status = GetMap(systemTable, map);//get EFI memory map
 	HandleError(L"Failed to obtain memory map", status);
-	status = MapMemory(systemTable, pml4, map, sectionInfos, sectionInfoCount); //map memory from EFI map and kernel code
+	status = MapMemory(systemTable, pml4, map, sectionInfos, sectionInfoCount);//map memory from EFI map and kernel code
 	HandleError(L"Failed to map memory", status);
 	status = CreateMap(systemTable, pml4, (EFI_VIRTUAL_ADDRESS) framebuffer->bufferBase, (EFI_PHYSICAL_ADDRESS) framebuffer->bufferBase,
-					   (framebuffer->bufferSize + 0x1000 - 1) / 0x1000); //add mapping for GOP framebuffer
+					   (framebuffer->bufferSize + 0x1000 - 1) / 0x1000);//add mapping for GOP framebuffer
 	HandleError(L"Failed to map memory for the framebuffer", status);
-	status = GetMap(systemTable, map); //get the final memory map from EFI
-	HandleError(L"Failed to obtain memory map", status);
+	systemTable->BootServices->FreePool(map->map);
+	status = GetMap(systemTable, map);//get the final memory map from EFI
+	HandleError(L"Failed to obtain final memory map", status);
 
 	//create the boot information structure
 	BootInfo bootInfo;
 	bootInfo.map = map;
 	bootInfo.framebuffer = framebuffer;
+	bootInfo.basicFont = font;
 
 	status = systemTable->BootServices->ExitBootServices(imageHandle, map->key);//exit boot services
 	if (status != EFI_SUCCESS) { return status; }
 
 	SetCR3PML4((uint64_t) pml4 | PAGE_WSP);//set CR3 to the newly created paging map
 
-	_start(&bootInfo); //call the kernel
+	_start(&bootInfo);//call the kernel
 
 	return EFI_SUCCESS;
 }

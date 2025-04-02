@@ -2,6 +2,7 @@
 #define BOOT_INFO_H
 
 #include <stdint.h>
+#include "../include/psf1.hpp"
 
 struct MemoryDescriptor{
     uint32_t type;
@@ -30,6 +31,7 @@ typedef struct {
 
 struct BootInfo{
 	MemMap *map;
+    PSF1_Font *basicFont;
     GOPFramebuffer *framebuffer;
 };
 
