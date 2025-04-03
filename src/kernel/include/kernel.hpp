@@ -3,16 +3,16 @@
 
 #include "../include/GOP_renderer.hpp"
 #include "../include/boot_info.hpp"
+#include "../include/tty.hpp"
 
 namespace MdOS {
 class Kernel {
 public:
-	Kernel() {}
-	~Kernel() {}
 	void run(BootInfo *bootInfo);
 
 private:
-	GOP_Renderer renderer;
+	GOP_Renderer m_renderer;
+	Teletype m_tty;
 };
 }// namespace MdOS
 #endif

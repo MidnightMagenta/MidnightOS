@@ -150,6 +150,7 @@ EFI_STATUS LoadKernel(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable, Elf
 	EFI_FILE *kernel = NULL;
 	status = OpenFile(NULL, L"\\boot\\kernel.elf", imageHandle, systemTable, &kernel);
 	HandleError(L"Failed to open kernel file: 0x%lx\n\r", status);
+	
 	if (!kernel) {
 		Print(L"Kernel is nullptr\n\r");
 		return EFI_LOAD_ERROR;
@@ -184,7 +185,8 @@ EFI_STATUS LoadKernel(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable, Elf
 				int pageCount = (phdr->p_memsz + 0x1000 - 1) / 0x1000;
 				status = systemTable->BootServices->AllocatePages(AllocateAnyPages, EfiLoaderData, pageCount, &sectionInfo->paddr);
 				if (status != EFI_SUCCESS) { return status; }
-
+				ZeroMem((void*) sectionInfo->paddr, pageCount * 0x1000);
+				
 				//read the segment from the file
 				status = kernel->SetPosition(kernel, phdr->p_offset);
 				if (status != EFI_SUCCESS) { return status; }
@@ -197,7 +199,6 @@ EFI_STATUS LoadKernel(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable, Elf
 				sectionInfo->vaddr = phdr->p_vaddr;
 				sectionInfo->pageCount = pageCount;
 				sectionInfo->flags = phdr->p_flags;
-
 				//increment section info pointer to the next entry
 				sectionInfo = (LoadedSectionInfo *) ((char *) sectionInfo + sizeof(LoadedSectionInfo));
 			}
@@ -375,8 +376,8 @@ EFI_STATUS MapMemory(EFI_SYSTEM_TABLE *systemTable, uint64_t *pml4, MemMap *memM
 		if (status != EFI_SUCCESS) { return status; }
 	}
 
-	for (LoadedSectionInfo *sectionInfo = sectionInfos; sectionInfo < sectionInfos + sizeof(LoadedSectionInfo) * sectionInfoCount;
-		 sectionInfo = sectionInfo + sizeof(LoadedSectionInfo)) {
+	for (LoadedSectionInfo *sectionInfo = sectionInfos; (char *) sectionInfo < (char *) sectionInfos + sectionInfoCount * sizeof(LoadedSectionInfo);
+		 sectionInfo = (LoadedSectionInfo *) ((char *) sectionInfo + sizeof(LoadedSectionInfo))) {
 		CreateMap(systemTable, pml4, sectionInfo->vaddr, sectionInfo->paddr, sectionInfo->pageCount);
 	}
 
