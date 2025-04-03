@@ -1,9 +1,9 @@
 #ifndef KERNEL_H
 #define KERNEL_H
 
-#include "../include/GOP_renderer.hpp"
+#include "../include/IO/graphics/GOP_renderer.hpp"
 #include "../include/boot_info.hpp"
-#include "../include/tty.hpp"
+#include "../include/IO/tty/tty.hpp"
 
 namespace MdOS {
 class Kernel {

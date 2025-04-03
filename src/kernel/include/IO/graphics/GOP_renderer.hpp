@@ -1,7 +1,7 @@
 #ifndef GOP_RENDERER_H
 #define GOP_RENDERER_H
 
-#include "../include/psf1.hpp"
+#include "../../../include/IO/tty/psf1.hpp"
 #include <stdint.h>
 
 #define MAKE_COLOR(r, g, b, a) (a << 24) | (r << 16) | (g << 8) | (b)

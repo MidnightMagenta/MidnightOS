@@ -1,4 +1,4 @@
-#include "../include/tty.hpp"
+#include "../../../include/IO/tty/tty.hpp"
 
 void MdOS::Teletype::putc(const char chr, uint32_t color, uint32_t xOffset, uint32_t yOffset) {
 	//TODO: turn this into a blit

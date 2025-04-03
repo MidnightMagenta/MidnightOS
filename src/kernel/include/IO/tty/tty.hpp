@@ -2,7 +2,7 @@
 #define TTY_H
 
 #include <stddef.h>
-#include "../include/GOP_renderer.hpp"
+#include "../../../include/IO/graphics/GOP_renderer.hpp"
 
 namespace MdOS {
 class Teletype {

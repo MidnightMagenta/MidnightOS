@@ -1,4 +1,4 @@
-#include "../include/GOP_renderer.hpp"
+#include "../../../include/IO/graphics/GOP_renderer.hpp"
 
 void MdOS::GOP_Renderer::ClearBuffer(uint32_t clearColor) {
 	for (uint32_t i = 0; i < m_bufferSize; i += 4) { *(uint32_t *) (i + (char *) m_bufferBase) = clearColor; }

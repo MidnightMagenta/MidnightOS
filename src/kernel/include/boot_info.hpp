@@ -2,7 +2,7 @@
 #define BOOT_INFO_H
 
 #include <stdint.h>
-#include "../include/psf1.hpp"
+#include "../include/IO/tty/psf1.hpp"
 
 struct MemoryDescriptor{
     uint32_t type;
