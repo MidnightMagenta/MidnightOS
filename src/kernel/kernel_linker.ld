@@ -1,6 +1,6 @@
 OUTPUT_FORMAT(elf64-x86-64)
 
-ENTRY(kernel_entry)
+ENTRY(_start)
 
 SECTIONS
 {
@@ -23,11 +23,6 @@ SECTIONS
         *(.data)
         *(.ctor*)
         *(.dtor*)
-    }
-    
-    .eh_frame : ALIGN(0x1000) {
-        *(.eh_frame)
-        *(.gnu.linkonce.e*)
     }
 
     .bss : ALIGN(0x1000)

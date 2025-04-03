@@ -186,7 +186,7 @@ EFI_STATUS LoadKernel(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable, Elf
 				status = systemTable->BootServices->AllocatePages(AllocateAnyPages, EfiLoaderData, pageCount, &sectionInfo->paddr);
 				if (status != EFI_SUCCESS) { return status; }
 				ZeroMem((void*) sectionInfo->paddr, pageCount * 0x1000);
-				
+
 				//read the segment from the file
 				status = kernel->SetPosition(kernel, phdr->p_offset);
 				if (status != EFI_SUCCESS) { return status; }
@@ -449,7 +449,6 @@ EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
 	systemTable->BootServices->FreePool(map->map);
 	status = GetMap(systemTable, map);//get the final memory map from EFI
 	HandleError(L"Failed to obtain final memory map", status);
-
 	//create the boot information structure
 	BootInfo bootInfo;
 	bootInfo.map = map;
