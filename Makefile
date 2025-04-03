@@ -34,14 +34,12 @@ DBG_FLAGS = -ex "target remote localhost:1234" \
 			-ex "set disassemble-next-line on" \
 			-ex "set step-mode on"
 
-CFLAGS = -g -ffreestanding -fshort-wchar -mno-red-zone -m64 -Wall -Wextra -nostdlib -fno-rtti -fPIC \
+CFLAGS = -g -ffreestanding -fshort-wchar -mno-red-zone -m64 -Wall -Wextra -nostdlib -fno-rtti -mcmodel=kernel \
 		-fno-builtin -fno-stack-protector -nostartfiles -nodefaultlibs -fno-exceptions -fno-use-cxa-atexit -O0 
 
 ACFLAGS = -f elf64
 
 LDFLAGS = -static -Bsymbolic -nostdlib
-
-
 
 partial: build update-img
 

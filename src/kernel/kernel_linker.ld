@@ -8,7 +8,9 @@ SECTIONS
 
     .text : ALIGN(0x1000)
     {
+        *(.init*)
         *(.text)
+        *(.fini*)
     }
 
     .rodata : ALIGN(0x1000)
@@ -19,8 +21,15 @@ SECTIONS
     .data : ALIGN(0x1000)
     {
         *(.data)
+        *(.ctor*)
+        *(.dtor*)
     }
     
+    .eh_frame : ALIGN(0x1000) {
+        *(.eh_frame)
+        *(.gnu.linkonce.e*)
+    }
+
     .bss : ALIGN(0x1000)
     {
         *(COMMON)
