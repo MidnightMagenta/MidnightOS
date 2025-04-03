@@ -4,10 +4,10 @@
 
 #define VERBOSE_REPORTING 1
 
-#define HandleError(fmt, status)                                                                                                                     \
-	if (status != EFI_SUCCESS) {                                                                                                                     \
-		Print(fmt L": 0x%lx\n\r", status);                                                                                                           \
-		return status;                                                                                                                               \
+#define HandleError(fmt, status)                                                                                                                               \
+	if (status != EFI_SUCCESS) {                                                                                                                               \
+		Print(fmt L": 0x%lx\n\r", status);                                                                                                                     \
+		return status;                                                                                                                                         \
 	}
 #define ALIGN_ADDR(val, alignment, castType) ((castType) val + ((castType) alignment - 1)) & (~((castType) alignment - 1))
 
@@ -143,14 +143,13 @@ UINTN CountLoadableSegments(Elf64_Phdr *phdrs, Elf64_Half phnum, Elf64_Half phen
 	return phdrCount;
 }
 
-EFI_STATUS LoadKernel(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable, Elf64_Ehdr *pEhdr, UINTN *sectionInfoCount,
-					  LoadedSectionInfo **sectionInfos) {
+EFI_STATUS LoadKernel(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable, Elf64_Ehdr *pEhdr, UINTN *sectionInfoCount, LoadedSectionInfo **sectionInfos) {
 	EFI_STATUS status;
 	//Open kernel.elf
 	EFI_FILE *kernel = NULL;
 	status = OpenFile(NULL, L"\\boot\\kernel.elf", imageHandle, systemTable, &kernel);
 	HandleError(L"Failed to open kernel file: 0x%lx\n\r", status);
-	
+
 	if (!kernel) {
 		Print(L"Kernel is nullptr\n\r");
 		return EFI_LOAD_ERROR;
@@ -185,7 +184,7 @@ EFI_STATUS LoadKernel(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable, Elf
 				int pageCount = (phdr->p_memsz + 0x1000 - 1) / 0x1000;
 				status = systemTable->BootServices->AllocatePages(AllocateAnyPages, EfiLoaderData, pageCount, &sectionInfo->paddr);
 				if (status != EFI_SUCCESS) { return status; }
-				ZeroMem((void*) sectionInfo->paddr, pageCount * 0x1000);
+				ZeroMem((void *) sectionInfo->paddr, pageCount * 0x1000);
 
 				//read the segment from the file
 				status = kernel->SetPosition(kernel, phdr->p_offset);

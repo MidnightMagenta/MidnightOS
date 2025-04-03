@@ -7,9 +7,10 @@ extern _fini
 global _start
 
 section .bss
-_stack_bottom:					; kernel's bootstrap stack
-	resb 0x4000
-_stack_top:
+	align 16
+	_stack_bottom:	 			; kernel's bootstrap stack
+		resb 0x4000
+	_stack_top:
 
 section .data
 	_bootInfo: dd 0x0  			; temporary storage for bootInfo pointer while _init is being called

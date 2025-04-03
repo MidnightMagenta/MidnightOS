@@ -4,7 +4,7 @@ void MdOS::GOP_Renderer::ClearBuffer(uint32_t clearColor) {
 	for (uint32_t i = 0; i < m_bufferSize; i += 4) { *(uint32_t *) (i + (char *) m_bufferBase) = clearColor; }
 }
 
-void MdOS::GOP_Renderer::Initialize(void *bufferBase, uint64_t bufferSize, uint32_t width, uint32_t height, uint32_t ppsl) {
+void MdOS::GOP_Renderer::Initialize(void *bufferBase, uint64_t bufferSize, int32_t width, uint32_t height, uint32_t ppsl) {
 	m_bufferBase = bufferBase;
 	m_bufferSize = bufferSize;
 	m_width = width;

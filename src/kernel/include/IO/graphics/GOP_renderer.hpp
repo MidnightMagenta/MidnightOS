@@ -16,7 +16,7 @@ public:
 	}
 	~GOP_Renderer() {}
 
-	void Initialize(void *bufferBase, uint64_t bufferSize, uint32_t width, uint32_t height, uint32_t ppsl);
+	void Initialize(void *bufferBase, uint64_t bufferSize, int32_t width, uint32_t height, uint32_t ppsl);
 	void ClearBuffer(uint32_t clearColor);
 
 	void *m_bufferBase;
