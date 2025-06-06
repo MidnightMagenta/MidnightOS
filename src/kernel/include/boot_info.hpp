@@ -29,10 +29,17 @@ typedef struct {
 	unsigned int pixelsPerScanline;
 } GOPFramebuffer;
 
+struct BootstrapMemoryRegion{
+	uint64_t *baseAddr;
+	uint64_t *topAddr;
+	uint64_t size;
+};
+
 struct BootInfo {
 	MemMap *map;
 	PSF1_Font *basicFont;
 	GOPFramebuffer *framebuffer;
+	BootstrapMemoryRegion bootstrapMem;
 };
 
 #endif

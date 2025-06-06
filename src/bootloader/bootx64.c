@@ -3,10 +3,11 @@
 #include <elf.h>
 
 #define VERBOSE_REPORTING 1
+#define BOOTSTRAP_HEAP_PAGE_COUNT 12207//approx. 50 mb
 
 #define HandleError(fmt, status)                                                                                                                               \
 	if (status != EFI_SUCCESS) {                                                                                                                               \
-		Print(fmt L": 0x%lx\n\r", status);                                                                                                                     \
+		Print(L"Critical error: " fmt L": 0x%lx\n\r", status);                                                                                                 \
 		return status;                                                                                                                                         \
 	}
 #define ALIGN_ADDR(val, alignment, castType) ((castType) val + ((castType) alignment - 1)) & (~((castType) alignment - 1))
@@ -70,9 +71,16 @@ typedef struct {
 } GOPFramebuffer;
 
 typedef struct {
+	uint64_t *baseAddr;
+	uint64_t *topAddr;
+	uint64_t size;
+} BootstrapMemoryRegion;
+
+typedef struct {
 	MemMap *map;
 	PSF1_Font *basicFont;
 	GOPFramebuffer *framebuffer;
+	BootstrapMemoryRegion bootstrapMem;
 } BootInfo;
 
 EFI_STATUS OpenFile(EFI_FILE *directory, CHAR16 *path, EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable, EFI_FILE **file) {
@@ -154,12 +162,21 @@ EFI_STATUS LoadKernel(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable, Elf
 		Print(L"Kernel is nullptr\n\r");
 		return EFI_LOAD_ERROR;
 	}
+
+#ifdef VERBOSE_REPORTING
+	Print(L"Kernel image located...\n\r");
+#endif
+
 	//obtain the elf header
 	Elf64_Ehdr ehdr;
 	UINTN ehdrSize = sizeof(ehdr);
 	kernel->Read(kernel, &ehdrSize, &ehdr);
 	if (!VerifyElfHeader(ehdr)) { return EFI_LOAD_ERROR; }
 	*pEhdr = ehdr;
+
+#ifdef VERBOSE_REPORTING
+	Print(L"Kernel image ehdr valid...\n\r");
+#endif
 
 	//obtain the phdrs
 	Elf64_Phdr *phdrs = NULL;
@@ -198,6 +215,10 @@ EFI_STATUS LoadKernel(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable, Elf
 				sectionInfo->vaddr = phdr->p_vaddr;
 				sectionInfo->pageCount = pageCount;
 				sectionInfo->flags = phdr->p_flags;
+#ifdef VERBOSE_REPORTING
+				Print(L"Loading section...\n\r   Vaddr: 0x%lx\n\r   Paddr: 0x%lx\n\r   Page count: %u\n\r", sectionInfo->vaddr, sectionInfo->paddr,
+					  sectionInfo->pageCount);
+#endif
 				//increment section info pointer to the next entry
 				sectionInfo = (LoadedSectionInfo *) ((char *) sectionInfo + sizeof(LoadedSectionInfo));
 			}
@@ -207,6 +228,10 @@ EFI_STATUS LoadKernel(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable, Elf
 	}
 
 	kernel->Close(kernel);
+
+#ifdef VERBOSE_REPORTING
+	Print(L"Kernel image loaded successfuly...\n\r");
+#endif
 
 	return EFI_SUCCESS;
 }
@@ -224,6 +249,10 @@ EFI_STATUS InitGOP(EFI_SYSTEM_TABLE *systemTable, GOPFramebuffer *framebuffer) {
 	framebuffer->width = gop->Mode->Info->HorizontalResolution;
 	framebuffer->height = gop->Mode->Info->VerticalResolution;
 	framebuffer->pixelsPerScanline = gop->Mode->Info->PixelsPerScanLine;
+
+#ifdef VERBOSE_REPORTING
+	Print(L"GOP initialized...\n\r");
+#endif
 
 	return EFI_SUCCESS;
 }
@@ -288,6 +317,10 @@ EFI_STATUS CreateMap(EFI_SYSTEM_TABLE *systemTable, uint64_t *pml4, EFI_VIRTUAL_
 	EFI_STATUS status;
 	EFI_PHYSICAL_ADDRESS newPage = 0;
 	EFI_VIRTUAL_ADDRESS physicalAddress = paddr;
+
+#ifdef VERBOSE_REPORTING
+	Print(L"Mapping address range...\n\r   paddr: 0x%lx\n\r   vaddr: 0x%lx\n\r   page count: %u\n\r", paddr, vaddr, pageCount);
+#endif
 
 	//itterate over the address space in increments of 1 page
 	for (uint64_t address = vaddr; address < vaddr + (pageCount * 0x1000); address += 0x1000) {
@@ -414,7 +447,7 @@ EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
 	//find the entry point of the kernel
 	void (*_start)(BootInfo *) = ((__attribute__((sysv_abi)) void (*)(BootInfo *)) ehdr.e_entry);
 
-	//allocate memory for PML4 (1 page, 512 entries)
+	//allocate memory for PML4
 	EFI_PHYSICAL_ADDRESS pml4Addr;
 	uint64_t *pml4 = NULL;
 	status = systemTable->BootServices->AllocatePages(AllocateAnyPages, EfiLoaderData, 1, &pml4Addr);
@@ -438,28 +471,67 @@ EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
 	status = systemTable->BootServices->AllocatePool(EfiLoaderData, sizeof(MemMap), (void **) &map);
 	HandleError(L"Failed to allocate memory for memory map", status);
 
-	status = GetMap(systemTable, map);//get EFI memory map
+	uint64_t *bootstrapHeap;
+	EFI_PHYSICAL_ADDRESS bootstrapHeapAddr;
+	status = systemTable->BootServices->AllocatePages(AllocateAnyPages, EfiLoaderData, BOOTSTRAP_HEAP_PAGE_COUNT, &bootstrapHeapAddr);
+	HandleError(L"Failed to allocate bootstrap heap", status);
+	bootstrapHeap = (uint64_t *) bootstrapHeapAddr;
+
+	uint64_t *bootstrapHeapVaddr = 0;
+
+	for (unsigned int i = 0; i < sectionInfoCount; i++) {
+		if ((uint64_t *) (sectionInfos[i].vaddr + sectionInfos[i].pageCount * 0x1000) > bootstrapHeapVaddr) {
+			bootstrapHeapVaddr = (uint64_t *) (sectionInfos[i].vaddr + sectionInfos[i].pageCount * 0x1000);
+		}
+	}
+
+	status = GetMap(systemTable, map);
 	HandleError(L"Failed to obtain memory map", status);
-	status = MapMemory(systemTable, pml4, map, sectionInfos, sectionInfoCount);//map memory from EFI map and kernel code
+
+	status = MapMemory(systemTable, pml4, map, sectionInfos, sectionInfoCount);
 	HandleError(L"Failed to map memory", status);
+
 	status = CreateMap(systemTable, pml4, (EFI_VIRTUAL_ADDRESS) framebuffer->bufferBase, (EFI_PHYSICAL_ADDRESS) framebuffer->bufferBase,
-					   (framebuffer->bufferSize + 0x1000 - 1) / 0x1000);//add mapping for GOP framebuffer
+					   (framebuffer->bufferSize + 0x1000 - 1) / 0x1000);
 	HandleError(L"Failed to map memory for the framebuffer", status);
+	status = CreateMap(systemTable, pml4, (EFI_VIRTUAL_ADDRESS) bootstrapHeapVaddr, (EFI_PHYSICAL_ADDRESS) bootstrapHeap, BOOTSTRAP_HEAP_PAGE_COUNT);
+	HandleError(L"Failed to map memory for the bootstrap heap", status);
+
 	systemTable->BootServices->FreePool(map->map);
-	status = GetMap(systemTable, map);//get the final memory map from EFI
+	status = GetMap(systemTable, map);
 	HandleError(L"Failed to obtain final memory map", status);
-	//create the boot information structure
+
 	BootInfo bootInfo;
 	bootInfo.map = map;
 	bootInfo.framebuffer = framebuffer;
 	bootInfo.basicFont = font;
+	bootInfo.bootstrapMem.baseAddr = bootstrapHeap;
+	bootInfo.bootstrapMem.topAddr = bootstrapHeap + BOOTSTRAP_HEAP_PAGE_COUNT * 0x1000;
+	bootInfo.bootstrapMem.size = BOOTSTRAP_HEAP_PAGE_COUNT * 0x1000;
 
-	status = systemTable->BootServices->ExitBootServices(imageHandle, map->key);//exit boot services
-	if (status != EFI_SUCCESS) { return status; }
+	status = systemTable->BootServices->ExitBootServices(imageHandle, map->key);
+	if (status != EFI_SUCCESS) {
+		if (status == EFI_INVALID_PARAMETER) {
+			int exitStatus = 0;
+			for (int i = 0; i < 10; i++) {
+				systemTable->BootServices->FreePool(map->map);
+				status = GetMap(systemTable, map);
+				HandleError(L"Failed to obtain final memory map", status);
+				bootInfo.map = map;
+				status = systemTable->BootServices->ExitBootServices(imageHandle, map->key);
+				if (status == EFI_SUCCESS) {
+					exitStatus = 1;
+					break;
+				}
+			}
+			if (!exitStatus) { return status; }
+		} else {
+			return status;
+		}
+	}
 
-	SetCR3PML4((uint64_t) pml4 | PAGE_WSP);//set CR3 to the newly created paging map
-
-	_start(&bootInfo);//call the kernel
+	SetCR3PML4((uint64_t) pml4 | PAGE_WSP);
+	_start(&bootInfo);
 
 	return EFI_SUCCESS;
 }
