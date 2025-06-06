@@ -163,7 +163,7 @@ EFI_STATUS LoadKernel(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable, Elf
 		return EFI_LOAD_ERROR;
 	}
 
-#ifdef VERBOSE_REPORTING
+#if VERBOSE_REPORTING
 	Print(L"Kernel image located...\n\r");
 #endif
 
@@ -174,7 +174,7 @@ EFI_STATUS LoadKernel(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable, Elf
 	if (!VerifyElfHeader(ehdr)) { return EFI_LOAD_ERROR; }
 	*pEhdr = ehdr;
 
-#ifdef VERBOSE_REPORTING
+#if VERBOSE_REPORTING
 	Print(L"Kernel image ehdr valid...\n\r");
 #endif
 
@@ -215,7 +215,7 @@ EFI_STATUS LoadKernel(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable, Elf
 				sectionInfo->vaddr = phdr->p_vaddr;
 				sectionInfo->pageCount = pageCount;
 				sectionInfo->flags = phdr->p_flags;
-#ifdef VERBOSE_REPORTING
+#if VERBOSE_REPORTING
 				Print(L"Loading section...\n\r   Vaddr: 0x%lx\n\r   Paddr: 0x%lx\n\r   Page count: %u\n\r", sectionInfo->vaddr, sectionInfo->paddr,
 					  sectionInfo->pageCount);
 #endif
@@ -229,7 +229,7 @@ EFI_STATUS LoadKernel(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable, Elf
 
 	kernel->Close(kernel);
 
-#ifdef VERBOSE_REPORTING
+#if VERBOSE_REPORTING
 	Print(L"Kernel image loaded successfuly...\n\r");
 #endif
 
@@ -250,7 +250,7 @@ EFI_STATUS InitGOP(EFI_SYSTEM_TABLE *systemTable, GOPFramebuffer *framebuffer) {
 	framebuffer->height = gop->Mode->Info->VerticalResolution;
 	framebuffer->pixelsPerScanline = gop->Mode->Info->PixelsPerScanLine;
 
-#ifdef VERBOSE_REPORTING
+#if VERBOSE_REPORTING
 	Print(L"GOP initialized...\n\r");
 #endif
 
@@ -313,12 +313,60 @@ EFI_STATUS GetPSF2Font(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable, CH
 	}
 }
 
-EFI_STATUS CreateMap(EFI_SYSTEM_TABLE *systemTable, uint64_t *pml4, EFI_VIRTUAL_ADDRESS vaddr, EFI_PHYSICAL_ADDRESS paddr, UINTN pageCount) {
+EFI_STATUS MapPageIdentity(EFI_SYSTEM_TABLE *systemTable, uint64_t *pml4, EFI_PHYSICAL_ADDRESS addr) {
+	EFI_STATUS status;
+	EFI_PHYSICAL_ADDRESS newPage;
+	uint64_t *pdpt = NULL;
+	uint64_t *pd = NULL;
+	uint64_t *pt = NULL;
+
+#if VERBOSE_REPORTING
+	Print(L"Mapping page identity...\n\r   addr: 0x%lx\n\r", addr);
+#endif
+
+	if (!(pml4[PML4_ENTRY(addr)] & PAGE_PRESENT)) {
+		newPage = 0;
+		status = systemTable->BootServices->AllocatePages(AllocateAnyPages, EfiLoaderData, 1, &newPage);
+		if (status != EFI_SUCCESS) { return status; }
+		pml4[PML4_ENTRY(addr)] = newPage | PAGE_WSP;
+		uint64_t *temp = (uint64_t *) newPage;
+		ZeroMem((void *) temp, 0x1000);
+	}
+
+	pdpt = (uint64_t *) (pml4[PML4_ENTRY(addr)] & ~0xFFF);
+
+	if (!(pdpt[PDPT_ENTRY(addr)] & PAGE_PRESENT)) {
+		newPage = 0;
+		status = systemTable->BootServices->AllocatePages(AllocateAnyPages, EfiLoaderData, 1, &newPage);
+		if (status != EFI_SUCCESS) { return status; }
+		pdpt[PDPT_ENTRY(addr)] = newPage | PAGE_WSP;
+		uint64_t *temp = (uint64_t *) newPage;
+		ZeroMem((void *) temp, 0x1000);
+	}
+
+	pd = (uint64_t *) (pdpt[PDPT_ENTRY(addr)] & ~0xFFF);
+
+	if (!(pd[PD_ENTRY(addr)] & PAGE_PRESENT)) {
+		newPage = 0;
+		status = systemTable->BootServices->AllocatePages(AllocateAnyPages, EfiLoaderData, 1, &newPage);
+		if (status != EFI_SUCCESS) { return status; }
+		pd[PD_ENTRY(addr)] = newPage | PAGE_WSP;
+		uint64_t *temp = (uint64_t *) newPage;
+		ZeroMem((void *) temp, 0x1000);
+	}
+
+	pt = (uint64_t *) (pd[PD_ENTRY(addr)] & ~0xFFF);
+	pt[PT_ENTRY(addr)] = addr | PAGE_WSP;
+
+	return EFI_SUCCESS;
+}
+
+EFI_STATUS MapPages(EFI_SYSTEM_TABLE *systemTable, uint64_t *pml4, EFI_VIRTUAL_ADDRESS vaddr, EFI_PHYSICAL_ADDRESS paddr, UINTN pageCount) {
 	EFI_STATUS status;
 	EFI_PHYSICAL_ADDRESS newPage = 0;
-	EFI_VIRTUAL_ADDRESS physicalAddress = paddr;
+	EFI_PHYSICAL_ADDRESS physicalAddress = paddr;
 
-#ifdef VERBOSE_REPORTING
+#if VERBOSE_REPORTING
 	Print(L"Mapping address range...\n\r   paddr: 0x%lx\n\r   vaddr: 0x%lx\n\r   page count: %u\n\r", paddr, vaddr, pageCount);
 #endif
 
@@ -334,6 +382,8 @@ EFI_STATUS CreateMap(EFI_SYSTEM_TABLE *systemTable, uint64_t *pml4, EFI_VIRTUAL_
 			newPage = 0;
 			status = systemTable->BootServices->AllocatePages(AllocateAnyPages, EfiLoaderData, 1, &newPage);//allocate memory for the structure
 			if (status != EFI_SUCCESS) { return status; }
+			status = MapPageIdentity(systemTable, pml4, newPage);
+			if (status != EFI_SUCCESS) { return status; }
 			pml4[PML4_ENTRY(address)] = newPage | PAGE_WSP;//write the pointer to PDPT into PML4
 			uint64_t *temp = (uint64_t *) newPage;		   //clear memory pointer to by the structure
 			ZeroMem((void *) temp, 0x1000);
@@ -345,6 +395,8 @@ EFI_STATUS CreateMap(EFI_SYSTEM_TABLE *systemTable, uint64_t *pml4, EFI_VIRTUAL_
 			newPage = 0;
 			status = systemTable->BootServices->AllocatePages(AllocateAnyPages, EfiLoaderData, 1, &newPage);//allocate memory for the structure
 			if (status != EFI_SUCCESS) { return status; }
+			status = MapPageIdentity(systemTable, pml4, newPage);
+			if (status != EFI_SUCCESS) { return status; }
 			pdpt[PDPT_ENTRY(address)] = newPage | PAGE_WSP;//write the pointer to PD into PDPT
 			uint64_t *temp = (uint64_t *) newPage;		   //clear memory pointer to by the structure
 			ZeroMem((void *) temp, 0x1000);
@@ -355,6 +407,8 @@ EFI_STATUS CreateMap(EFI_SYSTEM_TABLE *systemTable, uint64_t *pml4, EFI_VIRTUAL_
 		if (!(pd[PD_ENTRY(address)] & PAGE_PRESENT)) {
 			newPage = 0;
 			status = systemTable->BootServices->AllocatePages(AllocateAnyPages, EfiLoaderData, 1, &newPage);//allocate memory for the structure
+			if (status != EFI_SUCCESS) { return status; }
+			status = MapPageIdentity(systemTable, pml4, newPage);
 			if (status != EFI_SUCCESS) { return status; }
 			pd[PD_ENTRY(address)] = newPage | PAGE_WSP;//write the pointer to PT into PD
 			uint64_t *temp = (uint64_t *) newPage;	   //clear memory pointer to by the structure
@@ -376,31 +430,31 @@ EFI_STATUS MapMemory(EFI_SYSTEM_TABLE *systemTable, uint64_t *pml4, MemMap *memM
 		 entry = (EFI_MEMORY_DESCRIPTOR *) ((char *) entry + memMap->descriptorSize)) {
 		switch (entry->Type) {//only create a map for relavent structures
 			case EfiLoaderCode:
-				status = CreateMap(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
+				status = MapPages(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
 				break;
 			case EfiLoaderData:
-				status = CreateMap(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
+				status = MapPages(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
 				break;
 			case EfiMemoryMappedIO:
-				status = CreateMap(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
+				status = MapPages(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
 				break;
 			case EfiMemoryMappedIOPortSpace:
-				status = CreateMap(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
+				status = MapPages(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
 				break;
 			case EfiACPIReclaimMemory:
-				status = CreateMap(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
+				status = MapPages(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
 				break;
 			case EfiACPIMemoryNVS:
-				status = CreateMap(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
+				status = MapPages(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
 				break;
 			case EfiRuntimeServicesCode:
-				status = CreateMap(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
+				status = MapPages(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
 				break;
 			case EfiRuntimeServicesData:
-				status = CreateMap(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
+				status = MapPages(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
 				break;
 			case EfiBootServicesData:
-				status = CreateMap(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
+				status = MapPages(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
 				break;
 			default:
 				break;
@@ -410,7 +464,7 @@ EFI_STATUS MapMemory(EFI_SYSTEM_TABLE *systemTable, uint64_t *pml4, MemMap *memM
 
 	for (LoadedSectionInfo *sectionInfo = sectionInfos; (char *) sectionInfo < (char *) sectionInfos + sectionInfoCount * sizeof(LoadedSectionInfo);
 		 sectionInfo = (LoadedSectionInfo *) ((char *) sectionInfo + sizeof(LoadedSectionInfo))) {
-		CreateMap(systemTable, pml4, sectionInfo->vaddr, sectionInfo->paddr, sectionInfo->pageCount);
+		MapPages(systemTable, pml4, sectionInfo->vaddr, sectionInfo->paddr, sectionInfo->pageCount);
 	}
 
 	return EFI_SUCCESS;
@@ -471,11 +525,13 @@ EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
 	status = systemTable->BootServices->AllocatePool(EfiLoaderData, sizeof(MemMap), (void **) &map);
 	HandleError(L"Failed to allocate memory for memory map", status);
 
-	uint64_t *bootstrapHeap;
+	uint64_t *bootstrapHeap = NULL;
 	EFI_PHYSICAL_ADDRESS bootstrapHeapAddr;
 	status = systemTable->BootServices->AllocatePages(AllocateAnyPages, EfiLoaderData, BOOTSTRAP_HEAP_PAGE_COUNT, &bootstrapHeapAddr);
 	HandleError(L"Failed to allocate bootstrap heap", status);
 	bootstrapHeap = (uint64_t *) bootstrapHeapAddr;
+	if (!bootstrapHeap) { HandleError(L"Bootstrap heap is nullptr", EFI_LOAD_ERROR); }
+	ZeroMem(bootstrapHeap, BOOTSTRAP_HEAP_PAGE_COUNT * 0x1000);
 
 	uint64_t *bootstrapHeapVaddr = 0;
 
@@ -485,16 +541,18 @@ EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
 		}
 	}
 
+#if VERBOSE_REPORTING
+	Print(L"Doing mapping pass...");
+#endif
 	status = GetMap(systemTable, map);
 	HandleError(L"Failed to obtain memory map", status);
-
 	status = MapMemory(systemTable, pml4, map, sectionInfos, sectionInfoCount);
 	HandleError(L"Failed to map memory", status);
 
-	status = CreateMap(systemTable, pml4, (EFI_VIRTUAL_ADDRESS) framebuffer->bufferBase, (EFI_PHYSICAL_ADDRESS) framebuffer->bufferBase,
+	status = MapPages(systemTable, pml4, (EFI_VIRTUAL_ADDRESS) framebuffer->bufferBase, (EFI_PHYSICAL_ADDRESS) framebuffer->bufferBase,
 					   (framebuffer->bufferSize + 0x1000 - 1) / 0x1000);
 	HandleError(L"Failed to map memory for the framebuffer", status);
-	status = CreateMap(systemTable, pml4, (EFI_VIRTUAL_ADDRESS) bootstrapHeapVaddr, (EFI_PHYSICAL_ADDRESS) bootstrapHeap, BOOTSTRAP_HEAP_PAGE_COUNT);
+	status = MapPages(systemTable, pml4, (EFI_VIRTUAL_ADDRESS) bootstrapHeapVaddr, (EFI_PHYSICAL_ADDRESS) bootstrapHeap, BOOTSTRAP_HEAP_PAGE_COUNT);
 	HandleError(L"Failed to map memory for the bootstrap heap", status);
 
 	systemTable->BootServices->FreePool(map->map);
