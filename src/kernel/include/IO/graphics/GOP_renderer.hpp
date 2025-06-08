@@ -25,6 +25,9 @@ public:
 	uint32_t m_height;
 	uint32_t m_pixelsPerScanline;
 };
+
+static GOP_Renderer g_renderer;
+
 }// namespace MdOS
 
 #endif

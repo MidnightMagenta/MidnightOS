@@ -11,7 +11,6 @@ public:
 	void run(BootInfo *bootInfo);
 
 private:
-	GOP_Renderer m_renderer;
 	Teletype m_tty;
 };
 }// namespace MdOS
