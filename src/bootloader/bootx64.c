@@ -79,6 +79,8 @@ typedef struct {
 typedef struct {
 	uint64_t *baseAddr;
 	uint64_t *topAddr;
+	uint64_t *basePaddr;
+	uint64_t *topPaddr;
 	uint64_t size;
 } BootstrapMemoryRegion;
 
@@ -552,17 +554,19 @@ EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
 					  BOOTSTRAP_HEAP_PAGE_COUNT);
 	HandleError(L"Failed to map memory for the bootstrap heap", status);
 
-	systemTable->BootServices->FreePool(map->map);
-	status = GetMap(systemTable, map);
-	HandleError(L"Failed to obtain final memory map", status);
-
 	BootInfo bootInfo;
 	bootInfo.map = map;
 	bootInfo.bootExtra.framebuffer = framebuffer;
 	bootInfo.bootExtra.basicFont = font;
-	bootInfo.bootstrapMem.baseAddr = bootstrapHeap;
-	bootInfo.bootstrapMem.topAddr = bootstrapHeap + BOOTSTRAP_HEAP_PAGE_COUNT * 0x1000;
+	bootInfo.bootstrapMem.baseAddr = bootstrapHeapVaddr;
+	bootInfo.bootstrapMem.topAddr = (uint64_t*)((uint64_t)bootstrapHeapVaddr + (BOOTSTRAP_HEAP_PAGE_COUNT * 0x1000));
+	bootInfo.bootstrapMem.basePaddr = bootstrapHeap;
+	bootInfo.bootstrapMem.topPaddr = (uint64_t*)((uint64_t)bootstrapHeap + (BOOTSTRAP_HEAP_PAGE_COUNT * 0x1000));
 	bootInfo.bootstrapMem.size = BOOTSTRAP_HEAP_PAGE_COUNT * 0x1000;
+
+	systemTable->BootServices->FreePool(map->map);
+	status = GetMap(systemTable, map);
+	HandleError(L"Failed to obtain final memory map", status);
 
 	status = systemTable->BootServices->ExitBootServices(imageHandle, map->key);
 	if (status != EFI_SUCCESS) {

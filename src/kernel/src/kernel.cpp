@@ -9,5 +9,10 @@ void MdOS::Kernel::run(BootInfo *bootInfo) {
 	g_renderer.ClearBuffer(MAKE_COLOR(25, 25, 25, 255));
 	MdOS::IO::kprintSystem::Initialize(&g_renderer, bootInfo->bootExtra.basicFont);
 
-	MdOS::IO::kprint("Test string %d %f %x %lx", 10, 12.12241f, 0xABCD, (uint64_t) 0x0123456789ABCDEF);
+	MdOS::IO::kprint("Bootstrap heap base:  0x%lx\nBootstrap heap top:   0x%lx\n", bootInfo->bootstrapMem.baseAddr, bootInfo->bootstrapMem.topAddr);
+	MdOS::IO::kprint("Bootstrap heap pbase: 0x%lx\nBootstrap heap ptop:  0x%lx\n", bootInfo->bootstrapMem.basePaddr, bootInfo->bootstrapMem.topPaddr);
+
+	m_bumpAlloc.Init(bootInfo->bootstrapMem.baseAddr, bootInfo->bootstrapMem.topAddr);
+
+	MdOS::IO::kprint("\nEOF\n");
 }

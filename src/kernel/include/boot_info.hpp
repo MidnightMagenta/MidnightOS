@@ -37,6 +37,8 @@ struct BootExtra{
 struct BootstrapMemoryRegion{
 	uint64_t *baseAddr;
 	uint64_t *topAddr;
+	uint64_t *basePaddr;
+	uint64_t *topPaddr;
 	uint64_t size;
 };
 
