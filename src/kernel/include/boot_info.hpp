@@ -1,7 +1,7 @@
 #ifndef BOOT_INFO_H
 #define BOOT_INFO_H
 
-#include "../include/IO/tty/psf1.hpp"
+#include "../include/IO/tty/psf.hpp"
 #include <stdint.h>
 
 struct MemoryDescriptor {
@@ -29,6 +29,11 @@ typedef struct {
 	unsigned int pixelsPerScanline;
 } GOPFramebuffer;
 
+struct BootExtra{
+	PSF1_Font *basicFont;
+	GOPFramebuffer *framebuffer;
+};
+
 struct BootstrapMemoryRegion{
 	uint64_t *baseAddr;
 	uint64_t *topAddr;
@@ -37,8 +42,7 @@ struct BootstrapMemoryRegion{
 
 struct BootInfo {
 	MemMap *map;
-	PSF1_Font *basicFont;
-	GOPFramebuffer *framebuffer;
+	BootExtra bootExtra;
 	BootstrapMemoryRegion bootstrapMem;
 };
 

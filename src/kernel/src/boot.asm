@@ -24,6 +24,7 @@ section .text
 		mov rdi, [_bootInfo]	; retrieve bootInfo prior to calling kernel_entry
 		call kernel_entry
 		call _fini
+		cli
 	_halt:						; halt the processor, since no shutdown routine exists yet. TODO: implement shutdown here
 		hlt
 		jmp _halt

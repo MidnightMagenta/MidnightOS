@@ -14,10 +14,15 @@ void MdOS::Teletype::putc(const char chr, uint32_t color, uint32_t xOffset, uint
 
 void MdOS::Teletype::PrintString(const char *str, size_t strlen) {
 	for (size_t i = 0; i < strlen; i++) {
+		if(str[i] == '\n'){
+			m_yOffset += m_font.glyphHeight;
+			m_xOffset = 0;
+			continue;
+		}
 		putc(str[i], m_color, m_xOffset, m_yOffset);
-		m_xOffset += (uint32_t) m_font.glyphWidth;
+		m_xOffset += uint32_t(m_font.glyphWidth);
 		if (m_xOffset >= m_renderer->m_width) {
-			m_yOffset += (uint32_t) m_font.glyphHeight;
+			m_yOffset += uint32_t(m_font.glyphHeight);
 			m_xOffset = 0;
 		}
 	}
