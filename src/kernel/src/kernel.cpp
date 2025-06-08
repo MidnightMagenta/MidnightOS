@@ -1,10 +1,11 @@
 #include "../include/kernel.hpp"
-#include "../include/kstring.hpp"
 #include "../include/IO/kprint.hpp"
+#include "../include/kstring.hpp"
 
 void MdOS::Kernel::run(BootInfo *bootInfo) {
-	g_renderer.Initialize(bootInfo->bootExtra.framebuffer->bufferBase, bootInfo->bootExtra.framebuffer->bufferSize, bootInfo->bootExtra.framebuffer->width,
-						  bootInfo->bootExtra.framebuffer->height, bootInfo->bootExtra.framebuffer->pixelsPerScanline);
+	g_renderer.Initialize(bootInfo->bootExtra.framebuffer->bufferBase, bootInfo->bootExtra.framebuffer->bufferSize,
+						  bootInfo->bootExtra.framebuffer->width, bootInfo->bootExtra.framebuffer->height,
+						  bootInfo->bootExtra.framebuffer->pixelsPerScanline);
 	g_renderer.ClearBuffer(MAKE_COLOR(25, 25, 25, 255));
 	MdOS::IO::kprintSystem::Initialize(&g_renderer, bootInfo->bootExtra.basicFont);
 

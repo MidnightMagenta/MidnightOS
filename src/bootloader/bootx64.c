@@ -5,12 +5,13 @@
 #define VERBOSE_REPORTING 1
 #define BOOTSTRAP_HEAP_PAGE_COUNT 12207//approx. 50 mb
 
-#define HandleError(fmt, status)                                                                                                                               \
-	if (status != EFI_SUCCESS) {                                                                                                                               \
-		Print(L"Critical error: " fmt L": 0x%lx\n\r", status);                                                                                                 \
-		return status;                                                                                                                                         \
+#define HandleError(fmt, status)                                                                                       \
+	if (status != EFI_SUCCESS) {                                                                                       \
+		Print(L"Critical error: " fmt L": 0x%lx\n\r", status);                                                         \
+		return status;                                                                                                 \
 	}
-#define ALIGN_ADDR(val, alignment, castType) ((castType) val + ((castType) alignment - 1)) & (~((castType) alignment - 1))
+#define ALIGN_ADDR(val, alignment, castType)                                                                           \
+	((castType) val + ((castType) alignment - 1)) & (~((castType) alignment - 1))
 
 #define PT_ENTRY(addr) (addr >> 12) & 0x1FF
 #define PD_ENTRY(addr) (addr >> 21) & 0x1FF
@@ -70,7 +71,7 @@ typedef struct {
 	unsigned int pixelsPerScanline;
 } GOPFramebuffer;
 
-typedef struct{
+typedef struct {
 	PSF1_Font *basicFont;
 	GOPFramebuffer *framebuffer;
 } BootExtra;
@@ -87,11 +88,13 @@ typedef struct {
 	BootstrapMemoryRegion bootstrapMem;
 } BootInfo;
 
-EFI_STATUS OpenFile(EFI_FILE *directory, CHAR16 *path, EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable, EFI_FILE **file) {
+EFI_STATUS OpenFile(EFI_FILE *directory, CHAR16 *path, EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable,
+					EFI_FILE **file) {
 	EFI_LOADED_IMAGE_PROTOCOL *loadedImage;
 	EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *fileSystem;
 	systemTable->BootServices->HandleProtocol(imageHandle, &gEfiLoadedImageProtocolGuid, (void **) &loadedImage);
-	systemTable->BootServices->HandleProtocol(loadedImage->DeviceHandle, &gEfiSimpleFileSystemProtocolGuid, (void **) &fileSystem);
+	systemTable->BootServices->HandleProtocol(loadedImage->DeviceHandle, &gEfiSimpleFileSystemProtocolGuid,
+											  (void **) &fileSystem);
 
 	if (!directory) { fileSystem->OpenVolume(fileSystem, &directory); }
 	return directory->Open(directory, file, path, EFI_FILE_MODE_READ, EFI_FILE_READ_ONLY);
@@ -148,13 +151,15 @@ EFI_STATUS GetPhdrs(EFI_SYSTEM_TABLE *systemTable, Elf64_Ehdr ehdr, EFI_FILE *el
 
 UINTN CountLoadableSegments(Elf64_Phdr *phdrs, Elf64_Half phnum, Elf64_Half phentsize) {
 	UINTN phdrCount = 0;
-	for (Elf64_Phdr *phdr = phdrs; (char *) phdr < (char *) phdrs + phnum * phentsize; phdr = (Elf64_Phdr *) ((char *) phdr + phentsize)) {
+	for (Elf64_Phdr *phdr = phdrs; (char *) phdr < (char *) phdrs + phnum * phentsize;
+		 phdr = (Elf64_Phdr *) ((char *) phdr + phentsize)) {
 		if (phdr->p_type == PT_LOAD) { phdrCount++; }
 	}
 	return phdrCount;
 }
 
-EFI_STATUS LoadKernel(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable, Elf64_Ehdr *pEhdr, UINTN *sectionInfoCount, LoadedSectionInfo **sectionInfos) {
+EFI_STATUS LoadKernel(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable, Elf64_Ehdr *pEhdr, UINTN *sectionInfoCount,
+					  LoadedSectionInfo **sectionInfos) {
 	EFI_STATUS status;
 	EFI_FILE *kernel = NULL;
 	status = OpenFile(NULL, L"\\boot\\kernel.elf", imageHandle, systemTable, &kernel);
@@ -185,7 +190,8 @@ EFI_STATUS LoadKernel(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable, Elf
 	UINTN phdrCount = CountLoadableSegments(phdrs, ehdr.e_phnum, ehdr.e_phentsize);
 	*sectionInfoCount = phdrCount;
 
-	status = systemTable->BootServices->AllocatePool(EfiLoaderData, phdrCount * sizeof(LoadedSectionInfo), (void **) sectionInfos);
+	status = systemTable->BootServices->AllocatePool(EfiLoaderData, phdrCount * sizeof(LoadedSectionInfo),
+													 (void **) sectionInfos);
 	if (status != EFI_SUCCESS) { return status; }
 
 	{
@@ -196,7 +202,8 @@ EFI_STATUS LoadKernel(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable, Elf
 			   (char *) sectionInfo < (char *) *sectionInfos + phdrCount * sizeof(LoadedSectionInfo)) {
 			if (phdr->p_type == PT_LOAD) {
 				int pageCount = (phdr->p_memsz + 0x1000 - 1) / 0x1000;
-				status = systemTable->BootServices->AllocatePages(AllocateAnyPages, EfiLoaderData, pageCount, &sectionInfo->paddr);
+				status = systemTable->BootServices->AllocatePages(AllocateAnyPages, EfiLoaderData, pageCount,
+																  &sectionInfo->paddr);
 				if (status != EFI_SUCCESS) { return status; }
 				ZeroMem((void *) sectionInfo->paddr, pageCount * 0x1000);
 
@@ -211,8 +218,8 @@ EFI_STATUS LoadKernel(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable, Elf
 				sectionInfo->pageCount = pageCount;
 				sectionInfo->flags = phdr->p_flags;
 #if VERBOSE_REPORTING
-				Print(L"Loading section...\n\r   Vaddr: 0x%lx\n\r   Paddr: 0x%lx\n\r   Page count: %u\n\r", sectionInfo->vaddr, sectionInfo->paddr,
-					  sectionInfo->pageCount);
+				Print(L"Loading section...\n\r   Vaddr: 0x%lx\n\r   Paddr: 0x%lx\n\r   Page count: %u\n\r",
+					  sectionInfo->vaddr, sectionInfo->paddr, sectionInfo->pageCount);
 #endif
 				sectionInfo = (LoadedSectionInfo *) ((char *) sectionInfo + sizeof(LoadedSectionInfo));
 			}
@@ -353,13 +360,15 @@ EFI_STATUS MapPageIdentity(EFI_SYSTEM_TABLE *systemTable, uint64_t *pml4, EFI_PH
 	return EFI_SUCCESS;
 }
 
-EFI_STATUS MapPages(EFI_SYSTEM_TABLE *systemTable, uint64_t *pml4, EFI_VIRTUAL_ADDRESS vaddr, EFI_PHYSICAL_ADDRESS paddr, UINTN pageCount) {
+EFI_STATUS MapPages(EFI_SYSTEM_TABLE *systemTable, uint64_t *pml4, EFI_VIRTUAL_ADDRESS vaddr,
+					EFI_PHYSICAL_ADDRESS paddr, UINTN pageCount) {
 	EFI_STATUS status;
 	EFI_PHYSICAL_ADDRESS newPage = 0;
 	EFI_PHYSICAL_ADDRESS physicalAddress = paddr;
 
 #if VERBOSE_REPORTING
-	Print(L"Mapping address range...\n\r   paddr: 0x%lx\n\r   vaddr: 0x%lx\n\r   page count: %u\n\r", paddr, vaddr, pageCount);
+	Print(L"Mapping address range...\n\r   paddr: 0x%lx\n\r   vaddr: 0x%lx\n\r   page count: %u\n\r", paddr, vaddr,
+		  pageCount);
 #endif
 
 	for (uint64_t address = vaddr; address < vaddr + (pageCount * 0x1000); address += 0x1000) {
@@ -410,7 +419,8 @@ EFI_STATUS MapPages(EFI_SYSTEM_TABLE *systemTable, uint64_t *pml4, EFI_VIRTUAL_A
 	return EFI_SUCCESS;
 }
 
-EFI_STATUS MapMemory(EFI_SYSTEM_TABLE *systemTable, uint64_t *pml4, MemMap *memMap, LoadedSectionInfo *sectionInfos, UINTN sectionInfoCount) {
+EFI_STATUS MapMemory(EFI_SYSTEM_TABLE *systemTable, uint64_t *pml4, MemMap *memMap, LoadedSectionInfo *sectionInfos,
+					 UINTN sectionInfoCount) {
 	EFI_STATUS status;
 	for (EFI_MEMORY_DESCRIPTOR *entry = memMap->map; (char *) entry < (char *) memMap->map + memMap->size;
 		 entry = (EFI_MEMORY_DESCRIPTOR *) ((char *) entry + memMap->descriptorSize)) {
@@ -448,7 +458,8 @@ EFI_STATUS MapMemory(EFI_SYSTEM_TABLE *systemTable, uint64_t *pml4, MemMap *memM
 		if (status != EFI_SUCCESS) { return status; }
 	}
 
-	for (LoadedSectionInfo *sectionInfo = sectionInfos; (char *) sectionInfo < (char *) sectionInfos + sectionInfoCount * sizeof(LoadedSectionInfo);
+	for (LoadedSectionInfo *sectionInfo = sectionInfos;
+		 (char *) sectionInfo < (char *) sectionInfos + sectionInfoCount * sizeof(LoadedSectionInfo);
 		 sectionInfo = (LoadedSectionInfo *) ((char *) sectionInfo + sizeof(LoadedSectionInfo))) {
 		status = MapPages(systemTable, pml4, sectionInfo->vaddr, sectionInfo->paddr, sectionInfo->pageCount);
 		if (status != EFI_SUCCESS) { return status; }
@@ -461,12 +472,14 @@ EFI_STATUS GetMap(EFI_SYSTEM_TABLE *systemTable, MemMap *map) {
 	map->map = NULL;
 	map->size = 0;
 
-	EFI_STATUS status = systemTable->BootServices->GetMemoryMap(&map->size, map->map, &map->key, &map->descriptorSize, &map->descriptorVersion);
+	EFI_STATUS status = systemTable->BootServices->GetMemoryMap(&map->size, map->map, &map->key, &map->descriptorSize,
+																&map->descriptorVersion);
 	if (map->size <= 0) { return EFI_BUFFER_TOO_SMALL; }
 	map->size += 10 * sizeof(EFI_MEMORY_DESCRIPTOR);
 	status = systemTable->BootServices->AllocatePool(EfiLoaderData, map->size, (void **) &map->map);
 	if (status != EFI_SUCCESS) { return status; }
-	status = systemTable->BootServices->GetMemoryMap(&map->size, map->map, &map->key, &map->descriptorSize, &map->descriptorVersion);
+	status = systemTable->BootServices->GetMemoryMap(&map->size, map->map, &map->key, &map->descriptorSize,
+													 &map->descriptorVersion);
 	return status;
 }
 
@@ -509,7 +522,8 @@ EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
 
 	uint64_t *bootstrapHeap = NULL;
 	EFI_PHYSICAL_ADDRESS bootstrapHeapAddr;
-	status = systemTable->BootServices->AllocatePages(AllocateAnyPages, EfiLoaderData, BOOTSTRAP_HEAP_PAGE_COUNT, &bootstrapHeapAddr);
+	status = systemTable->BootServices->AllocatePages(AllocateAnyPages, EfiLoaderData, BOOTSTRAP_HEAP_PAGE_COUNT,
+													  &bootstrapHeapAddr);
 	HandleError(L"Failed to allocate bootstrap heap", status);
 	bootstrapHeap = (uint64_t *) bootstrapHeapAddr;
 	if (!bootstrapHeap) { HandleError(L"Bootstrap heap is nullptr", EFI_LOAD_ERROR); }
@@ -531,10 +545,11 @@ EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
 	status = MapMemory(systemTable, pml4, map, sectionInfos, sectionInfoCount);
 	HandleError(L"Failed to map memory", status);
 
-	status = MapPages(systemTable, pml4, (EFI_VIRTUAL_ADDRESS) framebuffer->bufferBase, (EFI_PHYSICAL_ADDRESS) framebuffer->bufferBase,
-					  (framebuffer->bufferSize + 0x1000 - 1) / 0x1000);
+	status = MapPages(systemTable, pml4, (EFI_VIRTUAL_ADDRESS) framebuffer->bufferBase,
+					  (EFI_PHYSICAL_ADDRESS) framebuffer->bufferBase, (framebuffer->bufferSize + 0x1000 - 1) / 0x1000);
 	HandleError(L"Failed to map memory for the framebuffer", status);
-	status = MapPages(systemTable, pml4, (EFI_VIRTUAL_ADDRESS) bootstrapHeapVaddr, (EFI_PHYSICAL_ADDRESS) bootstrapHeap, BOOTSTRAP_HEAP_PAGE_COUNT);
+	status = MapPages(systemTable, pml4, (EFI_VIRTUAL_ADDRESS) bootstrapHeapVaddr, (EFI_PHYSICAL_ADDRESS) bootstrapHeap,
+					  BOOTSTRAP_HEAP_PAGE_COUNT);
 	HandleError(L"Failed to map memory for the bootstrap heap", status);
 
 	systemTable->BootServices->FreePool(map->map);

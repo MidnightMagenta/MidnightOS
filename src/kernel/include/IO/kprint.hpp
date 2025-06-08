@@ -4,10 +4,10 @@
 #include "../../include/IO/graphics/GOP_renderer.hpp"
 #include "../../include/IO/tty/tty.hpp"
 #include "../../include/kstring.hpp"
+#include <limits.h>
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <limits.h>
 
 namespace MdOS::IO {
 int kprint(const char *fmt, ...);
@@ -17,7 +17,7 @@ public:
 	kprintSystem() {}
 	~kprintSystem() {}
 
-	static void Initialize(MdOS::GOP_Renderer* renderer, PSF1_Font* font);
+	static void Initialize(MdOS::GOP_Renderer *renderer, PSF1_Font *font);
 	static int print(const char *fmt, va_list params);
 
 private:

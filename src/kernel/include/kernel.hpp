@@ -11,7 +11,6 @@ public:
 	void run(BootInfo *bootInfo);
 
 private:
-	Teletype m_tty;
 };
 }// namespace MdOS
 #endif

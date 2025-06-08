@@ -6,7 +6,9 @@ void MdOS::Teletype::putc(const char chr, uint32_t color, uint32_t xOffset, uint
 	uint32_t *pixel = (uint32_t *) m_renderer->m_bufferBase;
 	for (uint32_t y = yOffset; y < yOffset + m_font.glyphHeight; y++) {
 		for (uint32_t x = xOffset; x < xOffset + 8; x++) {
-			if ((*glyph & (0b10000000 >> (x - xOffset))) > 0) { *(uint32_t *) (pixel + x + (y * m_renderer->m_pixelsPerScanline)) = color; }
+			if ((*glyph & (0b10000000 >> (x - xOffset))) > 0) {
+				*(uint32_t *) (pixel + x + (y * m_renderer->m_pixelsPerScanline)) = color;
+			}
 		}
 		glyph++;
 	}
@@ -14,7 +16,7 @@ void MdOS::Teletype::putc(const char chr, uint32_t color, uint32_t xOffset, uint
 
 void MdOS::Teletype::PrintString(const char *str, size_t strlen) {
 	for (size_t i = 0; i < strlen; i++) {
-		if(str[i] == '\n'){
+		if (str[i] == '\n') {
 			m_yOffset += m_font.glyphHeight;
 			m_xOffset = 0;
 			continue;
