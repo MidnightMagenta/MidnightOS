@@ -33,8 +33,8 @@ namespace MdOS {
 typedef char *PSF1_glyph;
 
 struct PSF_DrawableFont {
-	void InitializeFont(PSF1_Font *font);
-	void InitializeFont(PSF2_Font *font);
+	void init(PSF1_Font *font);
+	void init(PSF2_Font *font);
 	char *operator[](const char val) {
 		if (val > 0) { return (char *) glyphs + (val * glyphHeight); }
 		return nullptr;

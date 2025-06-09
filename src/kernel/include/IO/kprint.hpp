@@ -17,7 +17,7 @@ public:
 	kprintSystem() {}
 	~kprintSystem() {}
 
-	static void Initialize(MdOS::GOP_Renderer *renderer, PSF1_Font *font);
+	static void init(MdOS::GOP_Renderer *renderer, PSF1_Font *font);
 	static int print(const char *fmt, va_list params);
 
 private:

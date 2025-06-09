@@ -10,8 +10,8 @@ public:
 	BumpAllocator() {}
 	~BumpAllocator() {}
 
-	void Init(uint64_t *heapBase, uint64_t *heapTop);
-	void Init(uint64_t *heapBase, uint64_t heapSize);
+	void init(uint64_t *heapBase, uint64_t *heapTop);
+	void init(uint64_t *heapBase, uint64_t heapSize);
 
 	void *alloc(size_t size);
 
@@ -20,6 +20,8 @@ private:
 	uint64_t *m_heapTop;
 	uint64_t *m_allocPtr;
 };
+
+static BumpAllocator g_bumpAlloc;
 }// namespace MdOS::Memory
 
 #endif

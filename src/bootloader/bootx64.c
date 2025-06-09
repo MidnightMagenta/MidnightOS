@@ -90,7 +90,7 @@ typedef struct {
 	BootstrapMemoryRegion bootstrapMem;
 } BootInfo;
 
-EFI_STATUS OpenFile(EFI_FILE *directory, CHAR16 *path, EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable,
+EFI_STATUS open_file(EFI_FILE *directory, CHAR16 *path, EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable,
 					EFI_FILE **file) {
 	EFI_LOADED_IMAGE_PROTOCOL *loadedImage;
 	EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *fileSystem;
@@ -102,7 +102,7 @@ EFI_STATUS OpenFile(EFI_FILE *directory, CHAR16 *path, EFI_HANDLE imageHandle, E
 	return directory->Open(directory, file, path, EFI_FILE_MODE_READ, EFI_FILE_READ_ONLY);
 }
 
-int CompareMemory(const void *aptr, const void *bptr, size_t n) {
+int mem_compare(const void *aptr, const void *bptr, size_t n) {
 	const unsigned char *a = aptr, *b = bptr;
 	for (size_t i = 0; i < n; i++) {
 		if (a[i] < b[i]) return -1;
@@ -112,8 +112,8 @@ int CompareMemory(const void *aptr, const void *bptr, size_t n) {
 	return 0;
 }
 
-int VerifyElfHeader(Elf64_Ehdr header) {
-	if (CompareMemory(&header.e_ident[EI_MAG0], ELFMAG, SELFMAG) != 0) {
+int verify_ehdr(Elf64_Ehdr header) {
+	if (mem_compare(&header.e_ident[EI_MAG0], ELFMAG, SELFMAG) != 0) {
 		Print(L"Invalid kernel binary elf magic\n\r");
 		return 0;
 	}
@@ -140,7 +140,7 @@ int VerifyElfHeader(Elf64_Ehdr header) {
 	return 1;
 }
 
-EFI_STATUS GetPhdrs(EFI_SYSTEM_TABLE *systemTable, Elf64_Ehdr ehdr, EFI_FILE *elfFile, Elf64_Phdr **phdrs) {
+EFI_STATUS get_phdrs(EFI_SYSTEM_TABLE *systemTable, Elf64_Ehdr ehdr, EFI_FILE *elfFile, Elf64_Phdr **phdrs) {
 	EFI_STATUS status;
 	UINTN phdrBuffSize = ehdr.e_phnum * ehdr.e_phentsize;
 	status = systemTable->BootServices->AllocatePool(EfiLoaderData, phdrBuffSize, (void **) phdrs);
@@ -151,7 +151,7 @@ EFI_STATUS GetPhdrs(EFI_SYSTEM_TABLE *systemTable, Elf64_Ehdr ehdr, EFI_FILE *el
 	return EFI_SUCCESS;
 }
 
-UINTN CountLoadableSegments(Elf64_Phdr *phdrs, Elf64_Half phnum, Elf64_Half phentsize) {
+UINTN count_loadable_segments(Elf64_Phdr *phdrs, Elf64_Half phnum, Elf64_Half phentsize) {
 	UINTN phdrCount = 0;
 	for (Elf64_Phdr *phdr = phdrs; (char *) phdr < (char *) phdrs + phnum * phentsize;
 		 phdr = (Elf64_Phdr *) ((char *) phdr + phentsize)) {
@@ -160,11 +160,11 @@ UINTN CountLoadableSegments(Elf64_Phdr *phdrs, Elf64_Half phnum, Elf64_Half phen
 	return phdrCount;
 }
 
-EFI_STATUS LoadKernel(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable, Elf64_Ehdr *pEhdr, UINTN *sectionInfoCount,
+EFI_STATUS load_kernel(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable, Elf64_Ehdr *pEhdr, UINTN *sectionInfoCount,
 					  LoadedSectionInfo **sectionInfos) {
 	EFI_STATUS status;
 	EFI_FILE *kernel = NULL;
-	status = OpenFile(NULL, L"\\boot\\kernel.elf", imageHandle, systemTable, &kernel);
+	status = open_file(NULL, L"\\boot\\kernel.elf", imageHandle, systemTable, &kernel);
 	HandleError(L"Failed to open kernel file: 0x%lx\n\r", status);
 
 	if (!kernel) {
@@ -179,7 +179,7 @@ EFI_STATUS LoadKernel(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable, Elf
 	Elf64_Ehdr ehdr;
 	UINTN ehdrSize = sizeof(ehdr);
 	kernel->Read(kernel, &ehdrSize, &ehdr);
-	if (!VerifyElfHeader(ehdr)) { return EFI_LOAD_ERROR; }
+	if (!verify_ehdr(ehdr)) { return EFI_LOAD_ERROR; }
 	*pEhdr = ehdr;
 
 #if VERBOSE_REPORTING
@@ -187,9 +187,9 @@ EFI_STATUS LoadKernel(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable, Elf
 #endif
 
 	Elf64_Phdr *phdrs = NULL;
-	status = GetPhdrs(systemTable, ehdr, kernel, &phdrs);
+	status = get_phdrs(systemTable, ehdr, kernel, &phdrs);
 	if (status != EFI_SUCCESS) { return status; }
-	UINTN phdrCount = CountLoadableSegments(phdrs, ehdr.e_phnum, ehdr.e_phentsize);
+	UINTN phdrCount = count_loadable_segments(phdrs, ehdr.e_phnum, ehdr.e_phentsize);
 	*sectionInfoCount = phdrCount;
 
 	status = systemTable->BootServices->AllocatePool(EfiLoaderData, phdrCount * sizeof(LoadedSectionInfo),
@@ -238,7 +238,7 @@ EFI_STATUS LoadKernel(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable, Elf
 	return EFI_SUCCESS;
 }
 
-EFI_STATUS InitGOP(EFI_SYSTEM_TABLE *systemTable, GOPFramebuffer *framebuffer) {
+EFI_STATUS init_GOP(EFI_SYSTEM_TABLE *systemTable, GOPFramebuffer *framebuffer) {
 	EFI_GUID gopGuid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
 	EFI_GRAPHICS_OUTPUT_PROTOCOL *gop;
 	EFI_STATUS status;
@@ -259,9 +259,9 @@ EFI_STATUS InitGOP(EFI_SYSTEM_TABLE *systemTable, GOPFramebuffer *framebuffer) {
 	return EFI_SUCCESS;
 }
 
-EFI_STATUS GetPSF1Font(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable, CHAR16 *path, PSF1_Font *font) {
+EFI_STATUS get_PSF1_font(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable, CHAR16 *path, PSF1_Font *font) {
 	EFI_FILE *fontFile = NULL;
-	EFI_STATUS status = OpenFile(NULL, path, imageHandle, systemTable, &fontFile);
+	EFI_STATUS status = open_file(NULL, path, imageHandle, systemTable, &fontFile);
 	HandleError(L"Failed to open font file", status);
 
 	UINTN bytesToRead = 4;
@@ -292,9 +292,9 @@ EFI_STATUS GetPSF1Font(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable, CH
 	return EFI_SUCCESS;
 }
 
-EFI_STATUS GetPSF2Font(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable, CHAR16 *path) {
+EFI_STATUS get_PSF2_font(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable, CHAR16 *path) {
 	EFI_FILE *fontFile = NULL;
-	EFI_STATUS status = OpenFile(NULL, path, imageHandle, systemTable, &fontFile);
+	EFI_STATUS status = open_file(NULL, path, imageHandle, systemTable, &fontFile);
 	HandleError(L"Failed to open font file", status);
 
 	UINTN bytesToRead = 4;
@@ -314,7 +314,7 @@ EFI_STATUS GetPSF2Font(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable, CH
 	}
 }
 
-EFI_STATUS MapPageIdentity(EFI_SYSTEM_TABLE *systemTable, uint64_t *pml4, EFI_PHYSICAL_ADDRESS addr) {
+EFI_STATUS map_page_identity(EFI_SYSTEM_TABLE *systemTable, uint64_t *pml4, EFI_PHYSICAL_ADDRESS addr) {
 	EFI_STATUS status;
 	EFI_PHYSICAL_ADDRESS newPage;
 	uint64_t *pdpt = NULL;
@@ -362,7 +362,7 @@ EFI_STATUS MapPageIdentity(EFI_SYSTEM_TABLE *systemTable, uint64_t *pml4, EFI_PH
 	return EFI_SUCCESS;
 }
 
-EFI_STATUS MapPages(EFI_SYSTEM_TABLE *systemTable, uint64_t *pml4, EFI_VIRTUAL_ADDRESS vaddr,
+EFI_STATUS map_pages(EFI_SYSTEM_TABLE *systemTable, uint64_t *pml4, EFI_VIRTUAL_ADDRESS vaddr,
 					EFI_PHYSICAL_ADDRESS paddr, UINTN pageCount) {
 	EFI_STATUS status;
 	EFI_PHYSICAL_ADDRESS newPage = 0;
@@ -382,7 +382,7 @@ EFI_STATUS MapPages(EFI_SYSTEM_TABLE *systemTable, uint64_t *pml4, EFI_VIRTUAL_A
 			newPage = 0;
 			status = systemTable->BootServices->AllocatePages(AllocateAnyPages, EfiLoaderData, 1, &newPage);
 			if (status != EFI_SUCCESS) { return status; }
-			status = MapPageIdentity(systemTable, pml4, newPage);
+			status = map_page_identity(systemTable, pml4, newPage);
 			if (status != EFI_SUCCESS) { return status; }
 			pml4[PML4_ENTRY(address)] = newPage | PAGE_WSP;
 			uint64_t *temp = (uint64_t *) newPage;
@@ -394,7 +394,7 @@ EFI_STATUS MapPages(EFI_SYSTEM_TABLE *systemTable, uint64_t *pml4, EFI_VIRTUAL_A
 			newPage = 0;
 			status = systemTable->BootServices->AllocatePages(AllocateAnyPages, EfiLoaderData, 1, &newPage);
 			if (status != EFI_SUCCESS) { return status; }
-			status = MapPageIdentity(systemTable, pml4, newPage);
+			status = map_page_identity(systemTable, pml4, newPage);
 			if (status != EFI_SUCCESS) { return status; }
 			pdpt[PDPT_ENTRY(address)] = newPage | PAGE_WSP;
 			uint64_t *temp = (uint64_t *) newPage;
@@ -406,7 +406,7 @@ EFI_STATUS MapPages(EFI_SYSTEM_TABLE *systemTable, uint64_t *pml4, EFI_VIRTUAL_A
 			newPage = 0;
 			status = systemTable->BootServices->AllocatePages(AllocateAnyPages, EfiLoaderData, 1, &newPage);
 			if (status != EFI_SUCCESS) { return status; }
-			status = MapPageIdentity(systemTable, pml4, newPage);
+			status = map_page_identity(systemTable, pml4, newPage);
 			if (status != EFI_SUCCESS) { return status; }
 			pd[PD_ENTRY(address)] = newPage | PAGE_WSP;
 			uint64_t *temp = (uint64_t *) newPage;
@@ -421,38 +421,38 @@ EFI_STATUS MapPages(EFI_SYSTEM_TABLE *systemTable, uint64_t *pml4, EFI_VIRTUAL_A
 	return EFI_SUCCESS;
 }
 
-EFI_STATUS MapMemory(EFI_SYSTEM_TABLE *systemTable, uint64_t *pml4, MemMap *memMap, LoadedSectionInfo *sectionInfos,
+EFI_STATUS map_mem(EFI_SYSTEM_TABLE *systemTable, uint64_t *pml4, MemMap *memMap, LoadedSectionInfo *sectionInfos,
 					 UINTN sectionInfoCount) {
 	EFI_STATUS status;
 	for (EFI_MEMORY_DESCRIPTOR *entry = memMap->map; (char *) entry < (char *) memMap->map + memMap->size;
 		 entry = (EFI_MEMORY_DESCRIPTOR *) ((char *) entry + memMap->descriptorSize)) {
 		switch (entry->Type) {
 			case EfiLoaderCode:
-				status = MapPages(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
+				status = map_pages(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
 				break;
 			case EfiLoaderData:
-				status = MapPages(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
+				status = map_pages(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
 				break;
 			case EfiMemoryMappedIO:
-				status = MapPages(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
+				status = map_pages(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
 				break;
 			case EfiMemoryMappedIOPortSpace:
-				status = MapPages(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
+				status = map_pages(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
 				break;
 			case EfiACPIReclaimMemory:
-				status = MapPages(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
+				status = map_pages(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
 				break;
 			case EfiACPIMemoryNVS:
-				status = MapPages(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
+				status = map_pages(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
 				break;
 			case EfiRuntimeServicesCode:
-				status = MapPages(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
+				status = map_pages(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
 				break;
 			case EfiRuntimeServicesData:
-				status = MapPages(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
+				status = map_pages(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
 				break;
 			case EfiBootServicesData:
-				status = MapPages(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
+				status = map_pages(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
 				break;
 			default:
 				break;
@@ -463,14 +463,14 @@ EFI_STATUS MapMemory(EFI_SYSTEM_TABLE *systemTable, uint64_t *pml4, MemMap *memM
 	for (LoadedSectionInfo *sectionInfo = sectionInfos;
 		 (char *) sectionInfo < (char *) sectionInfos + sectionInfoCount * sizeof(LoadedSectionInfo);
 		 sectionInfo = (LoadedSectionInfo *) ((char *) sectionInfo + sizeof(LoadedSectionInfo))) {
-		status = MapPages(systemTable, pml4, sectionInfo->vaddr, sectionInfo->paddr, sectionInfo->pageCount);
+		status = map_pages(systemTable, pml4, sectionInfo->vaddr, sectionInfo->paddr, sectionInfo->pageCount);
 		if (status != EFI_SUCCESS) { return status; }
 	}
 
 	return EFI_SUCCESS;
 }
 
-EFI_STATUS GetMap(EFI_SYSTEM_TABLE *systemTable, MemMap *map) {
+EFI_STATUS get_EFI_map(EFI_SYSTEM_TABLE *systemTable, MemMap *map) {
 	map->map = NULL;
 	map->size = 0;
 
@@ -485,7 +485,7 @@ EFI_STATUS GetMap(EFI_SYSTEM_TABLE *systemTable, MemMap *map) {
 	return status;
 }
 
-void SetCR3PML4(uint64_t pml4Addr) { __asm__ volatile("mov %0, %%rax; mov %%rax, %%cr3" ::"r"(pml4Addr)); }
+void set_CR3_PML4(uint64_t pml4Addr) { __asm__ volatile("mov %0, %%rax; mov %%rax, %%cr3" ::"r"(pml4Addr)); }
 
 EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
 	EFI_STATUS status;
@@ -495,7 +495,7 @@ EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
 	UINTN sectionInfoCount = 0;
 	Elf64_Ehdr ehdr;
 
-	status = LoadKernel(imageHandle, systemTable, &ehdr, &sectionInfoCount, &sectionInfos);
+	status = load_kernel(imageHandle, systemTable, &ehdr, &sectionInfoCount, &sectionInfos);
 	HandleError(L"Failed to load kernel", status);
 
 	void (*_start)(BootInfo *) = ((__attribute__((sysv_abi)) void (*)(BootInfo *)) ehdr.e_entry);
@@ -510,12 +510,12 @@ EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
 	GOPFramebuffer *framebuffer = NULL;
 	status = systemTable->BootServices->AllocatePool(EfiLoaderData, sizeof(framebuffer), (void **) &framebuffer);
 	HandleError(L"Failed to allocate memory for framebuffer info struct", status);
-	status = InitGOP(systemTable, framebuffer);
+	status = init_GOP(systemTable, framebuffer);
 	HandleError(L"Failed to initialize GOP", status);
 
 	PSF1_Font *font = NULL;
 	systemTable->BootServices->AllocatePool(EfiLoaderData, sizeof(PSF1_Font), (void **) &font);
-	status = GetPSF1Font(imageHandle, systemTable, L"FONTS\\zap-light16.psf", font);
+	status = get_PSF1_font(imageHandle, systemTable, L"FONTS\\zap-light16.psf", font);
 	HandleError(L"Failed to read PSF font", status);
 
 	MemMap *map = NULL;
@@ -540,17 +540,17 @@ EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
 	}
 
 #if VERBOSE_REPORTING
-	Print(L"Doing mapping pass...");
+	Print(L"Doing mapping pass...\n\r");
 #endif
-	status = GetMap(systemTable, map);
+	status = get_EFI_map(systemTable, map);
 	HandleError(L"Failed to obtain memory map", status);
-	status = MapMemory(systemTable, pml4, map, sectionInfos, sectionInfoCount);
+	status = map_mem(systemTable, pml4, map, sectionInfos, sectionInfoCount);
 	HandleError(L"Failed to map memory", status);
 
-	status = MapPages(systemTable, pml4, (EFI_VIRTUAL_ADDRESS) framebuffer->bufferBase,
+	status = map_pages(systemTable, pml4, (EFI_VIRTUAL_ADDRESS) framebuffer->bufferBase,
 					  (EFI_PHYSICAL_ADDRESS) framebuffer->bufferBase, (framebuffer->bufferSize + 0x1000 - 1) / 0x1000);
 	HandleError(L"Failed to map memory for the framebuffer", status);
-	status = MapPages(systemTable, pml4, (EFI_VIRTUAL_ADDRESS) bootstrapHeapVaddr, (EFI_PHYSICAL_ADDRESS) bootstrapHeap,
+	status = map_pages(systemTable, pml4, (EFI_VIRTUAL_ADDRESS) bootstrapHeapVaddr, (EFI_PHYSICAL_ADDRESS) bootstrapHeap,
 					  BOOTSTRAP_HEAP_PAGE_COUNT);
 	HandleError(L"Failed to map memory for the bootstrap heap", status);
 
@@ -565,7 +565,7 @@ EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
 	bootInfo.bootstrapMem.size = BOOTSTRAP_HEAP_PAGE_COUNT * 0x1000;
 
 	systemTable->BootServices->FreePool(map->map);
-	status = GetMap(systemTable, map);
+	status = get_EFI_map(systemTable, map);
 	HandleError(L"Failed to obtain final memory map", status);
 
 	status = systemTable->BootServices->ExitBootServices(imageHandle, map->key);
@@ -574,8 +574,7 @@ EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
 			int exitStatus = 0;
 			for (int i = 0; i < 10; i++) {
 				systemTable->BootServices->FreePool(map->map);
-				status = GetMap(systemTable, map);
-				HandleError(L"Failed to obtain final memory map", status);
+				status = get_EFI_map(systemTable, map);
 				bootInfo.map = map;
 				status = systemTable->BootServices->ExitBootServices(imageHandle, map->key);
 				if (status == EFI_SUCCESS) {
@@ -589,7 +588,7 @@ EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
 		}
 	}
 
-	SetCR3PML4((uint64_t) pml4 | PAGE_WSP);
+	set_CR3_PML4((uint64_t) pml4 | PAGE_WSP);
 	_start(&bootInfo);
 
 	return EFI_SUCCESS;

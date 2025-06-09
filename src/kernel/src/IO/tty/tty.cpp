@@ -14,7 +14,7 @@ void MdOS::Teletype::putc(const char chr, uint32_t color, uint32_t xOffset, uint
 	}
 }
 
-void MdOS::Teletype::PrintString(const char *str, size_t strlen) {
+void MdOS::Teletype::print_str(const char *str, size_t strlen) {
 	for (size_t i = 0; i < strlen; i++) {
 		if (str[i] == '\n') {
 			m_yOffset += m_font.glyphHeight;

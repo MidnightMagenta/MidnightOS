@@ -8,15 +8,15 @@ namespace MdOS {
 class Teletype {
 public:
 	Teletype() {}
-	Teletype(GOP_Renderer *renderer, PSF1_Font *font) { Initialize(renderer, font); };
-	void Initialize(GOP_Renderer *renderer, PSF1_Font *font) {
+	Teletype(GOP_Renderer *renderer, PSF1_Font *font) { init(renderer, font); };
+	void init(GOP_Renderer *renderer, PSF1_Font *font) {
 		m_renderer = renderer;
-		m_font.InitializeFont(font);
+		m_font.init(font);
 	}
 	~Teletype() {}
 
-	void SetColor(uint32_t color) { m_color = color; }
-	void PrintString(const char *str, size_t strlen);
+	void set_color(uint32_t color) { m_color = color; }
+	void print_str(const char *str, size_t strlen);
 
 private:
 	void putc(const char chr, uint32_t color, uint32_t xOffset, uint32_t yOffset);

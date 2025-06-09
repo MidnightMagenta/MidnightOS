@@ -12,7 +12,6 @@ public:
 	void run(BootInfo *bootInfo);
 
 private:
-	MdOS::Memory::BumpAllocator m_bumpAlloc;
 };
 }// namespace MdOS
 #endif

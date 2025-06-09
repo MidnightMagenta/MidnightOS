@@ -3,9 +3,9 @@
 MdOS::GOP_Renderer *MdOS::IO::kprintSystem::m_renderer = nullptr;
 MdOS::Teletype MdOS::IO::kprintSystem::m_tty = MdOS::Teletype();
 
-void MdOS::IO::kprintSystem::Initialize(MdOS::GOP_Renderer *renderer, PSF1_Font *font) {
+void MdOS::IO::kprintSystem::init(MdOS::GOP_Renderer *renderer, PSF1_Font *font) {
 	m_renderer = renderer;
-	m_tty.Initialize(renderer, font);
+	m_tty.init(renderer, font);
 }
 
 int MdOS::IO::kprintSystem::print(const char *fmt, va_list params) {
@@ -21,7 +21,7 @@ int MdOS::IO::kprintSystem::print(const char *fmt, va_list params) {
 				//TODO: error stuff
 				return -1;
 			}
-			m_tty.PrintString(fmt, ammount);
+			m_tty.print_str(fmt, ammount);
 			fmt += ammount;
 			written += ammount;
 			continue;
@@ -36,7 +36,7 @@ int MdOS::IO::kprintSystem::print(const char *fmt, va_list params) {
 				//TODO: error
 				return -1;
 			}
-			m_tty.PrintString(&c, 1);
+			m_tty.print_str(&c, 1);
 			written++;
 		} else if (*fmt == 's') {
 			fmt++;
@@ -46,7 +46,7 @@ int MdOS::IO::kprintSystem::print(const char *fmt, va_list params) {
 				//TODO: error
 				return -1;
 			}
-			m_tty.PrintString(str, ammount);
+			m_tty.print_str(str, ammount);
 			written += ammount;
 		} else if (*fmt == 'd' || *fmt == 'i') {
 			fmt++;
@@ -57,7 +57,7 @@ int MdOS::IO::kprintSystem::print(const char *fmt, va_list params) {
 				//TODO: error
 				return -1;
 			}
-			m_tty.PrintString(str, ammount);
+			m_tty.print_str(str, ammount);
 			written += ammount;
 		} else if ((*fmt == 'l' && fmt[1] == 'd') || (*fmt == 'l' && fmt[1] == 'i')) {
 			fmt += 2;
@@ -68,7 +68,7 @@ int MdOS::IO::kprintSystem::print(const char *fmt, va_list params) {
 				//TODO: error
 				return -1;
 			}
-			m_tty.PrintString(str, ammount);
+			m_tty.print_str(str, ammount);
 			written += ammount;
 		} else if (*fmt == 'u') {
 			fmt++;
@@ -79,7 +79,7 @@ int MdOS::IO::kprintSystem::print(const char *fmt, va_list params) {
 				//TODO: error
 				return -1;
 			}
-			m_tty.PrintString(str, ammount);
+			m_tty.print_str(str, ammount);
 			written += ammount;
 		} else if ((*fmt == 'l' && fmt[1] == 'u')) {
 			fmt += 2;
@@ -90,7 +90,7 @@ int MdOS::IO::kprintSystem::print(const char *fmt, va_list params) {
 				//TODO: error
 				return -1;
 			}
-			m_tty.PrintString(str, ammount);
+			m_tty.print_str(str, ammount);
 			written += ammount;
 		} else if (*fmt == 'x') {
 			fmt++;
@@ -101,7 +101,7 @@ int MdOS::IO::kprintSystem::print(const char *fmt, va_list params) {
 				//TODO: error
 				return -1;
 			}
-			m_tty.PrintString(str, ammount);
+			m_tty.print_str(str, ammount);
 			written += ammount;
 		} else if ((*fmt == 'l' && fmt[1] == 'x')) {
 			fmt += 2;
@@ -112,7 +112,7 @@ int MdOS::IO::kprintSystem::print(const char *fmt, va_list params) {
 				//TODO: error
 				return -1;
 			}
-			m_tty.PrintString(str, ammount);
+			m_tty.print_str(str, ammount);
 			written += ammount;
 		} else if (*fmt == 'f') {
 			fmt++;
@@ -123,7 +123,7 @@ int MdOS::IO::kprintSystem::print(const char *fmt, va_list params) {
 				//TODO: error
 				return -1;
 			}
-			m_tty.PrintString(str, ammount);
+			m_tty.print_str(str, ammount);
 			written += ammount;
 		} else {
 			fmt = fmt_begun_at;
@@ -132,7 +132,7 @@ int MdOS::IO::kprintSystem::print(const char *fmt, va_list params) {
 				//implement errno
 				return -1;
 			}
-			m_tty.PrintString(fmt, len);
+			m_tty.print_str(fmt, len);
 			written += len;
 			fmt += len;
 		}
