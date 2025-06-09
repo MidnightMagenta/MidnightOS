@@ -2,11 +2,12 @@
 #include "../include/IO/kprint.hpp"
 #include "../include/bitmap.hpp"
 #include "../include/kstring.hpp"
+#include <stdint.h>
 
 void MdOS::Kernel::run(BootInfo *bootInfo) {
 	g_renderer.init(bootInfo->bootExtra.framebuffer->bufferBase, bootInfo->bootExtra.framebuffer->bufferSize,
-						  bootInfo->bootExtra.framebuffer->width, bootInfo->bootExtra.framebuffer->height,
-						  bootInfo->bootExtra.framebuffer->pixelsPerScanline);
+					bootInfo->bootExtra.framebuffer->width, bootInfo->bootExtra.framebuffer->height,
+					bootInfo->bootExtra.framebuffer->pixelsPerScanline);
 	g_renderer.clear_buffer(MAKE_COLOR(25, 25, 25, 255));
 	MdOS::IO::kprintSystem::init(&g_renderer, bootInfo->bootExtra.basicFont);
 
@@ -15,16 +16,8 @@ void MdOS::Kernel::run(BootInfo *bootInfo) {
 	MdOS::IO::kprint("Bootstrap heap pbase: 0x%lx\nBootstrap heap ptop:  0x%lx\n", bootInfo->bootstrapMem.basePaddr,
 					 bootInfo->bootstrapMem.topPaddr);
 
-	MdOS::Memory::g_bumpAlloc.init(bootInfo->bootstrapMem.baseAddr, bootInfo->bootstrapMem.topAddr);
-
-	utils::Bitmap<uint32_t> bmp;
-	bmp.init(64);
-	bmp.set_range(16, 40);
-	bmp.clear_range(20, 30);
-	MdOS::IO::kprint("\n");
-	for (size_t i = 0; i < bmp.size(); i++) {
-		MdOS::IO::kprint("%d", bmp[i] ? 1 : 0);
-	}
+	MdOS::Memory::g_bumpAlloc.init(uintptr_t(bootInfo->bootstrapMem.baseAddr),
+								   uintptr_t(bootInfo->bootstrapMem.topAddr));
 
 	MdOS::IO::kprint("\nEOF\n");
 }

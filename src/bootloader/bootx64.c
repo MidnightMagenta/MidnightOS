@@ -77,21 +77,22 @@ typedef struct {
 } BootExtra;
 
 typedef struct {
-	uint64_t *baseAddr;
-	uint64_t *topAddr;
-	uint64_t *basePaddr;
-	uint64_t *topPaddr;
-	uint64_t size;
+	void *baseAddr;
+	void *topAddr;
+	void *basePaddr;
+	void *topPaddr;
+	size_t size;
 } BootstrapMemoryRegion;
 
 typedef struct {
 	MemMap *map;
+	uint64_t *pml4;
 	BootExtra bootExtra;
 	BootstrapMemoryRegion bootstrapMem;
 } BootInfo;
 
 EFI_STATUS open_file(EFI_FILE *directory, CHAR16 *path, EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable,
-					EFI_FILE **file) {
+					 EFI_FILE **file) {
 	EFI_LOADED_IMAGE_PROTOCOL *loadedImage;
 	EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *fileSystem;
 	systemTable->BootServices->HandleProtocol(imageHandle, &gEfiLoadedImageProtocolGuid, (void **) &loadedImage);
@@ -160,8 +161,8 @@ UINTN count_loadable_segments(Elf64_Phdr *phdrs, Elf64_Half phnum, Elf64_Half ph
 	return phdrCount;
 }
 
-EFI_STATUS load_kernel(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable, Elf64_Ehdr *pEhdr, UINTN *sectionInfoCount,
-					  LoadedSectionInfo **sectionInfos) {
+EFI_STATUS load_kernel(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable, Elf64_Ehdr *pEhdr,
+					   UINTN *sectionInfoCount, LoadedSectionInfo **sectionInfos) {
 	EFI_STATUS status;
 	EFI_FILE *kernel = NULL;
 	status = open_file(NULL, L"\\boot\\kernel.elf", imageHandle, systemTable, &kernel);
@@ -363,7 +364,7 @@ EFI_STATUS map_page_identity(EFI_SYSTEM_TABLE *systemTable, uint64_t *pml4, EFI_
 }
 
 EFI_STATUS map_pages(EFI_SYSTEM_TABLE *systemTable, uint64_t *pml4, EFI_VIRTUAL_ADDRESS vaddr,
-					EFI_PHYSICAL_ADDRESS paddr, UINTN pageCount) {
+					 EFI_PHYSICAL_ADDRESS paddr, UINTN pageCount) {
 	EFI_STATUS status;
 	EFI_PHYSICAL_ADDRESS newPage = 0;
 	EFI_PHYSICAL_ADDRESS physicalAddress = paddr;
@@ -422,7 +423,7 @@ EFI_STATUS map_pages(EFI_SYSTEM_TABLE *systemTable, uint64_t *pml4, EFI_VIRTUAL_
 }
 
 EFI_STATUS map_mem(EFI_SYSTEM_TABLE *systemTable, uint64_t *pml4, MemMap *memMap, LoadedSectionInfo *sectionInfos,
-					 UINTN sectionInfoCount) {
+				   UINTN sectionInfoCount) {
 	EFI_STATUS status;
 	for (EFI_MEMORY_DESCRIPTOR *entry = memMap->map; (char *) entry < (char *) memMap->map + memMap->size;
 		 entry = (EFI_MEMORY_DESCRIPTOR *) ((char *) entry + memMap->descriptorSize)) {
@@ -548,20 +549,21 @@ EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
 	HandleError(L"Failed to map memory", status);
 
 	status = map_pages(systemTable, pml4, (EFI_VIRTUAL_ADDRESS) framebuffer->bufferBase,
-					  (EFI_PHYSICAL_ADDRESS) framebuffer->bufferBase, (framebuffer->bufferSize + 0x1000 - 1) / 0x1000);
+					   (EFI_PHYSICAL_ADDRESS) framebuffer->bufferBase, (framebuffer->bufferSize + 0x1000 - 1) / 0x1000);
 	HandleError(L"Failed to map memory for the framebuffer", status);
-	status = map_pages(systemTable, pml4, (EFI_VIRTUAL_ADDRESS) bootstrapHeapVaddr, (EFI_PHYSICAL_ADDRESS) bootstrapHeap,
-					  BOOTSTRAP_HEAP_PAGE_COUNT);
+	status = map_pages(systemTable, pml4, (EFI_VIRTUAL_ADDRESS) bootstrapHeapVaddr,
+					   (EFI_PHYSICAL_ADDRESS) bootstrapHeap, BOOTSTRAP_HEAP_PAGE_COUNT);
 	HandleError(L"Failed to map memory for the bootstrap heap", status);
 
 	BootInfo bootInfo;
 	bootInfo.map = map;
+	bootInfo.pml4 = pml4;
 	bootInfo.bootExtra.framebuffer = framebuffer;
 	bootInfo.bootExtra.basicFont = font;
 	bootInfo.bootstrapMem.baseAddr = bootstrapHeapVaddr;
-	bootInfo.bootstrapMem.topAddr = (uint64_t*)((uint64_t)bootstrapHeapVaddr + (BOOTSTRAP_HEAP_PAGE_COUNT * 0x1000));
+	bootInfo.bootstrapMem.topAddr = (uint64_t *) ((uint64_t) bootstrapHeapVaddr + (BOOTSTRAP_HEAP_PAGE_COUNT * 0x1000));
 	bootInfo.bootstrapMem.basePaddr = bootstrapHeap;
-	bootInfo.bootstrapMem.topPaddr = (uint64_t*)((uint64_t)bootstrapHeap + (BOOTSTRAP_HEAP_PAGE_COUNT * 0x1000));
+	bootInfo.bootstrapMem.topPaddr = (uint64_t *) ((uint64_t) bootstrapHeap + (BOOTSTRAP_HEAP_PAGE_COUNT * 0x1000));
 	bootInfo.bootstrapMem.size = BOOTSTRAP_HEAP_PAGE_COUNT * 0x1000;
 
 	systemTable->BootServices->FreePool(map->map);

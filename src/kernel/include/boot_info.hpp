@@ -3,6 +3,7 @@
 
 #include "../include/IO/tty/psf.hpp"
 #include <stdint.h>
+#include <stddef.h>
 
 struct MemoryDescriptor {
 	uint32_t type;
@@ -35,15 +36,16 @@ struct BootExtra{
 };
 
 struct BootstrapMemoryRegion{
-	uint64_t *baseAddr;
-	uint64_t *topAddr;
-	uint64_t *basePaddr;
-	uint64_t *topPaddr;
-	uint64_t size;
+	void *baseAddr;
+	void *topAddr;
+	void *basePaddr;
+	void *topPaddr;
+	size_t size;
 };
 
 struct BootInfo {
 	MemMap *map;
+	uint64_t* pml4;
 	BootExtra bootExtra;
 	BootstrapMemoryRegion bootstrapMem;
 };
