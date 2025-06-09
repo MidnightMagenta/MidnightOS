@@ -63,14 +63,27 @@ public:
 		return true;
 	}
 
-	size_t find_first_set() {
+	size_t find_first_set_bit() {
 		for (size_t i = 0; i < m_size; i++) {
 			if ((*this)[i]) { return i; }
 		}
 		return m_size;
 	}
-	size_t find_first_clear() {
+	size_t find_first_clear_bit() {
 		for (size_t i = 0; i < m_size; i++) {
+			if (!(*this)[i]) { return i; }
+		}
+		return m_size;
+	}
+
+	size_t find_next_set_bit(size_t index) {
+		for (size_t i = index; i < m_size; i++) {
+			if ((*this)[i]) { return i; }
+		}
+		return m_size;
+	}
+	size_t find_next_clear_bit(size_t index) {
+		for (size_t i = index; i < m_size; i++) {
 			if (!(*this)[i]) { return i; }
 		}
 		return m_size;
