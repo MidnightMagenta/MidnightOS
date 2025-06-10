@@ -2,7 +2,7 @@
 #include <efilib.h>
 #include <elf.h>
 
-#define VERBOSE_REPORTING 1
+#define VERBOSE_REPORTING 0
 #define BOOTSTRAP_HEAP_PAGE_COUNT 12207//approx. 50 mb
 
 #define HandleError(fmt, status)                                                                                       \
@@ -471,15 +471,24 @@ EFI_STATUS map_mem(EFI_SYSTEM_TABLE *systemTable, uint64_t *pml4, MemMap *memMap
 	return EFI_SUCCESS;
 }
 
-EFI_STATUS get_EFI_map(EFI_SYSTEM_TABLE *systemTable, MemMap *map) {
-	map->map = NULL;
-	map->size = 0;
+size_t get_efi_map_size(EFI_SYSTEM_TABLE *systemTable) {
+	UINTN size = 0;
+	UINTN key;
+	UINTN descriptorSize;
+	UINT32 descriptorVersion;
+	systemTable->BootServices->GetMemoryMap(&size, NULL, &key, &descriptorSize, &descriptorVersion);
+	return size;
+}
 
+EFI_STATUS get_EFI_map_noalloc(EFI_SYSTEM_TABLE *systemTable, MemMap *map) {
 	EFI_STATUS status = systemTable->BootServices->GetMemoryMap(&map->size, map->map, &map->key, &map->descriptorSize,
 																&map->descriptorVersion);
-	if (map->size <= 0) { return EFI_BUFFER_TOO_SMALL; }
-	map->size += 10 * sizeof(EFI_MEMORY_DESCRIPTOR);
-	status = systemTable->BootServices->AllocatePool(EfiLoaderData, map->size, (void **) &map->map);
+	return status;
+}
+
+EFI_STATUS get_EFI_map(EFI_SYSTEM_TABLE *systemTable, MemMap *map) {
+	map->size = get_efi_map_size(systemTable) + (100 * sizeof(EFI_MEMORY_DESCRIPTOR));
+	EFI_STATUS status = systemTable->BootServices->AllocatePool(EfiLoaderData, map->size, (void **) &map->map);
 	if (status != EFI_SUCCESS) { return status; }
 	status = systemTable->BootServices->GetMemoryMap(&map->size, map->map, &map->key, &map->descriptorSize,
 													 &map->descriptorVersion);
@@ -567,7 +576,13 @@ EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
 	bootInfo.bootstrapMem.size = BOOTSTRAP_HEAP_PAGE_COUNT * 0x1000;
 
 	systemTable->BootServices->FreePool(map->map);
-	status = get_EFI_map(systemTable, map);
+	size_t mapSize = get_efi_map_size(systemTable) + (200 * sizeof(EFI_MEMORY_DESCRIPTOR));
+	status = systemTable->BootServices->AllocatePool(EfiLoaderData, mapSize, (void **) &map->map);
+	HandleError(L"Failed to obtain final memory map", status);
+	map->size = mapSize;
+	map_pages(systemTable, pml4, (EFI_VIRTUAL_ADDRESS) map->map, (EFI_PHYSICAL_ADDRESS) map->map,
+			  ALIGN_ADDR(mapSize, 0x1000, UINTN));
+	status = get_EFI_map_noalloc(systemTable, map);
 	HandleError(L"Failed to obtain final memory map", status);
 
 	status = systemTable->BootServices->ExitBootServices(imageHandle, map->key);
@@ -576,8 +591,12 @@ EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
 			int exitStatus = 0;
 			for (int i = 0; i < 10; i++) {
 				systemTable->BootServices->FreePool(map->map);
-				status = get_EFI_map(systemTable, map);
-				bootInfo.map = map;
+				size_t mapSize = get_efi_map_size(systemTable) + (200 * sizeof(EFI_MEMORY_DESCRIPTOR));
+				status = systemTable->BootServices->AllocatePool(EfiLoaderData, mapSize, (void **) &map->map);
+				map->size = mapSize;
+				map_pages(systemTable, pml4, (EFI_VIRTUAL_ADDRESS) map->map, (EFI_PHYSICAL_ADDRESS) map->map,
+						  ALIGN_ADDR(mapSize, 0x1000, UINTN));
+				status = get_EFI_map_noalloc(systemTable, map);
 				status = systemTable->BootServices->ExitBootServices(imageHandle, map->key);
 				if (status == EFI_SUCCESS) {
 					exitStatus = 1;

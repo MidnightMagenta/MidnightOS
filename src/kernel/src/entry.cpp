@@ -1,9 +1,7 @@
 #include "../include/boot_info.hpp"
-#include "../include/kernel.hpp"
-
-MdOS::Kernel kernel;
+#include "../include/init.hpp"
 
 extern "C" void kernel_entry(BootInfo *bootInfo) {
-	kernel.run(bootInfo);
+	MdOS::init_krnl(bootInfo);
 	return;
 }
