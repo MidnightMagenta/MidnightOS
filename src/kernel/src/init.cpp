@@ -11,7 +11,7 @@ void MdOS::init_IO(BootExtra *bootExtra) {
 	g_renderer.init(bootExtra->framebuffer->bufferBase, bootExtra->framebuffer->bufferSize,
 					bootExtra->framebuffer->width, bootExtra->framebuffer->height,
 					bootExtra->framebuffer->pixelsPerScanline);
-	g_renderer.clear_buffer(MAKE_COLOR(0, 0, 64, 255));
+	g_renderer.clear_buffer(DEFAULT_CLEAR_COLOR);
 
 	MdOS::IO::kprintSystem::init(&g_renderer, bootExtra->basicFont);
 }

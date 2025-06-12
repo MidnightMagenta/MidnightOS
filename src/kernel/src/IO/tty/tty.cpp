@@ -48,5 +48,9 @@ void MdOS::Teletype::print_str(const char *str, size_t strlen) {
 			m_yOffset += uint32_t(m_font.glyphHeight);
 			m_xOffset = 0;
 		}
+		if (m_yOffset >= m_renderer->m_height) { 
+			m_renderer->clear_buffer(DEFAULT_CLEAR_COLOR);
+			m_yOffset = 0; 
+		}
 	}
 }

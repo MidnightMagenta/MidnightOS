@@ -495,6 +495,19 @@ EFI_STATUS get_EFI_map(EFI_SYSTEM_TABLE *systemTable, MemMap *map) {
 	return status;
 }
 
+EFI_STATUS get_final_EFI_map(EFI_SYSTEM_TABLE *systemTable, MemMap *map, uint64_t *pml4) {
+	systemTable->BootServices->FreePool(map->map);
+	size_t mapSize = get_efi_map_size(systemTable) + (200 * sizeof(EFI_MEMORY_DESCRIPTOR));
+	EFI_STATUS status = systemTable->BootServices->AllocatePool(EfiLoaderData, mapSize, (void **) &map->map);
+	if (status != EFI_SUCCESS) { return status; }
+	map->size = mapSize;
+	map_pages(systemTable, pml4, (EFI_VIRTUAL_ADDRESS) map->map, (EFI_PHYSICAL_ADDRESS) map->map,
+			  ALIGN_ADDR(mapSize, 0x1000, UINTN));
+	status = get_EFI_map_noalloc(systemTable, map);
+	if (status != EFI_SUCCESS) { return status; }
+	return EFI_SUCCESS;
+}
+
 void set_CR3_PML4(uint64_t pml4Addr) { __asm__ volatile("mov %0, %%rax; mov %%rax, %%cr3" ::"r"(pml4Addr)); }
 
 EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
@@ -575,28 +588,15 @@ EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
 	bootInfo.bootstrapMem.topPaddr = (uint64_t *) ((uint64_t) bootstrapHeap + (BOOTSTRAP_HEAP_PAGE_COUNT * 0x1000));
 	bootInfo.bootstrapMem.size = BOOTSTRAP_HEAP_PAGE_COUNT * 0x1000;
 
-	systemTable->BootServices->FreePool(map->map);
-	size_t mapSize = get_efi_map_size(systemTable) + (200 * sizeof(EFI_MEMORY_DESCRIPTOR));
-	status = systemTable->BootServices->AllocatePool(EfiLoaderData, mapSize, (void **) &map->map);
-	HandleError(L"Failed to obtain final memory map", status);
-	map->size = mapSize;
-	map_pages(systemTable, pml4, (EFI_VIRTUAL_ADDRESS) map->map, (EFI_PHYSICAL_ADDRESS) map->map,
-			  ALIGN_ADDR(mapSize, 0x1000, UINTN));
-	status = get_EFI_map_noalloc(systemTable, map);
-	HandleError(L"Failed to obtain final memory map", status);
+	get_final_EFI_map(systemTable, map, pml4);
+	HandleError(L"Failed to get final EFI map", status);
 
 	status = systemTable->BootServices->ExitBootServices(imageHandle, map->key);
 	if (status != EFI_SUCCESS) {
 		if (status == EFI_INVALID_PARAMETER) {
 			int exitStatus = 0;
 			for (int i = 0; i < 10; i++) {
-				systemTable->BootServices->FreePool(map->map);
-				size_t mapSize = get_efi_map_size(systemTable) + (200 * sizeof(EFI_MEMORY_DESCRIPTOR));
-				status = systemTable->BootServices->AllocatePool(EfiLoaderData, mapSize, (void **) &map->map);
-				map->size = mapSize;
-				map_pages(systemTable, pml4, (EFI_VIRTUAL_ADDRESS) map->map, (EFI_PHYSICAL_ADDRESS) map->map,
-						  ALIGN_ADDR(mapSize, 0x1000, UINTN));
-				status = get_EFI_map_noalloc(systemTable, map);
+				get_final_EFI_map(systemTable, map, pml4);
 				status = systemTable->BootServices->ExitBootServices(imageHandle, map->key);
 				if (status == EFI_SUCCESS) {
 					exitStatus = 1;

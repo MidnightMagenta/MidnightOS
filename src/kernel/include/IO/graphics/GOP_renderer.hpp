@@ -7,6 +7,8 @@
 #define MAKE_COLOR(r, g, b, a) (a << 24) | (r << 16) | (g << 8) | (b)
 #define MAKE_COLOR_HEX(hex, a) (a << 24) | (hex)
 
+#define DEFAULT_CLEAR_COLOR MAKE_COLOR(0, 0, 64, 255)
+
 namespace MdOS {
 class GOP_Renderer {
 public:

@@ -13,7 +13,7 @@ section .bss
 	_stack_top:
 
 section .data
-	_bootInfo: dd 0x0  			; temporary storage for bootInfo pointer while _init is being called
+	_bootInfo: dq 0x0  			; temporary storage for bootInfo pointer while _init is being called
 
 section .text
 	_start:
