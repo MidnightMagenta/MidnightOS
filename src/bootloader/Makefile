@@ -42,6 +42,9 @@ VPATH = $(SRCDIR)
 
 GNU_EFI = $(abspath ../../gnu-efi)
 
+C_SRCS = $(shell find $(SOURCE_DIR) -name '*.c') $(shell find $(LIBC_DIR) -name '*.c')
+OBJS = $(patsubst %.c, %.o, $(C_SRCS))
+
 include $(GNU_EFI)/Make.defaults
 
 GNU_EFI_BUILD_DIR = $(GNU_EFI)/$(ARCH)
@@ -97,5 +100,13 @@ clean:
 	rm -f $(TARGETS) *~ *.o *.so
 
 .PHONY: install
+
+$(EFI_TARGET): $(EFI_TARGET:.efi=.so)
+	$(OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .rodata \
+		-j .rel -j .rela -j .rel.* -j .rela.* -j .rel* -j .rela* \
+		-j .areloc -j .reloc $(FORMAT) $< $@
+
+$(EFI_TARGET:.efi=.so): $(OBJS)
+	$(LD) $(LDFLAGS) -o $@ $^ $(LOADLIBES)
 
 include $(GNU_EFI)/Make.rules

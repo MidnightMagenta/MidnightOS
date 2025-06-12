@@ -20,7 +20,7 @@ CRTN_OBJ =  $(patsubst $(SOURCE_DIR)%.S, $(BUILD_DIR)%.o, $(CRTN_SRC))
 
 C_SRCS = $(shell find $(SOURCE_DIR) -name '*.c') $(shell find $(LIBC_DIR) -name '*.c')
 C_HDRS = $(shell find $(SOURCE_DIR) -name '*.h') $(shell find $(LIBC_DIR) -name '*.h')
-C_OBJS = $(patsubst $(SOURCE_DIR)%.cpp, $(BUILD_DIR)%.o, $(C_SRCS))
+C_OBJS = $(patsubst $(SOURCE_DIR)%.c, $(BUILD_DIR)%.o, $(C_SRCS))
 
 CPP_SRCS = $(shell find $(SOURCE_DIR) -name '*.cpp') $(shell find $(LIBC_DIR) -name '*.cpp')
 CPP_HDRS = $(shell find $(SOURCE_DIR) -name '*.hpp') $(shell find $(LIBC_DIR) -name '*.hpp')
