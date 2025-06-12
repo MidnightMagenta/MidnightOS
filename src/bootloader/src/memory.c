@@ -1,4 +1,4 @@
-#include "../include/mem_map.h"
+#include "../include/memory.h"
 
 EFI_STATUS map_page_identity(EFI_SYSTEM_TABLE *systemTable, uint64_t *pml4, EFI_PHYSICAL_ADDRESS addr) {
 	EFI_STATUS status;

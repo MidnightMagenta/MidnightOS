@@ -2,6 +2,7 @@
 #define BOOT_PSF_H
 
 #include "../include/basics.h"
+#include "../include/fs.h"
 #include <efi.h>
 #include <efilib.h>
 

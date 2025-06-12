@@ -1,4 +1,4 @@
-#include "../include/gop.h"
+#include "../include/video.h"
 
 EFI_STATUS init_GOP(EFI_SYSTEM_TABLE *systemTable, GOPFramebuffer *framebuffer) {
 	EFI_GUID gopGuid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;

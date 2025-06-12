@@ -2,6 +2,7 @@
 #define BOOT_ELF_LOADER_H
 
 #include "../include/basics.h"
+#include "../include/fs.h"
 #include <efi.h>
 #include <efilib.h>
 #include <elf.h>

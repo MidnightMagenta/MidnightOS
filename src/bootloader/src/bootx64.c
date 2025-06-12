@@ -1,34 +1,15 @@
 #include "../include/basics.h"
 #include "../include/efi_map.h"
 #include "../include/elf_loader.h"
-#include "../include/gop.h"
+#include "../include/memory.h"
 #include "../include/psf.h"
-#include "../include/mem_map.h"
+#include "../include/types.h"
+#include "../include/video.h"
 #include <efi.h>
 #include <efilib.h>
 #include <elf.h>
 
 #define BOOTSTRAP_HEAP_PAGE_COUNT 12207//approx. 50 mb
-
-typedef struct {
-	PSF1_Font *basicFont;
-	GOPFramebuffer *framebuffer;
-} BootExtra;
-
-typedef struct {
-	void *baseAddr;
-	void *topAddr;
-	void *basePaddr;
-	void *topPaddr;
-	size_t size;
-} BootstrapMemoryRegion;
-
-typedef struct {
-	MemMap *map;
-	uint64_t *pml4;
-	BootExtra bootExtra;
-	BootstrapMemoryRegion bootstrapMem;
-} BootInfo;
 
 EFI_STATUS get_final_EFI_map(EFI_SYSTEM_TABLE *systemTable, MemMap *map, uint64_t *pml4) {
 	systemTable->BootServices->FreePool(map->map);
