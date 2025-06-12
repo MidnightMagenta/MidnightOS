@@ -49,79 +49,79 @@ UINTN count_loadable_segments(Elf64_Phdr *phdrs, Elf64_Half phnum, Elf64_Half ph
 }
 
 EFI_STATUS load_kernel(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable, Elf64_Ehdr *pEhdr,
-    UINTN *sectionInfoCount, LoadedSectionInfo **sectionInfos) {
-EFI_STATUS status;
-EFI_FILE *kernel = NULL;
-status = open_file(NULL, L"\\boot\\kernel.elf", imageHandle, systemTable, &kernel);
-HandleError(L"Failed to open kernel file: 0x%lx\n\r", status);
+					   UINTN *sectionInfoCount, LoadedSectionInfo **sectionInfos) {
+	EFI_STATUS status;
+	EFI_FILE *kernel = NULL;
+	status = open_file(NULL, L"\\boot\\kernel.elf", imageHandle, systemTable, &kernel);
+	HandleError(L"Failed to open kernel file: 0x%lx\n\r", status);
 
-if (!kernel) {
-Print(L"Kernel is nullptr\n\r");
-return EFI_LOAD_ERROR;
-}
-
-#if VERBOSE_REPORTING
-Print(L"Kernel image located...\n\r");
-#endif
-
-Elf64_Ehdr ehdr;
-UINTN ehdrSize = sizeof(ehdr);
-kernel->Read(kernel, &ehdrSize, &ehdr);
-if (!verify_ehdr(ehdr)) { return EFI_LOAD_ERROR; }
-*pEhdr = ehdr;
+	if (!kernel) {
+		Print(L"Kernel is nullptr\n\r");
+		return EFI_LOAD_ERROR;
+	}
 
 #if VERBOSE_REPORTING
-Print(L"Kernel image ehdr valid...\n\r");
+	Print(L"Kernel image located...\n\r");
 #endif
 
-Elf64_Phdr *phdrs = NULL;
-status = get_phdrs(systemTable, ehdr, kernel, &phdrs);
-if (status != EFI_SUCCESS) { return status; }
-UINTN phdrCount = count_loadable_segments(phdrs, ehdr.e_phnum, ehdr.e_phentsize);
-*sectionInfoCount = phdrCount;
-
-status = systemTable->BootServices->AllocatePool(EfiLoaderData, phdrCount * sizeof(LoadedSectionInfo),
-                                  (void **) sectionInfos);
-if (status != EFI_SUCCESS) { return status; }
-
-{
-Elf64_Phdr *phdr = phdrs;
-LoadedSectionInfo *sectionInfo = *sectionInfos;
-
-while ((char *) phdr < (char *) phdrs + ehdr.e_phnum * ehdr.e_phentsize &&
-(char *) sectionInfo < (char *) *sectionInfos + phdrCount * sizeof(LoadedSectionInfo)) {
-if (phdr->p_type == PT_LOAD) {
-int pageCount = (phdr->p_memsz + 0x1000 - 1) / 0x1000;
-status = systemTable->BootServices->AllocatePages(AllocateAnyPages, EfiLoaderData, pageCount,
-                                               &sectionInfo->paddr);
-if (status != EFI_SUCCESS) { return status; }
-ZeroMem((void *) sectionInfo->paddr, pageCount * 0x1000);
-
-status = kernel->SetPosition(kernel, phdr->p_offset);
-if (status != EFI_SUCCESS) { return status; }
-UINTN size = phdr->p_memsz;
-status = kernel->Read(kernel, &size, (void *) sectionInfo->paddr);
-
-if (status != EFI_SUCCESS) { return status; }
-
-sectionInfo->vaddr = phdr->p_vaddr;
-sectionInfo->pageCount = pageCount;
-sectionInfo->flags = phdr->p_flags;
-#if VERBOSE_REPORTING
-Print(L"Loading section...\n\r   Vaddr: 0x%lx\n\r   Paddr: 0x%lx\n\r   Page count: %u\n\r",
-   sectionInfo->vaddr, sectionInfo->paddr, sectionInfo->pageCount);
-#endif
-sectionInfo = (LoadedSectionInfo *) ((char *) sectionInfo + sizeof(LoadedSectionInfo));
-}
-phdr = (Elf64_Phdr *) ((char *) phdr + ehdr.e_phentsize);
-}
-}
-
-kernel->Close(kernel);
+	Elf64_Ehdr ehdr;
+	UINTN ehdrSize = sizeof(ehdr);
+	kernel->Read(kernel, &ehdrSize, &ehdr);
+	if (!verify_ehdr(ehdr)) { return EFI_LOAD_ERROR; }
+	*pEhdr = ehdr;
 
 #if VERBOSE_REPORTING
-Print(L"Kernel image loaded successfuly...\n\r");
+	Print(L"Kernel image ehdr valid...\n\r");
 #endif
 
-return EFI_SUCCESS;
+	Elf64_Phdr *phdrs = NULL;
+	status = get_phdrs(systemTable, ehdr, kernel, &phdrs);
+	if (status != EFI_SUCCESS) { return status; }
+	UINTN phdrCount = count_loadable_segments(phdrs, ehdr.e_phnum, ehdr.e_phentsize);
+	*sectionInfoCount = phdrCount;
+
+	status = systemTable->BootServices->AllocatePool(EfiLoaderData, phdrCount * sizeof(LoadedSectionInfo),
+													 (void **) sectionInfos);
+	if (status != EFI_SUCCESS) { return status; }
+
+	{
+		Elf64_Phdr *phdr = phdrs;
+		LoadedSectionInfo *sectionInfo = *sectionInfos;
+
+		while ((char *) phdr < (char *) phdrs + ehdr.e_phnum * ehdr.e_phentsize &&
+			   (char *) sectionInfo < (char *) *sectionInfos + phdrCount * sizeof(LoadedSectionInfo)) {
+			if (phdr->p_type == PT_LOAD) {
+				int pageCount = (phdr->p_memsz + 0x1000 - 1) / 0x1000;
+				status = systemTable->BootServices->AllocatePages(AllocateAnyPages, EfiLoaderData, pageCount,
+																  &sectionInfo->paddr);
+				if (status != EFI_SUCCESS) { return status; }
+				ZeroMem((void *) sectionInfo->paddr, pageCount * 0x1000);
+
+				status = kernel->SetPosition(kernel, phdr->p_offset);
+				if (status != EFI_SUCCESS) { return status; }
+				UINTN size = phdr->p_memsz;
+				status = kernel->Read(kernel, &size, (void *) sectionInfo->paddr);
+
+				if (status != EFI_SUCCESS) { return status; }
+
+				sectionInfo->vaddr = phdr->p_vaddr;
+				sectionInfo->pageCount = pageCount;
+				sectionInfo->flags = phdr->p_flags;
+#if VERBOSE_REPORTING
+				Print(L"Loading section...\n\r   Vaddr: 0x%lx\n\r   Paddr: 0x%lx\n\r   Page count: %u\n\r",
+					  sectionInfo->vaddr, sectionInfo->paddr, sectionInfo->pageCount);
+#endif
+				sectionInfo = (LoadedSectionInfo *) ((char *) sectionInfo + sizeof(LoadedSectionInfo));
+			}
+			phdr = (Elf64_Phdr *) ((char *) phdr + ehdr.e_phentsize);
+		}
+	}
+
+	kernel->Close(kernel);
+
+#if VERBOSE_REPORTING
+	Print(L"Kernel image loaded successfuly...\n\r");
+#endif
+
+	return EFI_SUCCESS;
 }
