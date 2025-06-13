@@ -107,10 +107,10 @@ EFI_STATUS load_kernel(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable, El
 				sectionInfo->vaddr = phdr->p_vaddr;
 				sectionInfo->pageCount = pageCount;
 				sectionInfo->flags = phdr->p_flags;
-//#if VERBOSE_REPORTING
+#if VERBOSE_REPORTING
 				Print(L"Loading section...\n\r   Vaddr: 0x%lx\n\r   Paddr: 0x%lx\n\r   Page count: %u\n\r",
 					  sectionInfo->vaddr, sectionInfo->paddr, sectionInfo->pageCount);
-//#endif
+#endif
 				sectionInfo = (LoadedSectionInfo *) ((char *) sectionInfo + sizeof(LoadedSectionInfo));
 			}
 			phdr = (Elf64_Phdr *) ((char *) phdr + ehdr.e_phentsize);
