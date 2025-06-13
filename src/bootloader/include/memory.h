@@ -17,10 +17,16 @@
 #define PAGE_SUPERVISOR 1 << 2
 #define PAGE_WSP PAGE_PRESENT | PAGE_WRITABLE | PAGE_SUPERVISOR
 
+#define BOOTSTRAP_HEAP_RATIO 166
+#define MINIMUM_HEAP_SIZE 8192//32 MiB
+
 EFI_STATUS map_page_identity(EFI_SYSTEM_TABLE *systemTable, uint64_t *pml4, EFI_PHYSICAL_ADDRESS addr);
 EFI_STATUS map_pages(EFI_SYSTEM_TABLE *systemTable, uint64_t *pml4, EFI_VIRTUAL_ADDRESS vaddr,
 					 EFI_PHYSICAL_ADDRESS paddr, UINTN pageCount);
 EFI_STATUS map_mem(EFI_SYSTEM_TABLE *systemTable, uint64_t *pml4, MemMap *memMap, LoadedSectionInfo *sectionInfos,
 				   UINTN sectionInfoCount);
+EFI_STATUS alloc_bootstrap_memory(EFI_SYSTEM_TABLE *systemTable, MemMap *memMap, LoadedSectionInfo *sectionInfos,
+								  UINTN sectionInfoCount, uint64_t *heapSize, uintptr_t *heapAddr,
+								  uintptr_t *bootstrapHeapVaddr);
 
 #endif

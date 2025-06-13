@@ -155,3 +155,31 @@ EFI_STATUS map_mem(EFI_SYSTEM_TABLE *systemTable, uint64_t *pml4, MemMap *memMap
 
 	return EFI_SUCCESS;
 }
+
+EFI_STATUS alloc_bootstrap_memory(EFI_SYSTEM_TABLE *systemTable, MemMap *memMap, LoadedSectionInfo *sectionInfos,
+								  UINTN sectionInfoCount, uint64_t *heapSize, uintptr_t *heapAddr,
+								  uintptr_t *bootstrapHeapVaddr) {
+	UINTN totalMem = 0;
+	for (EFI_MEMORY_DESCRIPTOR *entry = memMap->map; (char *) entry < (char *) memMap->map + memMap->size;
+		 entry = (EFI_MEMORY_DESCRIPTOR *) ((char *) entry + memMap->descriptorSize)) {
+		totalMem += entry->NumberOfPages;
+	}
+	
+	*heapSize = totalMem / BOOTSTRAP_HEAP_RATIO;
+	if (*heapSize < MINIMUM_HEAP_SIZE) { *heapSize = MINIMUM_HEAP_SIZE; }
+
+	EFI_PHYSICAL_ADDRESS bootstrapHeapAddr;
+	EFI_STATUS status =
+			systemTable->BootServices->AllocatePages(AllocateAnyPages, EfiLoaderData, *heapSize, &bootstrapHeapAddr);
+	HandleError(L"Failed to allocate bootstrap heap", status);
+	*heapAddr = (uintptr_t) bootstrapHeapAddr;
+	if (!*heapAddr) { HandleError(L"Bootstrap heap is nullptr", EFI_LOAD_ERROR); }
+	ZeroMem((void *) *heapAddr, *heapSize * 0x1000);
+
+	for (unsigned int i = 0; i < sectionInfoCount; i++) {
+		if ((uintptr_t) (sectionInfos[i].vaddr + sectionInfos[i].pageCount * 0x1000) > *bootstrapHeapVaddr) {
+			*bootstrapHeapVaddr = (uintptr_t) (sectionInfos[i].vaddr + sectionInfos[i].pageCount * 0x1000);
+		}
+	}
+	return EFI_SUCCESS;
+}

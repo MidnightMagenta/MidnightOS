@@ -4,7 +4,7 @@
 #include <efi.h>
 #include <efilib.h>
 
-#define VERBOSE_REPORTING 1
+#define VERBOSE_REPORTING 0
 
 #define HandleError(fmt, status)                                                                                       \
 	if (status != EFI_SUCCESS) {                                                                                       \
