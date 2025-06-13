@@ -91,7 +91,7 @@ EFI_STATUS load_kernel(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable, El
 		while ((char *) phdr < (char *) phdrs + ehdr.e_phnum * ehdr.e_phentsize &&
 			   (char *) sectionInfo < (char *) *sectionInfos + phdrCount * sizeof(LoadedSectionInfo)) {
 			if (phdr->p_type == PT_LOAD) {
-				int pageCount = (phdr->p_memsz + 0x1000 - 1) / 0x1000;
+				UINTN pageCount = (phdr->p_memsz + 0x1000 - 1) / 0x1000;
 				status = systemTable->BootServices->AllocatePages(AllocateAnyPages, EfiLoaderData, pageCount,
 																  &sectionInfo->paddr);
 				if (status != EFI_SUCCESS) { return status; }
@@ -99,7 +99,7 @@ EFI_STATUS load_kernel(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable, El
 
 				status = kernel->SetPosition(kernel, phdr->p_offset);
 				if (status != EFI_SUCCESS) { return status; }
-				UINTN size = phdr->p_memsz;
+				UINTN size = phdr->p_filesz;
 				status = kernel->Read(kernel, &size, (void *) sectionInfo->paddr);
 
 				if (status != EFI_SUCCESS) { return status; }
@@ -107,10 +107,10 @@ EFI_STATUS load_kernel(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable, El
 				sectionInfo->vaddr = phdr->p_vaddr;
 				sectionInfo->pageCount = pageCount;
 				sectionInfo->flags = phdr->p_flags;
-#if VERBOSE_REPORTING
+//#if VERBOSE_REPORTING
 				Print(L"Loading section...\n\r   Vaddr: 0x%lx\n\r   Paddr: 0x%lx\n\r   Page count: %u\n\r",
 					  sectionInfo->vaddr, sectionInfo->paddr, sectionInfo->pageCount);
-#endif
+//#endif
 				sectionInfo = (LoadedSectionInfo *) ((char *) sectionInfo + sizeof(LoadedSectionInfo));
 			}
 			phdr = (Elf64_Phdr *) ((char *) phdr + ehdr.e_phentsize);
