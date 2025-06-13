@@ -8,7 +8,6 @@ void MdOS::init_krnl(BootInfo *bootInfo) {
 			"Bootstrap heap: %lu KiB\n\tBase - paddr: 0x%lx vaddr: 0x%lx\n\tTop  - paddr: 0x%lx vaddr: 0x%lx\n",
 			bootInfo->bootstrapMem.size / 1024, bootInfo->bootstrapMem.basePaddr, bootInfo->bootstrapMem.baseAddr,
 			bootInfo->bootstrapMem.topPaddr, bootInfo->bootstrapMem.topAddr);
-	MdOS::IO::kprint("Framebuffer addr: 0x%lx\n", bootInfo->bootExtra.framebuffer->bufferBase);
 	MdOS::IO::kprint("\nEOF\n");
 }
 

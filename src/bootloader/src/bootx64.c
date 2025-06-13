@@ -68,8 +68,6 @@ EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
 									&bootstrapHeap, &bootstrapHeapVaddr);
 	HandleError(L"Failed to allocate bootstrap heap", status);
 
-	Print(L"Created boot heap: paddr: 0x%lx vaddr: 0x%lx size: %lu\n\r", bootstrapHeap, bootstrapHeapVaddr, bootstreapHeapSize * 0x1000);
-
 #if VERBOSE_REPORTING
 	Print(L"Doing mapping pass...\n\r");
 #endif

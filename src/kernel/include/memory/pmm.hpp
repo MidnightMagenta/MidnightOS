@@ -8,9 +8,11 @@
 namespace MdOS::Memory {
 class PhysicalMemoryManager {
 public:
-    static void init(MemMap* memMap);
+	static void init(MemMap *memMap);
+
 private:
-    static size_t m_maxAvailPages;
+	static bool m_initialized;
+	static size_t m_maxAvailPages;
 	static utils::Bitmap<uint32_t> m_pageFrameMap;
 };
 }// namespace MdOS::Memory
