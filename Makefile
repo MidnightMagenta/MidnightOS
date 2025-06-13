@@ -83,6 +83,9 @@ init-img:
 run:
 	$(EMU) $(EMU_BASE_FLAGS)
 
+run-extra-info:
+	$(EMU) $(EMU_BASE_FLAGS) $(EMU_DBG_FLAGS)
+
 debug:
 	$(EMU) $(EMU_BASE_FLAGS) $(EMU_DBG_FLAGS) &
 	$(DBG) $(DBG_FLAGS)
