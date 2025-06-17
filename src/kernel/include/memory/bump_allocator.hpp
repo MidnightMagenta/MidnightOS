@@ -8,21 +8,16 @@
 namespace MdOS::Memory {
 class BumpAllocator {
 public:
-	BumpAllocator() {}
-	~BumpAllocator() {}
+	static void init(uintptr_t heapBase, uintptr_t heapTop);
 
-	void init(uintptr_t heapBase, uintptr_t heapTop);
-
-	void *alloc(size_t size);
-	void *aligned_alloc(size_t size, size_t alignment);
+	static void *alloc(size_t size);
+	static void *aligned_alloc(size_t size, size_t alignment);
 
 private:
-	uintptr_t m_heapBase;
-	uintptr_t m_heapTop;
-	uintptr_t m_allocPtr;
+	static uintptr_t m_heapBase;
+	static uintptr_t m_heapTop;
+	static uintptr_t m_allocPtr;
 };
-
-static BumpAllocator g_bumpAlloc;
 }// namespace MdOS::Memory
 
 #endif

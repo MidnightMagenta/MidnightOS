@@ -3,6 +3,7 @@
 
 #include "../include/memory/bump_allocator.hpp"
 #include "../k_utils/include/utils.hpp"
+#include "../include/IO/kprint.hpp"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -103,12 +104,26 @@ public:
 		if (m_initialized) { return false; }
 		//TODO: if the main allocator is available use the main allocator
 		m_size = ROUND_NTH(size, m_bmpEntrySize);
-		m_bitmap = (t_bmp *) MdOS::Memory::g_bumpAlloc.alloc(m_size / m_bmpEntrySize);
-		if (!m_bitmap) {
+		m_bitmap = (t_bmp *) MdOS::Memory::BumpAllocator::alloc(m_size / m_bmpEntrySize);
+		if (m_bitmap == nullptr) {
 			m_size = 0;
 			return false;
 		}
 		for (size_t i = 0; i < m_size / m_bmpEntrySize; i++) { m_bitmap[i] = 0; }
+		m_initialized = true;
+		return true;
+	}
+	bool init(size_t size, bool initValue) {
+		if (m_initialized) { return false; }
+		//TODO: if the main allocator is available use the main allocator
+		m_size = ROUND_NTH(size, m_bmpEntrySize);
+		m_bitmap = (t_bmp *) MdOS::Memory::BumpAllocator::alloc(m_size / m_bmpEntrySize);
+		if (!m_bitmap) {
+			m_size = 0;
+			return false;
+		}
+		t_bmp initVal = initValue ? t_bmp(0xFFFFFFFFFFFFFFFF) : t_bmp(0);
+		for (size_t i = 0; i < m_size / m_bmpEntrySize; i++) { m_bitmap[i] = initVal; }
 		m_initialized = true;
 		return true;
 	}
@@ -181,7 +196,7 @@ public:
 
 	void set_all() {
 		if (!m_initialized) { return; }
-		for (size_t i = 0; i < m_size / m_bmpEntrySize; i++) { m_bitmap[i] = 1; }
+		for (size_t i = 0; i < m_size / m_bmpEntrySize; i++) { m_bitmap[i] = t_bmp(0xFFFFFFFFFFFFFFFF); }
 	}
 
 	void clear_all() {

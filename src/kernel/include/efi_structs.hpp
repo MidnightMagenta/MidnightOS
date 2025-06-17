@@ -1,5 +1,7 @@
-#ifndef EFI_MEM_TYPES_H
-#define EFI_MEM_TYPES_H
+#ifndef EFI_STRUCTS_H
+#define EFI_STRUCTS_H
+
+#include <stdint.h>
 
 typedef enum {
 	EfiReservedMemoryType,
@@ -20,5 +22,14 @@ typedef enum {
 	EfiUnacceptedMemoryType,
 	EfiMaxMemoryType
 } EFI_MEMORY_TYPE;
+
+struct EFI_MEMORY_DESCRIPTOR {
+	uint32_t type;
+	uint32_t pad;
+	uint64_t paddr;
+	uint64_t vadd;
+	uint64_t pageCount;
+	uint64_t attributes;
+};
 
 #endif

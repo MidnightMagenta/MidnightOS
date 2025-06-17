@@ -1,4 +1,9 @@
 #include "../../include/memory/bump_allocator.hpp"
+#include "../../include/IO/kprint.hpp"
+
+uintptr_t MdOS::Memory::BumpAllocator::m_heapBase = 0;
+uintptr_t MdOS::Memory::BumpAllocator::m_heapTop = 0;
+uintptr_t MdOS::Memory::BumpAllocator::m_allocPtr = 0;
 
 void MdOS::Memory::BumpAllocator::init(uintptr_t heapBase, uintptr_t heapTop) {
 	m_heapBase = heapBase;
@@ -7,7 +12,7 @@ void MdOS::Memory::BumpAllocator::init(uintptr_t heapBase, uintptr_t heapTop) {
 }
 
 void *MdOS::Memory::BumpAllocator::alloc(size_t size) {
-	if (!m_allocPtr || !m_heapBase || !m_heapTop) { return nullptr; }
+	if (m_allocPtr == 0 || m_heapBase == 0 || m_heapTop == 0) { return nullptr; }
 	if (m_allocPtr + uintptr_t(size) >= m_heapTop) { return nullptr; }
 
 	uintptr_t allocAddress = m_allocPtr;
@@ -18,7 +23,7 @@ void *MdOS::Memory::BumpAllocator::alloc(size_t size) {
 void *MdOS::Memory::BumpAllocator::aligned_alloc(size_t size, size_t alignment) {
 	uintptr_t allocAddress = ALIGN_ADDR(m_allocPtr, alignment, uintptr_t);
 
-	if (!m_allocPtr || !m_heapBase || !m_heapTop) { return nullptr; }
+	if (m_allocPtr == 0 || m_heapBase == 0 || m_heapTop == 0) { return nullptr; }
 	if (allocAddress + uintptr_t(size) >= m_heapTop) { return nullptr; }
 
 	m_allocPtr = allocAddress + uintptr_t(size);
