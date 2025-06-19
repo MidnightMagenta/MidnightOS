@@ -43,7 +43,7 @@ private:
 	size_t m_freePageCount = 0;
 	size_t m_usedPageCount = 0;
 	size_t m_reservedPageCount = 0;
-	utils::Bitmap<uint32_t> m_pageFrameMap;
+	utils::Bitmap<uint64_t> m_pageFrameMap;
 };
 }// namespace MdOS::Memory
 

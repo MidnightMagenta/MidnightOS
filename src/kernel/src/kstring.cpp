@@ -1,7 +1,7 @@
 #include "../include/kstring.hpp"
 
-size_t MdOS::string::strlen(const char *str) {
-	size_t len = 0;
+uint64_t MdOS::string::strlen(const char *str) {
+	uint64_t len = 0;
 	while (str[len] != 0) { len++; }
 	return len;
 }
@@ -17,13 +17,13 @@ const char *MdOS::string::to_string(uint64_t num) {
 
 	uint8_t index = 0;
 	while (num / 10 > 0) {
-		uint8_t remainder = num % 10;
+		uint8_t remainder = uint8_t(num % 10);
 		num /= 10;
-		toStrBuffer[length - index] = remainder + '0';
+		toStrBuffer[length - index] = char(remainder) + '0';
 		index++;
 	}
-	uint8_t remainder = num % 10;
-	toStrBuffer[length - index] = remainder + '0';
+	uint8_t remainder = uint8_t(num % 10);
+	toStrBuffer[length - index] = char(remainder) + '0';
 	toStrBuffer[length + 1] = 0;
 	return toStrBuffer;
 }
@@ -35,9 +35,9 @@ const char *MdOS::string::to_hstring(uint64_t num) {
 	for (uint8_t i = 0; i < size; i++) {
 		ptr = ((uint8_t *) valPtr + i);
 		temp = ((*ptr & 0xF0) >> 4);
-		toStrBuffer[size - (i * 2 + 1)] = temp + (temp > 9 ? 'A' - 10 : '0');
+		toStrBuffer[size - uint64_t(i * 2 + 1)] = char(temp + (temp > 9 ? 'A' - 10 : '0'));
 		temp = ((*ptr & 0x0F));
-		toStrBuffer[size - (i * 2)] = temp + (temp > 9 ? 'A' - 10 : '0');
+		toStrBuffer[size - uint64_t(i * 2)] = char(temp + (temp > 9 ? 'A' - 10 : '0'));
 	}
 	toStrBuffer[size + 1] = 0;
 	return toStrBuffer;
@@ -51,9 +51,9 @@ const char *MdOS::string::to_hstring(uint32_t num) {
 	for (uint8_t i = 0; i < size; i++) {
 		ptr = ((uint8_t *) valPtr + i);
 		temp = ((*ptr & 0xF0) >> 4);
-		toStrBuffer[size - (i * 2 + 1)] = temp + (temp > 9 ? 'A' - 10 : '0');
+		toStrBuffer[size - uint64_t(i * 2 + 1)] = char(temp + (temp > 9 ? 'A' - 10 : '0'));
 		temp = ((*ptr & 0x0F));
-		toStrBuffer[size - (i * 2)] = temp + (temp > 9 ? 'A' - 10 : '0');
+		toStrBuffer[size - (i * 2)] = char(temp + (temp > 9 ? 'A' - 10 : '0'));
 	}
 	toStrBuffer[size + 1] = 0;
 	return toStrBuffer;
@@ -67,9 +67,9 @@ const char *MdOS::string::to_hstring(uint16_t num) {
 	for (uint8_t i = 0; i < size; i++) {
 		ptr = ((uint8_t *) valPtr + i);
 		temp = ((*ptr & 0xF0) >> 4);
-		toStrBuffer[size - (i * 2 + 1)] = temp + (temp > 9 ? 'A' - 10 : '0');
+		toStrBuffer[size - uint64_t(i * 2 + 1)] = char(temp + (temp > 9 ? 'A' - 10 : '0'));
 		temp = ((*ptr & 0x0F));
-		toStrBuffer[size - (i * 2)] = temp + (temp > 9 ? 'A' - 10 : '0');
+		toStrBuffer[size - (i * 2)] = char(temp + (temp > 9 ? 'A' - 10 : '0'));
 	}
 	toStrBuffer[size + 1] = 0;
 	return toStrBuffer;
@@ -83,9 +83,9 @@ const char *MdOS::string::to_hstring(uint8_t num) {
 	for (uint8_t i = 0; i < size; i++) {
 		ptr = ((uint8_t *) valPtr + i);
 		temp = ((*ptr & 0xF0) >> 4);
-		toStrBuffer[size - (i * 2 + 1)] = temp + (temp > 9 ? 'A' - 10 : '0');
+		toStrBuffer[size - uint64_t(i * 2 + 1)] = char(temp + (temp > 9 ? 'A' - 10 : '0'));
 		temp = ((*ptr & 0x0F));
-		toStrBuffer[size - (i * 2)] = temp + (temp > 9 ? 'A' - 10 : '0');
+		toStrBuffer[size - (i * 2)] = char(temp + (temp > 9 ? 'A' - 10 : '0'));
 	}
 	toStrBuffer[size + 1] = 0;
 	return toStrBuffer;
@@ -99,7 +99,7 @@ const char *MdOS::string::to_string(int64_t num) {
 		num *= -1;
 		toStrBuffer[0] = '-';
 	}
-	uint64_t sizeTest = num;
+	uint64_t sizeTest = uint64_t(num);
 	uint8_t length = 0;
 	while (sizeTest / 10 > 0) {
 		sizeTest /= 10;
@@ -108,13 +108,13 @@ const char *MdOS::string::to_string(int64_t num) {
 
 	uint8_t index = 0;
 	while (num / 10 > 0) {
-		uint8_t remainder = num % 10;
+		uint8_t remainder = uint8_t(num % 10);
 		num /= 10;
-		toStrBuffer[negative + length - index] = remainder + '0';
+		toStrBuffer[negative + length - index] = char(remainder) + '0';
 		index++;
 	}
-	uint8_t remainder = num % 10;
-	toStrBuffer[negative + length - index] = remainder + '0';
+	uint8_t remainder = uint8_t(num % 10);
+	toStrBuffer[negative + length - index] = char(remainder) + '0';
 	toStrBuffer[negative + length + 1] = 0;
 	return toStrBuffer;
 }
@@ -135,11 +135,11 @@ const char *MdOS::string::to_string(double num, unsigned int decimal_places) {
 	*doublePtr = '.';
 	doublePtr++;
 
-	float newNum = num - (int) num;
+	double newNum = num - int(num);
 	for (uint8_t i = 0; i < decimal_places; i++) {
 		newNum *= 10;
-		*doublePtr = (int) newNum + '0';
-		newNum -= (int) newNum;
+		*doublePtr = char(int(newNum)) + '0';
+		newNum -= int(newNum);
 		doublePtr++;
 	}
 	*doublePtr = 0;
@@ -148,25 +148,25 @@ const char *MdOS::string::to_string(double num, unsigned int decimal_places) {
 const char *MdOS::string::to_string(float num, unsigned int decimal_places) {
 	if (decimal_places >= 20) { decimal_places = 20; }
 	char *intPtr = (char *) to_string((int64_t) num);
-	char *doublePtr = toStrBuffer;
+	char *floatPtr = toStrBuffer;
 
 	if (num < 0) { num *= -1; }
 	while (*intPtr != 0) {
-		*doublePtr = *intPtr;
+		*floatPtr = *intPtr;
 		intPtr++;
-		doublePtr++;
+		floatPtr++;
 	}
 
-	*doublePtr = '.';
-	doublePtr++;
+	*floatPtr = '.';
+	floatPtr++;
 
-	double newNum = num - (int) num;
+	float newNum = num - int(num);
 	for (uint8_t i = 0; i < decimal_places; i++) {
 		newNum *= 10;
-		*doublePtr = (int) newNum + '0';
-		newNum -= (int) newNum;
-		doublePtr++;
+		*floatPtr = char(int(newNum)) + '0';
+		newNum -= int(newNum);
+		floatPtr++;
 	}
-	*doublePtr = 0;
+	*floatPtr = 0;
 	return toStrBuffer;
 }

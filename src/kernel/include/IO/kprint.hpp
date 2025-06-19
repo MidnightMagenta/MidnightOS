@@ -10,7 +10,7 @@
 #include <stdint.h>
 
 namespace MdOS::IO {
-int kprint(const char *fmt, ...);
+size_t kprint(const char *fmt, ...);
 
 class kprintSystem {
 public:
@@ -18,7 +18,7 @@ public:
 	~kprintSystem() {}
 
 	static void init(MdOS::GOP_Renderer *renderer, PSF1_Font *font);
-	static int print(const char *fmt, va_list params);
+	static size_t print(const char *fmt, va_list params);
 
 private:
 	static MdOS::GOP_Renderer *m_renderer;

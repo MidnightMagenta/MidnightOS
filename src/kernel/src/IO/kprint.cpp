@@ -8,8 +8,8 @@ void MdOS::IO::kprintSystem::init(MdOS::GOP_Renderer *renderer, PSF1_Font *font)
 	m_tty.init(renderer, font);
 }
 
-int MdOS::IO::kprintSystem::print(const char *fmt, va_list params) {
-	int written = 0;
+size_t MdOS::IO::kprintSystem::print(const char *fmt, va_list params) {
+	size_t written = 0;
 	while (*fmt != '\0') {
 		size_t maxrem = INT_MAX - written;
 
@@ -19,7 +19,7 @@ int MdOS::IO::kprintSystem::print(const char *fmt, va_list params) {
 			while (fmt[ammount] && fmt[ammount] != '%') { ammount++; }
 			if (maxrem < ammount) {
 				//TODO: error stuff
-				return -1;
+				return size_t(0);
 			}
 			m_tty.print_str(fmt, ammount);
 			fmt += ammount;
@@ -34,7 +34,7 @@ int MdOS::IO::kprintSystem::print(const char *fmt, va_list params) {
 			char c = (char) va_arg(params, int);
 			if (maxrem < 1) {
 				//TODO: error
-				return -1;
+				return size_t(0);
 			}
 			m_tty.print_str(&c, 1);
 			written++;
@@ -44,7 +44,7 @@ int MdOS::IO::kprintSystem::print(const char *fmt, va_list params) {
 			size_t ammount = MdOS::string::strlen(str);
 			if (maxrem < ammount) {
 				//TODO: error
-				return -1;
+				return size_t(0);
 			}
 			m_tty.print_str(str, ammount);
 			written += ammount;
@@ -55,7 +55,7 @@ int MdOS::IO::kprintSystem::print(const char *fmt, va_list params) {
 			size_t ammount = MdOS::string::strlen(str);
 			if (maxrem < ammount) {
 				//TODO: error
-				return -1;
+				return size_t(0);
 			}
 			m_tty.print_str(str, ammount);
 			written += ammount;
@@ -66,7 +66,7 @@ int MdOS::IO::kprintSystem::print(const char *fmt, va_list params) {
 			size_t ammount = MdOS::string::strlen(str);
 			if (maxrem < ammount) {
 				//TODO: error
-				return -1;
+				return size_t(0);
 			}
 			m_tty.print_str(str, ammount);
 			written += ammount;
@@ -77,7 +77,7 @@ int MdOS::IO::kprintSystem::print(const char *fmt, va_list params) {
 			size_t ammount = MdOS::string::strlen(str);
 			if (maxrem < ammount) {
 				//TODO: error
-				return -1;
+				return size_t(0);
 			}
 			m_tty.print_str(str, ammount);
 			written += ammount;
@@ -88,7 +88,7 @@ int MdOS::IO::kprintSystem::print(const char *fmt, va_list params) {
 			size_t ammount = MdOS::string::strlen(str);
 			if (maxrem < ammount) {
 				//TODO: error
-				return -1;
+				return size_t(0);
 			}
 			m_tty.print_str(str, ammount);
 			written += ammount;
@@ -99,7 +99,7 @@ int MdOS::IO::kprintSystem::print(const char *fmt, va_list params) {
 			size_t ammount = MdOS::string::strlen(str);
 			if (maxrem < ammount) {
 				//TODO: error
-				return -1;
+				return size_t(0);
 			}
 			m_tty.print_str(str, ammount);
 			written += ammount;
@@ -110,7 +110,7 @@ int MdOS::IO::kprintSystem::print(const char *fmt, va_list params) {
 			size_t ammount = MdOS::string::strlen(str);
 			if (maxrem < ammount) {
 				//TODO: error
-				return -1;
+				return size_t(0);
 			}
 			m_tty.print_str(str, ammount);
 			written += ammount;
@@ -121,7 +121,7 @@ int MdOS::IO::kprintSystem::print(const char *fmt, va_list params) {
 			size_t ammount = MdOS::string::strlen(str);
 			if (maxrem < ammount) {
 				//TODO: error
-				return -1;
+				return size_t(0);
 			}
 			m_tty.print_str(str, ammount);
 			written += ammount;
@@ -130,7 +130,7 @@ int MdOS::IO::kprintSystem::print(const char *fmt, va_list params) {
 			size_t len = MdOS::string::strlen(fmt);
 			if (maxrem < len) {
 				//implement errno
-				return -1;
+				return size_t(0);
 			}
 			m_tty.print_str(fmt, len);
 			written += len;
@@ -141,11 +141,11 @@ int MdOS::IO::kprintSystem::print(const char *fmt, va_list params) {
 	return written;
 }
 
-int MdOS::IO::kprint(const char *fmt, ...) {
+size_t MdOS::IO::kprint(const char *fmt, ...) {
 	va_list params;
 	va_start(params, fmt);
 
-	int written = MdOS::IO::kprintSystem::print(fmt, params);
+	size_t written = MdOS::IO::kprintSystem::print(fmt, params);
 
 	va_end(params);
 	return written;

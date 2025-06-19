@@ -6,6 +6,6 @@ void MdOS::PSF_DrawableFont::init(PSF1_Font *font){
     this->glyphWidth = 8;
 }
 
-void MdOS::PSF_DrawableFont::init(PSF2_Font *font) {
+void MdOS::PSF_DrawableFont::init(PSF2_Font *font __attribute__((unused))) {
     /*stub*/
 }

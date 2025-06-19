@@ -30,6 +30,9 @@ MdOS::Result MdOS::Memory::PhysicalMemoryManager::init(MemMap *memMap) {
 		return MdOS::Result::INIT_FAILURE;
 	}
 
+	for (size_t i = 0; i < 100; i++) { kprint("%i", m_pageFrameMap[i]); }
+	kprint("\n");
+
 	for (size_t i = 0; i < memMap->size / memMap->descriptorSize; i++) {
 		EFI_MEMORY_DESCRIPTOR *entry =
 				(EFI_MEMORY_DESCRIPTOR *) ((uintptr_t) memMap->map + (i * memMap->descriptorSize));
@@ -46,6 +49,9 @@ MdOS::Result MdOS::Memory::PhysicalMemoryManager::init(MemMap *memMap) {
 
 	m_unusablePageCount = m_maxAvailPages - (m_freePageCount + m_reservedPageCount);
 
+	for (size_t i = 0; i < 100; i++) { kprint("%i", m_pageFrameMap[i]); }
+	kprint("\n");
+	
 	return MdOS::Result::SUCCESS;
 }
 
