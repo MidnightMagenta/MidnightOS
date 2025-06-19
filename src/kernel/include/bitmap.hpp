@@ -1,9 +1,10 @@
 #ifndef BITMAP_H
 #define BITMAP_H
 
+#include "../include/IO/kprint.hpp"
 #include "../include/memory/bump_allocator.hpp"
 #include "../k_utils/include/utils.hpp"
-#include "../include/IO/kprint.hpp"
+#include "../k_utils/include/limits.hpp"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -13,6 +14,9 @@ class FixedBitmap {
 public:
 	FixedBitmap() {}
 	~FixedBitmap() {}
+
+	static_assert(__is_same(t_bmp, uint8_t) || __is_same(t_bmp, uint16_t) || __is_same(t_bmp, uint32_t) ||
+				  __is_same(t_bmp, uint64_t));
 
 	size_t size() const { return m_size; }
 	size_t entry_size() const { return m_bmpEntrySize; }
@@ -68,7 +72,7 @@ public:
 	}
 
 	void set_all() {
-		for (size_t i = 0; i < m_size / m_bmpEntrySize; i++) { m_bitmap[i] = 1; }
+		for (size_t i = 0; i < m_size / m_bmpEntrySize; i++) { m_bitmap[i] = utils::NumericLimits<t_bmp>::max(); }
 	}
 
 	void clear_all() {
@@ -100,6 +104,9 @@ public:
 	Bitmap() {}
 	~Bitmap() {}
 
+	static_assert(__is_same(t_bmp, uint8_t) || __is_same(t_bmp, uint16_t) || __is_same(t_bmp, uint32_t) ||
+				  __is_same(t_bmp, uint64_t));
+
 	bool init(size_t size) {
 		if (m_initialized) { return false; }
 		//TODO: if the main allocator is available use the main allocator
@@ -122,7 +129,7 @@ public:
 			m_size = 0;
 			return false;
 		}
-		t_bmp initVal = initValue ? t_bmp(0xFFFFFFFFFFFFFFFF) : t_bmp(0);
+		t_bmp initVal = initValue ? utils::NumericLimits<t_bmp>::max() : t_bmp(0);
 		for (size_t i = 0; i < m_size / m_bmpEntrySize; i++) { m_bitmap[i] = initVal; }
 		m_initialized = true;
 		return true;
@@ -196,7 +203,7 @@ public:
 
 	void set_all() {
 		if (!m_initialized) { return; }
-		for (size_t i = 0; i < m_size / m_bmpEntrySize; i++) { m_bitmap[i] = t_bmp(0xFFFFFFFFFFFFFFFF); }
+		for (size_t i = 0; i < m_size / m_bmpEntrySize; i++) { m_bitmap[i] = utils::NumericLimits<t_bmp>::max(); }
 	}
 
 	void clear_all() {
