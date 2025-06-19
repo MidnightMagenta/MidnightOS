@@ -1,5 +1,5 @@
 #include "../../include/memory/pmm.hpp"
-#include "../../include/IO/kprint.hpp"
+#include "../../include/IO/debug_print.hpp"
 
 MdOS::Result MdOS::Memory::PhysicalMemoryManager::init(MemMap *memMap) {
 	if (m_initialized) { return MdOS::Result::ALREADY_INITIALIZED; }
@@ -19,15 +19,14 @@ MdOS::Result MdOS::Memory::PhysicalMemoryManager::init(MemMap *memMap) {
 	}
 
 	if (((lowestAddr % 0x1000) != 0) || ((highestAddr % 0x1000) != 0)) {
-		kprint("PMM::init: memory limits not page aligned\n");
+		PRINT_ERROR("memory limits not page aligned");
 		return MdOS::Result::INIT_FAILURE;
 	}
 
 	m_maxAvailPages = (highestAddr - lowestAddr) / 0x1000;
 
 	if (!m_pageFrameMap.init(m_maxAvailPages, true) /*all pages marked as used*/) {
-		kprint("PMM::init: failed to initialize page frame map\n");
-		//TODO: panic
+		PRINT_ERROR("failed to initialize page frame map");
 		return MdOS::Result::INIT_FAILURE;
 	}
 
@@ -52,12 +51,12 @@ MdOS::Result MdOS::Memory::PhysicalMemoryManager::init(MemMap *memMap) {
 
 MdOS::Result MdOS::Memory::PhysicalMemoryManager::alloc_pages(MdOS::Memory::PhysicalMemoryAllocation *alloc) {
 	if (!m_initialized) {
-		kprint("PMM::alloc_pages: PMM not initialized\n");
+		PRINT_ERROR("PMM not initialized");
 		return MdOS::Result::NOT_INITIALIZED;
 	}
 	if (m_freePageCount == 0) {
 		//TODO: Panic
-		kprint("PMM::alloc_pages: out of memory\n");
+		PRINT_ERROR("out of memory");
 		return MdOS::Result::OUT_OF_MEMORY;
 	}
 	m_freePageCount -= 1;
@@ -72,15 +71,15 @@ MdOS::Result MdOS::Memory::PhysicalMemoryManager::alloc_pages(MdOS::Memory::Phys
 MdOS::Result MdOS::Memory::PhysicalMemoryManager::alloc_pages(size_t numPages,
 															  MdOS::Memory::PhysicalMemoryAllocation *alloc) {
 	if (numPages <= 0) {
-		kprint("PMM::alloc_pages: attempted to allocate 0 pages\n");
+		PRINT_ERROR("attempted to allocate 0 pages");
 		return MdOS::Result::INVALID_PARAMETER;
 	}
 	if (!m_initialized) {
-		kprint("PMM::alloc_pages: PMM not initialized\n");
+		PRINT_ERROR("PMM not initialized");
 		return MdOS::Result::NOT_INITIALIZED;
 	}
 	if (m_freePageCount < numPages) {
-		kprint("PMM::alloc_pages: out of memory\n");
+		PRINT_ERROR("out of memory");
 		return MdOS::Result::OUT_OF_MEMORY;
 	}
 
@@ -112,20 +111,18 @@ MdOS::Result MdOS::Memory::PhysicalMemoryManager::alloc_pages(size_t numPages,
 
 MdOS::Result MdOS::Memory::PhysicalMemoryManager::free_pages(const MdOS::Memory::PhysicalMemoryAllocation &alloc) {
 	if (!m_initialized) {
-		kprint("PMM::free_pages: PMM not initialized\n");
+		PRINT_ERROR("PMM not initialized");
 		return MdOS::Result::NOT_INITIALIZED;
 	}
 	if ((alloc.base % 0x1000) != 0) {
 		//TODO: Panic
-		kprint("PMM::free_pages: attempted to free a page with a non page aligned address. Address: 0x%lx\n",
-			   alloc.base);
+		PRINT_ERROR("attempted to free a page with a non page aligned address");
 		return MdOS::Result::INVALID_PARAMETER;
 	}
 	size_t baseIndex = alloc.base / 0x1000;
 	if (baseIndex + alloc.numPages > m_pageFrameMap.size()) {
 		//TODO: Panic
-		kprint("PMM::free_pages: attempted to free out of range memory. Page at index %lu Page frame map size: %lu\n",
-			   baseIndex, m_pageFrameMap.size());
+		PRINT_ERROR("attempted to free out of range memory");
 		return MdOS::Result::INVALID_PARAMETER;
 	}
 
@@ -134,11 +131,11 @@ MdOS::Result MdOS::Memory::PhysicalMemoryManager::free_pages(const MdOS::Memory:
 		if (m_pageFrameMap[baseIndex + i]) { freedPages++; }
 	}
 	if (freedPages == 0) {
-		kprint("PMM::free_pages: all pages in range are free\n");
+		PRINT_ERROR("all pages in range are free");
 		return MdOS::Result::SUCCESS;
 	}
 	if (m_usedPageCount < freedPages) {
-		kprint("PMM::free_pages: attempted to free more pages than used\n");
+		PRINT_ERROR("attempted to free more pages than used");
 		return MdOS::Result::INVALID_PARAMETER;
 	}
 
@@ -150,22 +147,20 @@ MdOS::Result MdOS::Memory::PhysicalMemoryManager::free_pages(const MdOS::Memory:
 
 MdOS::Result MdOS::Memory::PhysicalMemoryManager::reserve_pages(uintptr_t addr, size_t numPages) {
 	if (!m_initialized) {
-		kprint("PMM::reserve_pages: PMM not initialized\n");
+		PRINT_ERROR("PMM::reserve_pages: PMM not initialized");
 		return MdOS::Result::NOT_INITIALIZED;
 	}
 	if ((addr % 0x1000) != 0) {
-		kprint("PMM::reserve_pages: attempted to free a page with a non page aligned address. Address: 0x%lx\n", addr);
+		PRINT_ERROR("attempted to free a page with a non page aligned address");
 		return MdOS::Result::INVALID_PARAMETER;
 	}
 	if (numPages > m_freePageCount) {
-		kprint("PMM::alloc_pages: out of memory\n");
+		PRINT_ERROR("out of memory");
 		return MdOS::Result::OUT_OF_MEMORY;
 	}
 	size_t index = addr / 0x1000;
 	if (index + numPages > m_pageFrameMap.size()) {
-		kprint("PMM::reserve_pages: attempted to reserve out of range memory. Page at index %lu Page frame map size: "
-			   "%lu\n",
-			   index, m_pageFrameMap.size());
+		PRINT_ERROR("attempted to reserve out of range memory");
 		return MdOS::Result::INVALID_PARAMETER;
 	}
 
@@ -177,19 +172,16 @@ MdOS::Result MdOS::Memory::PhysicalMemoryManager::reserve_pages(uintptr_t addr, 
 
 MdOS::Result MdOS::Memory::PhysicalMemoryManager::unreserve_pages(uintptr_t addr, size_t numPages) {
 	if (!m_initialized) {
-		kprint("PMM::unreserve_pages: PMM not initialized\n");
+		PRINT_ERROR("PMM not initialized");
 		return MdOS::Result::NOT_INITIALIZED;
 	}
 	if ((addr % 0x1000) != 0) {
-		kprint("PMM::unreserve_pages: attempted to free a page with a non page aligned address. Address: 0x%lx\n",
-			   addr);
+		PRINT_ERROR("attempted to free a page with a non page aligned address");
 		return MdOS::Result::INVALID_PARAMETER;
 	}
 	size_t baseIndex = addr / 0x1000;
 	if (baseIndex + numPages > m_pageFrameMap.size()) {
-		kprint("PMM::unreserve_pages: attempted to reserve out of range memory. Page at index %lu Page frame map size: "
-			   "%lu\n",
-			   baseIndex, m_pageFrameMap.size());
+		PRINT_ERROR("attempted to reserve out of range memory");
 		return MdOS::Result::INVALID_PARAMETER;
 	}
 	size_t freedPages = 0;
@@ -197,11 +189,11 @@ MdOS::Result MdOS::Memory::PhysicalMemoryManager::unreserve_pages(uintptr_t addr
 		if (m_pageFrameMap[baseIndex + i]) { freedPages++; }
 	}
 	if (freedPages == 0) {
-		kprint("PMM::unreserve_pages: all pages in range are free\n");
+		PRINT_ERROR("all pages in range are free");
 		return MdOS::Result::SUCCESS;
 	}
 	if (m_reservedPageCount < freedPages) {
-		kprint("PMM::unreserve_pages: attempted to unreserve more pages than reserved\n");
+		PRINT_ERROR("attempted to unreserve more pages than reserved");
 		return MdOS::Result::INVALID_PARAMETER;
 	}
 
