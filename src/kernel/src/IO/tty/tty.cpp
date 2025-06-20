@@ -16,9 +16,11 @@ void MdOS::Teletype::putc(const char chr, uint32_t color, uint32_t xOffset, uint
 
 void MdOS::Teletype::print_str(const char *str, size_t strlen) {
 	for (size_t i = 0; i < strlen; i++) {
+		MdOS::IO::BasicSerial::write_serial(str[i]);
 		if (str[i] == '\n') {
 			m_yOffset += uint32_t(m_font.glyphHeight);
 			m_xOffset = 0;
+			MdOS::IO::BasicSerial::write_serial('\r');
 		} else if (str[i] == '\r') {
 			m_xOffset = 0;
 		} else if (str[i] == '\t') {
@@ -48,9 +50,9 @@ void MdOS::Teletype::print_str(const char *str, size_t strlen) {
 			m_yOffset += uint32_t(m_font.glyphHeight);
 			m_xOffset = 0;
 		}
-		if (m_yOffset >= m_renderer->framebuffer_height()) { 
+		if (m_yOffset >= m_renderer->framebuffer_height()) {
 			m_renderer->clear_buffer(MdOS::defaultBgColor);
-			m_yOffset = 0; 
+			m_yOffset = 0;
 		}
 	}
 }

@@ -18,7 +18,7 @@
 #define kassert(condition)                                                                                             \
 	if (!(condition)) {                                                                                                \
 		kprint("[ASSERTION FAILED][%s:%d in function: %s] %s\n", __FILE__, __LINE__, __func__, #condition);            \
-		while (true) { __asm__("hlt"); }                                                                               \
+		while (true) { __asm__("cli; hlt"); }                                                                          \
 	}
 
 #endif
