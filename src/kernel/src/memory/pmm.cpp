@@ -153,7 +153,7 @@ MdOS::Result MdOS::Memory::PhysicalMemoryManager::free_pages(const MdOS::Memory:
 	return MdOS::Result::SUCCESS;
 }
 
-MdOS::Result MdOS::Memory::PhysicalMemoryManager::reserve_pages(uintptr_t addr, size_t numPages) {
+MdOS::Result MdOS::Memory::PhysicalMemoryManager::reserve_pages(PhysicalAddress addr, size_t numPages) {
 	if (!m_initialized) {
 		PRINT_ERROR("PMM::reserve_pages: PMM not initialized");
 		return MdOS::Result::NOT_INITIALIZED;
@@ -178,7 +178,7 @@ MdOS::Result MdOS::Memory::PhysicalMemoryManager::reserve_pages(uintptr_t addr, 
 	return MdOS::Result::SUCCESS;
 }
 
-MdOS::Result MdOS::Memory::PhysicalMemoryManager::unreserve_pages(uintptr_t addr, size_t numPages) {
+MdOS::Result MdOS::Memory::PhysicalMemoryManager::unreserve_pages(PhysicalAddress addr, size_t numPages) {
 	if (!m_initialized) {
 		PRINT_ERROR("PMM not initialized");
 		return MdOS::Result::NOT_INITIALIZED;
