@@ -1,7 +1,23 @@
 #include "../../include/memory/pmm.hpp"
 #include "../../include/IO/debug_print.hpp"
 
-MdOS::Result MdOS::Memory::PhysicalMemoryManager::init(MemMap *memMap) {
+using namespace MdOS::Memory;
+
+bool m_initialized = false;
+utils::Bitmap<uint64_t> m_pageFrameMap;
+
+//memory trackers
+MemSize m_lowestPage = 0;		//lowest addressable page reported by UEFI
+MemSize m_highestPage = 0;		//highest addressable page reported by UEFI
+MemSize m_maxAvailPages = 0;	//number of pages between the lowest and highest addressable pages reported by UEFI
+MemSize m_unusablePageCount = 0;//pages not backed by DRAM
+MemSize m_usablePageCount = 0;	//pages backed by DRAM
+MemSize m_freePageCount = 0;	//pages marked as EfiConventionalMemory or reclaimed pages backed by DRAM
+MemSize m_usedPageCount = 0;	//pages allocated by the pmm
+MemSize m_reservedPageCount = 0;//pages not marked as EfiConventionalMemory, not reclaimed, but backed by DRAM
+//!memory trackers
+
+MdOS::Result PMM::init(MemMap *memMap) {
 	if (m_initialized) { return MdOS::Result::ALREADY_INITIALIZED; }
 	m_initialized = true;
 
@@ -57,13 +73,12 @@ MdOS::Result MdOS::Memory::PhysicalMemoryManager::init(MemMap *memMap) {
 	return MdOS::Result::SUCCESS;
 }
 
-MdOS::Result MdOS::Memory::PhysicalMemoryManager::alloc_pages(MdOS::Memory::PhysicalMemoryAllocation *alloc) {
+MdOS::Result PMM::alloc_pages(PMM::PhysicalMemoryAllocation *alloc) {
 	if (!m_initialized) {
 		PRINT_ERROR("PMM not initialized");
 		return MdOS::Result::NOT_INITIALIZED;
 	}
 	if (m_freePageCount == 0) {
-		//TODO: Panic
 		PRINT_ERROR("out of memory");
 		return MdOS::Result::OUT_OF_MEMORY;
 	}
@@ -76,8 +91,7 @@ MdOS::Result MdOS::Memory::PhysicalMemoryManager::alloc_pages(MdOS::Memory::Phys
 	return MdOS::Result::SUCCESS;
 }
 
-MdOS::Result MdOS::Memory::PhysicalMemoryManager::alloc_pages(size_t numPages,
-															  MdOS::Memory::PhysicalMemoryAllocation *alloc) {
+MdOS::Result PMM::alloc_pages(size_t numPages, PMM::PhysicalMemoryAllocation *alloc) {
 	if (numPages <= 0) {
 		PRINT_ERROR("attempted to allocate 0 pages");
 		return MdOS::Result::INVALID_PARAMETER;
@@ -117,19 +131,17 @@ MdOS::Result MdOS::Memory::PhysicalMemoryManager::alloc_pages(size_t numPages,
 	return allocSuccess ? MdOS::Result::SUCCESS : MdOS::Result::OUT_OF_MEMORY;
 }
 
-MdOS::Result MdOS::Memory::PhysicalMemoryManager::free_pages(const MdOS::Memory::PhysicalMemoryAllocation &alloc) {
+MdOS::Result PMM::free_pages(const PMM::PhysicalMemoryAllocation &alloc) {
 	if (!m_initialized) {
 		PRINT_ERROR("PMM not initialized");
 		return MdOS::Result::NOT_INITIALIZED;
 	}
 	if ((alloc.base % 0x1000) != 0) {
-		//TODO: Panic
 		PRINT_ERROR("attempted to free a page with a non page aligned address");
 		return MdOS::Result::INVALID_PARAMETER;
 	}
 	size_t baseIndex = (alloc.base / 0x1000) - min_page_index();
 	if (baseIndex + alloc.numPages > m_pageFrameMap.size()) {
-		//TODO: Panic
 		PRINT_ERROR("attempted to free out of range memory");
 		return MdOS::Result::INVALID_PARAMETER;
 	}
@@ -153,7 +165,7 @@ MdOS::Result MdOS::Memory::PhysicalMemoryManager::free_pages(const MdOS::Memory:
 	return MdOS::Result::SUCCESS;
 }
 
-MdOS::Result MdOS::Memory::PhysicalMemoryManager::reserve_pages(PhysicalAddress addr, size_t numPages) {
+MdOS::Result PMM::reserve_pages(PhysicalAddress addr, size_t numPages) {
 	if (!m_initialized) {
 		PRINT_ERROR("PMM::reserve_pages: PMM not initialized");
 		return MdOS::Result::NOT_INITIALIZED;
@@ -178,7 +190,7 @@ MdOS::Result MdOS::Memory::PhysicalMemoryManager::reserve_pages(PhysicalAddress 
 	return MdOS::Result::SUCCESS;
 }
 
-MdOS::Result MdOS::Memory::PhysicalMemoryManager::unreserve_pages(PhysicalAddress addr, size_t numPages) {
+MdOS::Result PMM::unreserve_pages(PhysicalAddress addr, size_t numPages) {
 	if (!m_initialized) {
 		PRINT_ERROR("PMM not initialized");
 		return MdOS::Result::NOT_INITIALIZED;
@@ -210,3 +222,21 @@ MdOS::Result MdOS::Memory::PhysicalMemoryManager::unreserve_pages(PhysicalAddres
 	m_pageFrameMap.clear_range(baseIndex, baseIndex + numPages);
 	return MdOS::Result::SUCCESS;
 }
+
+MemSize PMM::max_page_count() { return m_maxAvailPages; }
+MemSize PMM::max_mem_size() { return m_maxAvailPages * 0x1000; }
+MemSize PMM::unusable_page_count() { return m_unusablePageCount; }
+MemSize PMM::unusable_mem_size() { return m_unusablePageCount * 0x1000; }
+MemSize PMM::usable_page_count() { return m_usablePageCount; }
+MemSize PMM::usable_mem_size() { return m_usablePageCount * 0x1000; }
+MemSize PMM::free_page_count() { return m_freePageCount; }
+MemSize PMM::free_mem_size() { return m_freePageCount * 0x1000; }
+MemSize PMM::used_page_count() { return m_usedPageCount; }
+MemSize PMM::used_mem_size() { return m_usedPageCount * 0x1000; }
+MemSize PMM::reserved_page_count() { return m_reservedPageCount; }
+MemSize PMM::reserved_mem_size() { return m_reservedPageCount * 0x1000; }
+
+MemSize PMM::min_page_index() { return m_lowestPage; }
+MemSize PMM::min_page_addr() { return m_lowestPage * 0x1000; }
+MemSize PMM::max_page_index() { return m_highestPage; }
+MemSize PMM::max_page_addr() { return m_highestPage * 0x1000; }
