@@ -152,7 +152,6 @@ public:
 		t_bmp initVal = initValue ? utils::NumericLimits<t_bmp>::max() : t_bmp(0);
 		for (size_t i = 0; i < m_size / m_bmpEntrySize; i++) { m_bitmap[i] = initVal; }
 		m_initialized = true;
-		kprint("Size: %lu mem size: %lu entry size: %lu\n", m_size, m_memSize, m_bmpEntrySize);
 		return true;
 	}
 	size_t size() const {

@@ -2,7 +2,7 @@
 #define KERNEL_H
 
 #include "../include/IO/graphics/GOP_renderer.hpp"
-#include "../include/IO/kprint.hpp"
+#include "../include/IO/debug_print.hpp"
 #include "../include/IO/tty/tty.hpp"
 #include "../include/bitmap.hpp"
 #include "../include/boot_info.hpp"
