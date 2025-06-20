@@ -1,6 +1,5 @@
 #include "../include/init.hpp"
 
-extern "C" uint8_t __kernel_end;
 MdOS::Memory::PhysicalMemoryManager g_pmm;
 
 void MdOS::init_krnl(BootInfo *bootInfo) {
