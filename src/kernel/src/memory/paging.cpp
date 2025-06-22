@@ -1,1 +1,204 @@
 #include "../../include/memory/paging.hpp"
+
+void MdOS::Memory::Paging::set_type(EntryType type, PageEntry *entry) {
+	*entry &= ~uint64_t(0xE00);
+	*entry |= uint64_t(type) << 11;
+}
+
+MdOS::Memory::Paging::EntryType MdOS::Memory::Paging::get_type(PageEntry *entry) {
+	return EntryType(uint8_t(*entry >> 11) & uint8_t(0b0111));
+}
+
+void MdOS::Memory::Paging::set_bit(EntryControlBit bit, bool value, PageEntry *entry) {
+	EntryType type = get_type(entry);
+	if (type == EntryType::INVALID || type > EntryType::PML5E) { PRINT_ERROR("Attempted to edit an invalid entry"); }
+	switch (bit) {
+		case EntryControlBit::PagePresent:
+			if (value == true) {
+				*entry |= 1ULL << 0;
+			} else {
+				*entry &= ~(1ULL << 0);
+			}
+			return;
+		case EntryControlBit::ReadWrite:
+			if (value == true) {
+				*entry |= 1ULL << 1;
+			} else {
+				*entry &= ~(1ULL << 1);
+			}
+			return;
+		case EntryControlBit::PrivilidgeSelect:
+			if (value == true) {
+				*entry |= 1ULL << 2;
+			} else {
+				*entry &= ~(1ULL << 2);
+			}
+			return;
+		case EntryControlBit::WriteThrough:
+			if (value == true) {
+				*entry |= 1ULL << 3;
+			} else {
+				*entry &= ~(1ULL << 3);
+			}
+			return;
+		case EntryControlBit::CacheDisable:
+			if (value == true) {
+				*entry |= 1ULL << 4;
+			} else {
+				*entry &= ~(1ULL << 4);
+			}
+			return;
+		case EntryControlBit::Accessed:
+			if (value == true) {
+				*entry |= 1ULL << 5;
+			} else {
+				*entry &= ~(1ULL << 5);
+			}
+			return;
+		case EntryControlBit::Dirty:
+			if (type == EntryType::PTE) {
+				if (value == true) {
+					*entry |= 1ULL << 6;
+				} else {
+					*entry &= ~(1ULL << 6);
+				}
+			} else {
+				PRINT_ERROR("Attempted to set an invalid bit");
+			}
+			return;
+		case EntryControlBit::PageSize:
+			if (type == EntryType::PTE || type == EntryType::PDE || type == EntryType::PDPE) {
+				if (value == true) {
+					*entry |= 1ULL << 7;
+				} else {
+					*entry &= ~(1ULL << 7);
+				}
+			} else {
+				PRINT_ERROR("Attempted to set an invalid bit");
+			}
+			return;
+		case EntryControlBit::Global:
+			if (type == EntryType::PTE) {
+				if (value == true) {
+					*entry |= 1ULL << 8;
+				} else {
+					*entry &= ~(1ULL << 8);
+				}
+			} else {
+				PRINT_ERROR("Attempted to set an invalid bit");
+			}
+			return;
+		case EntryControlBit::AVL1:
+			PRINT_ERROR("Attempted to set reserved bit 9");
+			return;
+		case EntryControlBit::AVL2:
+			PRINT_ERROR("Attempted to set reserved bit 10");
+			return;
+		case EntryControlBit::AVL3:
+			PRINT_ERROR("Attempted to set reserved bit 11");
+			return;
+		case EntryControlBit::PageAttributeTable:
+			if (type == EntryType::PTE) {
+				if (value == true) {
+					*entry |= 1ULL << 7;
+				} else {
+					*entry &= ~(1ULL << 7);
+				}
+			} else if (type == EntryType::PDE || type == EntryType::PDPE) {
+				if (get_bit(EntryControlBit::PageSize, entry)) {
+					if (value == true) {
+						*entry |= 1ULL << 12;
+					} else {
+						*entry &= ~(1ULL << 12);
+					}
+				} else {
+					PRINT_ERROR("Attempted to set PTE bit in a non large page entry");
+				}
+			} else {
+				PRINT_ERROR("Attempted to set an invalid bit");
+			}
+			return;
+		case EntryControlBit::NoExecute:
+			if (value == true) {
+				*entry |= 1ULL << 63;
+			} else {
+				*entry &= ~(1ULL << 63);
+			}
+			return;
+		default:
+			PRINT_ERROR("Invalid page entry type");
+			return;
+	}
+}
+
+bool MdOS::Memory::Paging::get_bit(EntryControlBit bit, PageEntry *entry) {
+	EntryType type = get_type(entry);
+	if (type == EntryType::INVALID || type > EntryType::PML5E) { PRINT_ERROR("Attempted to edit an invalid entry"); }
+	switch (bit) {
+		case EntryControlBit::PagePresent:
+			return *entry & 1ULL << 0;
+		case EntryControlBit::ReadWrite:
+			return *entry & 1ULL << 1;
+		case EntryControlBit::PrivilidgeSelect:
+			return *entry & 1ULL << 2;
+		case EntryControlBit::WriteThrough:
+			return *entry & 1ULL << 3;
+		case EntryControlBit::CacheDisable:
+			return *entry & 1ULL << 4;
+		case EntryControlBit::Accessed:
+			return *entry & 1ULL << 5;
+		case EntryControlBit::Dirty:
+			if (type == EntryType::PTE) {
+				return *entry & 1ULL << 6;
+			} else {
+				PRINT_INFO("Attempted to set an invalid bit");
+				return false;
+			}
+		case EntryControlBit::PageSize:
+			if (type == EntryType::PDE || type == EntryType::PDPE) {
+				return *entry & 1ULL << 7;
+			} else {
+				PRINT_INFO("Attempted to set an invalid bit");
+				return false;
+			}
+		case EntryControlBit::Global:
+			if (type == EntryType::PTE) {
+				return *entry & 1ULL << 8;
+			} else {
+				PRINT_INFO("Attempted to set an invalid bit");
+				return false;
+			}
+		case EntryControlBit::AVL1:
+			return *entry & 1ULL << 9;
+		case EntryControlBit::AVL2:
+			return *entry & 1ULL << 10;
+		case EntryControlBit::AVL3:
+			return *entry & 1ULL << 11;
+		case EntryControlBit::PageAttributeTable:
+			if (type == EntryType::PTE) {
+				return *entry & 1ULL << 7;
+			} else if (type == EntryType::PDE || type == EntryType::PDPE) {
+				if (get_bit(EntryControlBit::PageSize, entry)) {
+					return *entry & 1ULL << 12;
+				} else {
+					PRINT_INFO("Attempted to set PTE bit in a non large page entry");
+					return false;
+				}
+			} else {
+				PRINT_INFO("Attempted to set an invalid bit");
+				return false;
+			}
+		case EntryControlBit::NoExecute:
+			return *entry & 1ULL << 63;
+		default:
+			PRINT_INFO("Invalid page entry type");
+			return false;
+	}
+}
+
+void MdOS::Memory::Paging::set_addr(uint64_t addr, PageEntry *entry) {
+	*entry &= ~0x000FFFFFFFFFF000ULL;
+	*entry |= (addr & ~0xFFFULL);
+}
+
+uint64_t MdOS::Memory::Paging::get_addr(PageEntry *entry) { return *entry & 0x000FFFFFFFFFF000ULL; }

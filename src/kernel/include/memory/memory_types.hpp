@@ -8,7 +8,6 @@ namespace MdOS::Memory {
 using PhysicalAddress = uintptr_t;
 using VirtualAddress = uintptr_t;
 using MemSize = size_t;
-using PageEntry = uint64_t;
 }// namespace MdOS::Memory
 
 
