@@ -9,16 +9,16 @@ namespace MdOS::Memory::Paging {
 enum class EntryControlBit {
 	PagePresent,
 	ReadWrite,
-	PrivilidgeSelect,
+	UserAccessible,
 	WriteThrough,
 	CacheDisable,
 	Accessed,
 	Dirty,
 	PageSize,
 	Global,
-	AVL1,
-	AVL2,
-	AVL3,
+	IMPL_RES1,
+	IMPL_RES2,
+	IMPL_RES3,
 	PageAttributeTable,
 	NoExecute
 };
@@ -42,21 +42,22 @@ void set_addr(uint64_t addr, PageEntry *entry);
 uint64_t get_addr(PageEntry *entry);
 
 struct Entry {
-private:
-	alignas(alignof(PageEntry)) PageEntry m_entry = 0x0;
+	PageEntry m_entry;
 
-public:
 	inline void set_type(EntryType type) { MdOS::Memory::Paging::set_type(type, &m_entry); }
 	inline EntryType get_type() { return MdOS::Memory::Paging::get_type(&m_entry); }
 	inline void set_bit(EntryControlBit bit, bool value) { MdOS::Memory::Paging::set_bit(bit, value, &m_entry); }
 	inline bool get_bit(EntryControlBit bit) { return MdOS::Memory::Paging::get_bit(bit, &m_entry); }
 	inline void set_addr(uint64_t addr) { MdOS::Memory::Paging::set_addr(addr, &m_entry); }
 	inline uint64_t get_addr() { return MdOS::Memory::Paging::get_addr(&m_entry); }
-
-	inline PageEntry get_raw() const { return m_entry; }
-	inline void set_raw(uint64_t val) { m_entry = val; }
-};
+} __attribute__((aligned(alignof(uint64_t))));
 static_assert(sizeof(Entry) == 8, "Entry must be 8 bytes");
+
+struct PageTable {
+	Entry m_entries[512];
+} __attribute__((aligned(0x1000)));
+static_assert(sizeof(PageTable) == 0x1000);
+static_assert(alignof(PageTable) == 0x1000);
 
 }// namespace MdOS::Memory::Paging
 

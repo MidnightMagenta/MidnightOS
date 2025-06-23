@@ -2,11 +2,11 @@
 
 void MdOS::Memory::Paging::set_type(EntryType type, PageEntry *entry) {
 	*entry &= ~uint64_t(0xE00);
-	*entry |= uint64_t(type) << 11;
+	*entry |= uint64_t(type) << 9;
 }
 
 MdOS::Memory::Paging::EntryType MdOS::Memory::Paging::get_type(PageEntry *entry) {
-	return EntryType(uint8_t(*entry >> 11) & uint8_t(0b0111));
+	return EntryType(uint8_t(*entry >> 9) & uint8_t(0b0111));
 }
 
 void MdOS::Memory::Paging::set_bit(EntryControlBit bit, bool value, PageEntry *entry) {
@@ -27,7 +27,7 @@ void MdOS::Memory::Paging::set_bit(EntryControlBit bit, bool value, PageEntry *e
 				*entry &= ~(1ULL << 1);
 			}
 			return;
-		case EntryControlBit::PrivilidgeSelect:
+		case EntryControlBit::UserAccessible:
 			if (value == true) {
 				*entry |= 1ULL << 2;
 			} else {
@@ -88,13 +88,13 @@ void MdOS::Memory::Paging::set_bit(EntryControlBit bit, bool value, PageEntry *e
 				PRINT_ERROR("Attempted to set an invalid bit");
 			}
 			return;
-		case EntryControlBit::AVL1:
+		case EntryControlBit::IMPL_RES1:
 			PRINT_ERROR("Attempted to set reserved bit 9");
 			return;
-		case EntryControlBit::AVL2:
+		case EntryControlBit::IMPL_RES2:
 			PRINT_ERROR("Attempted to set reserved bit 10");
 			return;
-		case EntryControlBit::AVL3:
+		case EntryControlBit::IMPL_RES3:
 			PRINT_ERROR("Attempted to set reserved bit 11");
 			return;
 		case EntryControlBit::PageAttributeTable:
@@ -112,7 +112,7 @@ void MdOS::Memory::Paging::set_bit(EntryControlBit bit, bool value, PageEntry *e
 						*entry &= ~(1ULL << 12);
 					}
 				} else {
-					PRINT_ERROR("Attempted to set PTE bit in a non large page entry");
+					PRINT_ERROR("Attempted to set PTE bit in a non-large PDE or PDPE");
 				}
 			} else {
 				PRINT_ERROR("Attempted to set an invalid bit");
@@ -133,13 +133,13 @@ void MdOS::Memory::Paging::set_bit(EntryControlBit bit, bool value, PageEntry *e
 
 bool MdOS::Memory::Paging::get_bit(EntryControlBit bit, PageEntry *entry) {
 	EntryType type = get_type(entry);
-	if (type == EntryType::INVALID || type > EntryType::PML5E) { PRINT_ERROR("Attempted to edit an invalid entry"); }
+	if (type == EntryType::INVALID || type > EntryType::PML5E) { PRINT_ERROR("Attempted to read an invalid entry"); }
 	switch (bit) {
 		case EntryControlBit::PagePresent:
 			return *entry & 1ULL << 0;
 		case EntryControlBit::ReadWrite:
 			return *entry & 1ULL << 1;
-		case EntryControlBit::PrivilidgeSelect:
+		case EntryControlBit::UserAccessible:
 			return *entry & 1ULL << 2;
 		case EntryControlBit::WriteThrough:
 			return *entry & 1ULL << 3;
@@ -151,28 +151,28 @@ bool MdOS::Memory::Paging::get_bit(EntryControlBit bit, PageEntry *entry) {
 			if (type == EntryType::PTE) {
 				return *entry & 1ULL << 6;
 			} else {
-				PRINT_INFO("Attempted to set an invalid bit");
+				PRINT_INFO("Attempted to get an invalid bit");
 				return false;
 			}
 		case EntryControlBit::PageSize:
 			if (type == EntryType::PDE || type == EntryType::PDPE) {
 				return *entry & 1ULL << 7;
 			} else {
-				PRINT_INFO("Attempted to set an invalid bit");
+				PRINT_INFO("Attempted to get an invalid bit");
 				return false;
 			}
 		case EntryControlBit::Global:
 			if (type == EntryType::PTE) {
 				return *entry & 1ULL << 8;
 			} else {
-				PRINT_INFO("Attempted to set an invalid bit");
+				PRINT_INFO("Attempted to get an invalid bit");
 				return false;
 			}
-		case EntryControlBit::AVL1:
+		case EntryControlBit::IMPL_RES1:
 			return *entry & 1ULL << 9;
-		case EntryControlBit::AVL2:
+		case EntryControlBit::IMPL_RES2:
 			return *entry & 1ULL << 10;
-		case EntryControlBit::AVL3:
+		case EntryControlBit::IMPL_RES3:
 			return *entry & 1ULL << 11;
 		case EntryControlBit::PageAttributeTable:
 			if (type == EntryType::PTE) {
@@ -181,11 +181,11 @@ bool MdOS::Memory::Paging::get_bit(EntryControlBit bit, PageEntry *entry) {
 				if (get_bit(EntryControlBit::PageSize, entry)) {
 					return *entry & 1ULL << 12;
 				} else {
-					PRINT_INFO("Attempted to set PTE bit in a non large page entry");
+					PRINT_INFO("Attempted to get PTE bit in a non-large PDE or PDPE");
 					return false;
 				}
 			} else {
-				PRINT_INFO("Attempted to set an invalid bit");
+				PRINT_INFO("Attempted to get an invalid bit");
 				return false;
 			}
 		case EntryControlBit::NoExecute:
