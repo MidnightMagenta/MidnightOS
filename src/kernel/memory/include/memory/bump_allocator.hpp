@@ -1,7 +1,7 @@
 #ifndef BUMP_ALLOCATOR_H
 #define BUMP_ALLOCATOR_H
 
-#include "../../k_utils/include/utils.hpp"
+#include <k_utils/utils.hpp>
 #include <stddef.h>
 #include <stdint.h>
 

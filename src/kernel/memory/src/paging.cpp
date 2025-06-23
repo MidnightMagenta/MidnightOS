@@ -1,4 +1,4 @@
-#include "../include/paging.hpp"
+#include <memory/paging.hpp>
 
 void MdOS::Memory::Paging::set_type(EntryType type, PageEntry *entry) {
 	*entry &= ~uint64_t(0xE00);

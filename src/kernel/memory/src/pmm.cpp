@@ -1,5 +1,5 @@
-#include "../include/pmm.hpp"
-#include "../../IO/include/debug_print.hpp"
+#include <memory/pmm.hpp>
+#include <IO/debug_print.hpp>
 
 using namespace MdOS::Memory;
 

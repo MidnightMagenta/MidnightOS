@@ -1,11 +1,11 @@
 #ifndef PMM_H
 #define PMM_H
 
-#include "../../boot/include/boot_info.hpp"
-#include "../../boot/include/efi_structs.hpp"
-#include "../../k_utils/include/bitmap.hpp"
-#include "../../k_utils/include/result.hpp"
-#include "../include/memory_types.hpp"
+#include <boot/boot_info.hpp>
+#include <boot/efi_structs.hpp>
+#include <k_utils/bitmap.hpp>
+#include <k_utils/result.hpp>
+#include <memory/memory_types.hpp>
 
 namespace MdOS::Memory::PMM {
 struct PhysicalMemoryAllocation {

@@ -1,4 +1,4 @@
-#include "../include/init.hpp"
+#include <boot/init.hpp>
 
 void MdOS::init_krnl(BootInfo *bootInfo) {
 	init_IO(&bootInfo->bootExtra);

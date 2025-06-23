@@ -1,10 +1,10 @@
 #ifndef BITMAP_H
 #define BITMAP_H
 
-#include "../../IO/include/kprint.hpp"
-#include "../../memory/include/bump_allocator.hpp"
-#include "../include/limits.hpp"
-#include "../include/utils.hpp"
+#include <IO/kprint.hpp>
+#include <memory/bump_allocator.hpp>
+#include <k_utils/limits.hpp>
+#include <k_utils/utils.hpp>
 #include <stddef.h>
 #include <stdint.h>
 

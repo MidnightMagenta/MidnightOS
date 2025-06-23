@@ -1,7 +1,7 @@
 #ifndef GOP_RENDERER_H
 #define GOP_RENDERER_H
 
-#include "../include/psf.hpp"
+#include <IO/psf.hpp>
 #include <stdint.h>
 
 namespace MdOS {

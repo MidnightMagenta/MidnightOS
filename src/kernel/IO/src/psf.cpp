@@ -1,4 +1,4 @@
-#include "../include/psf.hpp"
+#include <IO/psf.hpp>
 
 void MdOS::PSF_DrawableFont::init(PSF1_Font *font) {
 	this->glyphs = (char *) font->glyphs;

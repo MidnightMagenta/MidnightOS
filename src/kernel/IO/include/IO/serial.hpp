@@ -1,8 +1,8 @@
 #ifndef SERIAL_H
 #define SERIAL_H
 
-#include "../../k_utils/include/result.hpp"
-#include "../include/hwio.hpp"
+#include <k_utils/result.hpp>
+#include <IO/hwio.hpp>
 
 #define COM1_PORT 0x3F8
 #define COM1_REG(reg) uint16_t(COM1_PORT + reg)

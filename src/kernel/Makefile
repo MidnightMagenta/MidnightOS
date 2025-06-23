@@ -31,6 +31,13 @@ ASM_OBJS = $(patsubst $(SOURCE_DIR)%.asm, $(BUILD_DIR)%_asm.o, $(ASM_SRCS))
 
 OBJS = $(CRTI_OBJ) $(CRTBEGIN_OBJ) $(C_OBJS) $(CPP_OBJS) $(ASM_OBJS) $(CRTEND_OBJ) $(CRTN_OBJ)
 
+INCLUDE_DIRS = \
+	-I$(abspath $(LIBC_DIR)) \
+	-IIO/include \
+	-Imemory/include \
+	-Iboot/include \
+	-Ik_utils/include
+
 # Default flags
 CFLAGS = -g -ffreestanding -fshort-wchar -mno-red-zone -m64 -Wall -nostdlib -nostdinc \
 		-fno-builtin -fno-stack-protector -nostartfiles -nodefaultlibs
@@ -42,13 +49,13 @@ all: $(OBJS)
 
 $(BUILD_DIR)/%.o: $(SOURCE_DIR)/%.c $(C_HDRS)
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -I$(abspath $(LIBC_DIR)) -c $< -o $@
+	$(CC) $(CFLAGS) $(INCLUDE_DIRS) -c $< -o $@
 
 $(BUILD_DIR)/%.o: $(SOURCE_DIR)/%.cpp $(CPP_HDRS)
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -I$(abspath $(LIBC_DIR)) -c $< -o $@
+	$(CC) $(CFLAGS) $(INCLUDE_DIRS) -c $< -o $@
 
-$(BUILD_DIR)/%.o: $(SOURCE_DIR)/%.S $(CPP_HDRS)
+$(BUILD_DIR)/%.o: $(SOURCE_DIR)/%.S
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 

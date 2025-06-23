@@ -1,4 +1,4 @@
-#include "../include/kstring.hpp"
+#include <k_utils/kstring.hpp>
 
 uint64_t MdOS::string::strlen(const char *str) {
 	uint64_t len = 0;

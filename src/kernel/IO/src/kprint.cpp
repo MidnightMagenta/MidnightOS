@@ -1,4 +1,4 @@
-#include "../include/kprint.hpp"
+#include <IO/kprint.hpp>
 
 MdOS::GOP_Renderer *MdOS::IO::kprintSystem::m_renderer = nullptr;
 MdOS::Teletype MdOS::IO::kprintSystem::m_tty = MdOS::Teletype();

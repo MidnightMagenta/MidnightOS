@@ -1,5 +1,5 @@
-#include "../include/bump_allocator.hpp"
-#include "../../IO/include/debug_print.hpp"
+#include <memory/bump_allocator.hpp>
+#include <IO/debug_print.hpp>
 
 uintptr_t MdOS::Memory::BumpAllocator::m_heapBase = 0;
 uintptr_t MdOS::Memory::BumpAllocator::m_heapTop = 0;
