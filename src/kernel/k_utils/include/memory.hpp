@@ -4,8 +4,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
-namespace utils{
-    void* memset(void* ptr, int value, size_t num);
+namespace utils {
+void *memset(void *ptr, int value, size_t num);
 }
 
 #endif

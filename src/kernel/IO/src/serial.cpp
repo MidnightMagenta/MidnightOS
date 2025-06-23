@@ -1,4 +1,4 @@
-#include "../../include/IO/serial.hpp"
+#include "../include/serial.hpp"
 
 bool MdOS::IO::BasicSerial::m_initialized = false;
 

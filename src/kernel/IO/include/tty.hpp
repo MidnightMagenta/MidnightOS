@@ -1,8 +1,8 @@
 #ifndef TTY_H
 #define TTY_H
 
-#include "../../../include/IO/graphics/GOP_renderer.hpp"
-#include "../../../include/IO/serial.hpp"
+#include "../include/GOP_renderer.hpp"
+#include "../include/serial.hpp"
 #include <stddef.h>
 
 namespace MdOS {

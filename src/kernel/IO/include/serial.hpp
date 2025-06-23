@@ -1,8 +1,8 @@
 #ifndef SERIAL_H
 #define SERIAL_H
 
-#include "../../include/IO/hwio.hpp"
-#include "../../include/result.hpp"
+#include "../../k_utils/include/result.hpp"
+#include "../include/hwio.hpp"
 
 #define COM1_PORT 0x3F8
 #define COM1_REG(reg) uint16_t(COM1_PORT + reg)
@@ -34,6 +34,6 @@ private:
 	inline static bool is_tx_empty() { return MdOS::IO::inb(COM1_REG(COM_R_LINE_STATUS_REG)) & 0x20; }
 	static bool m_initialized;
 };
-}// namespace MsOS::IO
+}// namespace MdOS::IO
 
 #endif

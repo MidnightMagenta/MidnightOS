@@ -1,9 +1,9 @@
 #ifndef KPRINT_H
 #define KPRINT_H
 
-#include "../../include/IO/graphics/GOP_renderer.hpp"
-#include "../../include/IO/tty/tty.hpp"
-#include "../../include/kstring.hpp"
+#include "../../k_utils/include/kstring.hpp"
+#include "../include/GOP_renderer.hpp"
+#include "../include/tty.hpp"
 #include <limits.h>
 #include <stdarg.h>
 #include <stddef.h>

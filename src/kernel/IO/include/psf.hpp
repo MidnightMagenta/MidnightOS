@@ -25,9 +25,9 @@ struct PSF1_Font {
 	void *glyphs;
 };
 
-struct PSF2_Font{
+struct PSF2_Font {
 	PSF2_Header *header;
-}; //stub
+};//stub
 
 namespace MdOS {
 typedef char *PSF1_glyph;

@@ -1,7 +1,7 @@
 #ifndef DEBUG_PRINT_H
 #define DEBUG_PRINT_H
 
-#include "../../include/IO/kprint.hpp"
+#include "../include/kprint.hpp"
 
 #define VERBOSE_FUNCTION_NAMES false
 

@@ -1,8 +1,8 @@
 #ifndef PAGING_H
 #define PAGING_H
 
-#include "../../include/IO/debug_print.hpp"
-#include "../../include/memory/memory_types.hpp"
+#include "../../IO/include/debug_print.hpp"
+#include "../include/memory_types.hpp"
 #include <stdint.h>
 
 namespace MdOS::Memory::Paging {

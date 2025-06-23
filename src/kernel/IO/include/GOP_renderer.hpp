@@ -1,7 +1,7 @@
 #ifndef GOP_RENDERER_H
 #define GOP_RENDERER_H
 
-#include "../../../include/IO/tty/psf.hpp"
+#include "../include/psf.hpp"
 #include <stdint.h>
 
 namespace MdOS {
@@ -26,6 +26,7 @@ public:
 	inline uint32_t framebuffer_width() { return m_width; }
 	inline uint32_t framebuffer_height() { return m_height; }
 	inline uint32_t framebuffer_pps() { return m_pixelsPerScanline; }
+
 private:
 	void *m_bufferBase;
 	uint64_t m_bufferSize;

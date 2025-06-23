@@ -1,7 +1,7 @@
 #ifndef BOOT_INFO_H
 #define BOOT_INFO_H
 
-#include "../include/IO/tty/psf.hpp"
+#include "../../IO/include/psf.hpp"
 #include "../include/efi_structs.hpp"
 #include <stdint.h>
 #include <stddef.h>
