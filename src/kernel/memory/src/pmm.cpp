@@ -7,14 +7,14 @@ bool m_initialized = false;
 utils::Bitmap<uint64_t> m_pageFrameMap;
 
 //memory trackers
-MemSize m_lowestPage = 0;		//lowest addressable page reported by UEFI
-MemSize m_highestPage = 0;		//highest addressable page reported by UEFI
-MemSize m_maxAvailPages = 0;	//number of pages between the lowest and highest addressable pages reported by UEFI
-MemSize m_unusablePageCount = 0;//pages not backed by DRAM
-MemSize m_usablePageCount = 0;	//pages backed by DRAM
-MemSize m_freePageCount = 0;	//pages marked as EfiConventionalMemory or reclaimed pages backed by DRAM
-MemSize m_usedPageCount = 0;	//pages allocated by the pmm
-MemSize m_reservedPageCount = 0;//pages not marked as EfiConventionalMemory, not reclaimed, but backed by DRAM
+size_t m_lowestPage = 0;		//lowest addressable page reported by UEFI
+size_t m_highestPage = 0;		//highest addressable page reported by UEFI
+size_t m_maxAvailPages = 0;	//number of pages between the lowest and highest addressable pages reported by UEFI
+size_t m_unusablePageCount = 0;//pages not backed by DRAM
+size_t m_usablePageCount = 0;	//pages backed by DRAM
+size_t m_freePageCount = 0;	//pages marked as EfiConventionalMemory or reclaimed pages backed by DRAM
+size_t m_usedPageCount = 0;	//pages allocated by the pmm
+size_t m_reservedPageCount = 0;//pages not marked as EfiConventionalMemory, not reclaimed, but backed by DRAM
 //!memory trackers
 
 MdOS::Result PMM::init(MemMap *memMap) {
@@ -223,20 +223,20 @@ MdOS::Result PMM::unreserve_pages(PhysicalAddress addr, size_t numPages) {
 	return MdOS::Result::SUCCESS;
 }
 
-MemSize PMM::max_page_count() { return m_maxAvailPages; }
-MemSize PMM::max_mem_size() { return m_maxAvailPages * 0x1000; }
-MemSize PMM::unusable_page_count() { return m_unusablePageCount; }
-MemSize PMM::unusable_mem_size() { return m_unusablePageCount * 0x1000; }
-MemSize PMM::usable_page_count() { return m_usablePageCount; }
-MemSize PMM::usable_mem_size() { return m_usablePageCount * 0x1000; }
-MemSize PMM::free_page_count() { return m_freePageCount; }
-MemSize PMM::free_mem_size() { return m_freePageCount * 0x1000; }
-MemSize PMM::used_page_count() { return m_usedPageCount; }
-MemSize PMM::used_mem_size() { return m_usedPageCount * 0x1000; }
-MemSize PMM::reserved_page_count() { return m_reservedPageCount; }
-MemSize PMM::reserved_mem_size() { return m_reservedPageCount * 0x1000; }
+size_t PMM::max_page_count() { return m_maxAvailPages; }
+size_t PMM::max_mem_size() { return m_maxAvailPages * 0x1000; }
+size_t PMM::unusable_page_count() { return m_unusablePageCount; }
+size_t PMM::unusable_mem_size() { return m_unusablePageCount * 0x1000; }
+size_t PMM::usable_page_count() { return m_usablePageCount; }
+size_t PMM::usable_mem_size() { return m_usablePageCount * 0x1000; }
+size_t PMM::free_page_count() { return m_freePageCount; }
+size_t PMM::free_mem_size() { return m_freePageCount * 0x1000; }
+size_t PMM::used_page_count() { return m_usedPageCount; }
+size_t PMM::used_mem_size() { return m_usedPageCount * 0x1000; }
+size_t PMM::reserved_page_count() { return m_reservedPageCount; }
+size_t PMM::reserved_mem_size() { return m_reservedPageCount * 0x1000; }
 
-MemSize PMM::min_page_index() { return m_lowestPage; }
-MemSize PMM::min_page_addr() { return m_lowestPage * 0x1000; }
-MemSize PMM::max_page_index() { return m_highestPage; }
-MemSize PMM::max_page_addr() { return m_highestPage * 0x1000; }
+size_t PMM::min_page_index() { return m_lowestPage; }
+size_t PMM::min_page_addr() { return m_lowestPage * 0x1000; }
+size_t PMM::max_page_index() { return m_highestPage; }
+size_t PMM::max_page_addr() { return m_highestPage * 0x1000; }

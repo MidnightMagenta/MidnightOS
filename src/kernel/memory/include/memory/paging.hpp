@@ -2,7 +2,7 @@
 #define PAGING_H
 
 #include <IO/debug_print.hpp>
-#include <memory/memory_types.hpp>
+#include <k_utils/types.h>
 #include <stdint.h>
 
 namespace MdOS::Memory::Paging {
