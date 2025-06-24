@@ -1,7 +1,6 @@
 #ifndef MDOS_K_UTILS_BITMAP_H
 #define MDOS_K_UTILS_BITMAP_H
 
-#include <IO/kprint.hpp>
 #include <memory/bump_allocator.hpp>
 #include <k_utils/limits.hpp>
 #include <k_utils/utils.hpp>

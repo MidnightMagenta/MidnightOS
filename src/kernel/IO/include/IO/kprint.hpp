@@ -26,6 +26,4 @@ private:
 };
 }// namespace MdOS::IO
 
-using MdOS::IO::kprint;
-
 #endif

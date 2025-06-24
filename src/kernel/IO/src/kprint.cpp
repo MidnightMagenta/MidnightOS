@@ -1,3 +1,4 @@
+#include <IO/kprint.h>
 #include <IO/kprint.hpp>
 
 MdOS::GOP_Renderer *MdOS::IO::kprintSystem::m_renderer = nullptr;
@@ -149,4 +150,14 @@ size_t MdOS::IO::kprint(const char *fmt, ...) {
 
 	va_end(params);
 	return written;
+}
+
+extern "C" int kprint(const char *fmt, ...) {
+	va_list params;
+	va_start(params, fmt);
+
+	size_t written = MdOS::IO::kprintSystem::print(fmt, params);
+
+	va_end(params);
+	return int(written);
 }

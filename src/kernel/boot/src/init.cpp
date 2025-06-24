@@ -4,7 +4,7 @@ void MdOS::init_krnl(BootInfo *bootInfo) {
 	init_IO(&bootInfo->bootExtra);
 	init_memory(bootInfo);
 
-	kprint("\nEOF\n");
+	MdOS::IO::kprint("\nEOF\n");
 }
 
 void MdOS::init_IO(BootExtra *bootExtra) {
