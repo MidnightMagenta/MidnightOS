@@ -1,5 +1,5 @@
-#ifndef BITMAP_H
-#define BITMAP_H
+#ifndef MDOS_K_UTILS_BITMAP_H
+#define MDOS_K_UTILS_BITMAP_H
 
 #include <IO/kprint.hpp>
 #include <memory/bump_allocator.hpp>

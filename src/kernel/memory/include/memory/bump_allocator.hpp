@@ -1,5 +1,5 @@
-#ifndef BUMP_ALLOCATOR_H
-#define BUMP_ALLOCATOR_H
+#ifndef MDOS_BUMP_ALLOCATOR_H
+#define MDOS_BUMP_ALLOCATOR_H
 
 #include <k_utils/utils.hpp>
 #include <stddef.h>

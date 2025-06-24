@@ -1,5 +1,5 @@
-#ifndef BOOT_TYPES_H
-#define BOOT_TYPES_H
+#ifndef MDBOOT_BOOT_TYPES_H
+#define MDBOOT_BOOT_TYPES_H
 
 #include "../include/psf.h"
 #include "../include/video.h"

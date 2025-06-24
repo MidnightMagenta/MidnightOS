@@ -1,5 +1,5 @@
-#ifndef TYPE_TRAITS_H
-#define TYPE_TRAITS_H
+#ifndef MDOS_K_UTILS_TYPE_TRAITS_H
+#define MDOS_K_UTILS_TYPE_TRAITS_H
 
 namespace utils {
 namespace TypeTraits {

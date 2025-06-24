@@ -1,5 +1,5 @@
-#ifndef BOOT_MEM_MAP_H
-#define BOOT_MEM_MAP_H
+#ifndef MDBOOT_BOOT_MEM_MAP_H
+#define MDBOOT_BOOT_MEM_MAP_H
 
 #include "../include/basics.h"
 #include "../include/efi_map.h"

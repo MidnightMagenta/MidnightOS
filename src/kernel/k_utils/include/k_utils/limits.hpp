@@ -1,5 +1,5 @@
-#ifndef NUMERIC_LIMITS_H
-#define NUMERIC_LIMITS_H
+#ifndef MDOS_K_UTILS_NUMERIC_LIMITS_H
+#define MDOS_K_UTILS_NUMERIC_LIMITS_H
 
 #include <stdint.h>
 

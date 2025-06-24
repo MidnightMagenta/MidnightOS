@@ -1,5 +1,5 @@
-#ifndef BOOT_INFO_H
-#define BOOT_INFO_H
+#ifndef MDOS_BOOT_INFO_H
+#define MDOS_BOOT_INFO_H
 
 #include <IO/psf.hpp>
 #include <boot/efi_structs.hpp>

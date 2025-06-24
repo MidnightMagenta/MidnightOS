@@ -1,5 +1,5 @@
-#ifndef KERNEL_H
-#define KERNEL_H
+#ifndef MDOS_KERNEL_H
+#define MDOS_KERNEL_H
 
 #include <IO/debug_print.hpp>
 #include <boot/boot_info.hpp>

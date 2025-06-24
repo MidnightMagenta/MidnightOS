@@ -1,5 +1,5 @@
-#ifndef EFI_STRUCTS_H
-#define EFI_STRUCTS_H
+#ifndef MDOS_EFI_STRUCTS_H
+#define MDOS_EFI_STRUCTS_H
 
 #include <stdint.h>
 

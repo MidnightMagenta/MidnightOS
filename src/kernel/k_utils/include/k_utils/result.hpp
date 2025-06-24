@@ -1,5 +1,5 @@
-#ifndef RESULT_H
-#define RESULT_H
+#ifndef MDOS_K_UTILS_RESULT_H
+#define MDOS_K_UTILS_RESULT_H
 
 namespace MdOS {
 enum class Result {

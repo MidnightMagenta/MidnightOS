@@ -1,5 +1,5 @@
-#ifndef BOOT_GOP_H
-#define BOOT_GOP_H
+#ifndef MDBOOT_BOOT_GOP_H
+#define MDBOOT_BOOT_GOP_H
 
 #include "../include/basics.h"
 #include <efi.h>

@@ -1,5 +1,5 @@
-#ifndef BOOT_BASICS_H
-#define BOOT_BASICS_H
+#ifndef MDBOOT_BOOT_BASICS_H
+#define MDBOOT_BOOT_BASICS_H
 
 #include <efi.h>
 #include <efilib.h>

@@ -1,5 +1,5 @@
-#ifndef MEMORY_LIMITS_H
-#define MEMORY_LIMITS_H
+#ifndef MDOS_MEMORY_LIMITS_H
+#define MDOS_MEMORY_LIMITS_H
 
 extern "C" char __kernel_start;
 extern "C" char __kernel_end;

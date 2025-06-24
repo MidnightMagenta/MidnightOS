@@ -1,5 +1,5 @@
-#ifndef K_UTILS_MEMORY_H
-#define K_UTILS_MEMORY_H
+#ifndef MDOS_K_UTILS_MEMORY_H
+#define MDOS_K_UTILS_MEMORY_H
 
 #include <stddef.h>
 #include <stdint.h>

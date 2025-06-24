@@ -1,5 +1,5 @@
-#ifndef BOOT_PSF_H
-#define BOOT_PSF_H
+#ifndef MDBOOT_BOOT_PSF_H
+#define MDBOOT_BOOT_PSF_H
 
 #include "../include/basics.h"
 #include "../include/fs.h"

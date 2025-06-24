@@ -1,5 +1,5 @@
-#ifndef BOOT_ELF_LOADER_H
-#define BOOT_ELF_LOADER_H
+#ifndef MDBOOT_BOOT_ELF_LOADER_H
+#define MDBOOT_BOOT_ELF_LOADER_H
 
 #include "../include/basics.h"
 #include "../include/fs.h"

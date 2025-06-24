@@ -1,5 +1,5 @@
-#ifndef PMM_H
-#define PMM_H
+#ifndef MDOS_PMM_H
+#define MDOS_PMM_H
 
 #include <boot/boot_info.hpp>
 #include <boot/efi_structs.hpp>

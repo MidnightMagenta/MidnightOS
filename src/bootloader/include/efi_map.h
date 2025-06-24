@@ -1,5 +1,5 @@
-#ifndef BOOT_EFI_MAP_H
-#define BOOT_EFI_MAP_H
+#ifndef MDBOOT_BOOT_EFI_MAP_H
+#define MDBOOT_BOOT_EFI_MAP_H
 
 #include "../include/basics.h"
 #include "../include/types.h"

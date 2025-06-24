@@ -1,5 +1,5 @@
-#ifndef K_UTILS_TYPES_H
-#define K_UTILS_TYPES_H
+#ifndef MDOS_K_UTILS_TYPES_H
+#define MDOS_K_UTILS_TYPES_H
 #ifdef __cplusplus
 extern "C" {
 #endif

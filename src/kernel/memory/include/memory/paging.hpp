@@ -1,8 +1,9 @@
-#ifndef PAGING_H
-#define PAGING_H
+#ifndef MDOS_PAGING_H
+#define MDOS_PAGING_H
 
 #include <IO/debug_print.hpp>
 #include <k_utils/types.h>
+#include <memory/paging_index_helper.hpp>
 #include <stdint.h>
 
 namespace MdOS::Memory::Paging {
@@ -58,6 +59,11 @@ struct PageTable {
 } __attribute__((aligned(0x1000)));
 static_assert(sizeof(PageTable) == 0x1000);
 static_assert(alignof(PageTable) == 0x1000);
+
+class VirtualMemoryManager {
+public:
+private:
+};
 
 }// namespace MdOS::Memory::Paging
 

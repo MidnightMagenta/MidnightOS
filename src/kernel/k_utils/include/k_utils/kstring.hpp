@@ -1,5 +1,5 @@
-#ifndef KSTRING_H
-#define KSTRING_H
+#ifndef MDOS_K_UTILS_KSTRING_H
+#define MDOS_K_UTILS_KSTRING_H
 
 #include <stddef.h>
 #include <stdint.h>
