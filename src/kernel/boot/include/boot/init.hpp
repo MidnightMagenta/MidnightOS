@@ -4,6 +4,7 @@
 #include <IO/debug_print.hpp>
 #include <boot/boot_info.hpp>
 #include <memory/pmm.hpp>
+#include <memory/gdt.h>
 #include <stdint.h>
 
 namespace MdOS {
