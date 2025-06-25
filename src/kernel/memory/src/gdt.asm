@@ -1,8 +1,9 @@
 bits 64
-global load_gdt
+global mdos_mem_load_gdt
 
-load_gdt:
-    ldgt [rdi]
+section .text
+mdos_mem_load_gdt:
+    lgdt [rdi]
     xor rax, rax
     mov ax, 0x10
     mov ds, ax

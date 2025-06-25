@@ -28,11 +28,11 @@ typedef struct {
 	GDTEntry null2;
 	GDTEntry userCode;
 	GDTEntry userData;
-} __attribute__((packed)) __attribute__((aligned(0x1000))) GDT;
+} __attribute__((packed)) GDT;
 
 extern GDT g_defaultGDT;
-GDTDescriptor g_gdtDescriptor;
-extern void load_gdt(GDTDescriptor *gdtDescriptor);
+extern GDTDescriptor g_gdtDescriptor;
+extern void mdos_mem_load_gdt(GDTDescriptor *gdtDescriptor);
 
 #ifdef __cplusplus
 }
