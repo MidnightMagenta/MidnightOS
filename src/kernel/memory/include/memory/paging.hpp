@@ -52,11 +52,12 @@ struct Entry {
 	inline void set_addr(uint64_t addr) { MdOS::Memory::Paging::set_addr(addr, &m_entry); }
 	inline uint64_t get_addr() { return MdOS::Memory::Paging::get_addr(&m_entry); }
 } __attribute__((aligned(alignof(uint64_t))));
-static_assert(sizeof(Entry) == 8, "Entry must be 8 bytes");
 
 struct PageTable {
 	Entry m_entries[512];
 } __attribute__((aligned(0x1000)));
+
+static_assert(sizeof(Entry) == 8);
 static_assert(sizeof(PageTable) == 0x1000);
 static_assert(alignof(PageTable) == 0x1000);
 
