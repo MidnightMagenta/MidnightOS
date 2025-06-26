@@ -6,7 +6,7 @@ extern _init
 extern _fini
 global _start
 
-section .bss
+section .bss.boot_stack
 	align 16
 	_stack_bottom:				; kernel's bootstrap stack
 		resb 0x4000

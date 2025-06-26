@@ -38,6 +38,10 @@ SECTIONS
         *(COMMON)
         *(.bss)
         __bss_end = .;
+        . = ALIGN(0x1000);
+        __bss_boot_stack_start = .;
+        *(.bss.boot_stack)
+        __bss_boot_stack_end = .;
     }
 
     __kernel_end = .;
