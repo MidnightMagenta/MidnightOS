@@ -11,8 +11,18 @@ public:
 	Teletype() {}
 	Teletype(GOP_Renderer *renderer, PSF1_Font *font) { init(renderer, font); };
 	void init(GOP_Renderer *renderer, PSF1_Font *font) {
-		m_renderer = renderer;
-		m_font.init(font);
+		if (renderer != nullptr && font != nullptr) {
+			m_renderer = renderer;
+			m_font.init(font);
+			m_graphicsAvail = true;
+		}
+	}
+	void init_graphics(GOP_Renderer *renderer, PSF1_Font *font) {
+		if (renderer != nullptr && font != nullptr) {
+			m_renderer = renderer;
+			m_font.init(font);
+			m_graphicsAvail = true;
+		}
 	}
 	~Teletype() {}
 
@@ -26,6 +36,7 @@ private:
 	uint32_t m_xOffset = 0;
 	uint32_t m_yOffset = 0;
 
+	bool m_graphicsAvail = false;
 	GOP_Renderer *m_renderer = nullptr;
 	PSF_DrawableFont m_font;
 };
