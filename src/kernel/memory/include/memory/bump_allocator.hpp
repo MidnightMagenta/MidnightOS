@@ -12,6 +12,7 @@ public:
 
 	static void *alloc(size_t size);
 	static void *aligned_alloc(size_t size, size_t alignment);
+	static void *alloc_pages(size_t numPages);
 
 private:
 	static uintptr_t m_heapBase;

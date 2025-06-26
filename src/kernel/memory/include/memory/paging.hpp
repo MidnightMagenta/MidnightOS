@@ -61,9 +61,14 @@ static_assert(sizeof(Entry) == 8);
 static_assert(sizeof(PageTable) == 0x1000);
 static_assert(alignof(PageTable) == 0x1000);
 
+inline void flush_cr3(Entry *pml4) { __asm__ volatile("mov %0, %%cr3;" ::"r"(pml4) : "memory"); }
+inline void invalidate_page(uintptr_t vaddr) { __asm__ volatile("invlpg (%0)" ::"r"(vaddr) : "memory"); }
+
 class VirtualMemoryManager {
 public:
 private:
+	bool m_initialized = false;
+	PageTable m_pml4;
 };
 
 }// namespace MdOS::Memory::Paging

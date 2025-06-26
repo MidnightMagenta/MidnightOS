@@ -1,5 +1,5 @@
-#include <memory/bump_allocator.hpp>
 #include <IO/debug_print.hpp>
+#include <memory/bump_allocator.hpp>
 
 uintptr_t MdOS::Memory::BumpAllocator::m_heapBase = 0;
 uintptr_t MdOS::Memory::BumpAllocator::m_heapTop = 0;
@@ -16,13 +16,13 @@ void *MdOS::Memory::BumpAllocator::alloc(size_t size) {
 		PRINT_ERROR("uninitialized");
 		return nullptr;
 	}
-	if (m_allocPtr + uintptr_t(size) >= m_heapTop) {
+	if (m_allocPtr + size >= m_heapTop) {
 		PRINT_ERROR("out of memory");
 		return nullptr;
 	}
 
 	uintptr_t allocAddress = m_allocPtr;
-	m_allocPtr = m_allocPtr + uintptr_t(size);
+	m_allocPtr = m_allocPtr + size;
 	return (void *) allocAddress;
 }
 
@@ -33,11 +33,27 @@ void *MdOS::Memory::BumpAllocator::aligned_alloc(size_t size, size_t alignment) 
 		PRINT_ERROR("uninitialized");
 		return nullptr;
 	}
-	if (allocAddress + uintptr_t(size) >= m_heapTop) {
+	if (allocAddress + size >= m_heapTop) {
 		PRINT_ERROR("out of memory");
 		return nullptr;
 	}
 
-	m_allocPtr = allocAddress + uintptr_t(size);
+	m_allocPtr = allocAddress + size;
+	return (void *) allocAddress;
+}
+
+void *MdOS::Memory::BumpAllocator::alloc_pages(size_t numPages) {
+	uintptr_t allocAddress = ALIGN_ADDR(m_allocPtr, 0x1000, uintptr_t);
+
+	if (m_allocPtr == 0 || m_heapBase == 0 || m_heapTop == 0) {
+		PRINT_ERROR("uninitialized");
+		return nullptr;
+	}
+	if (allocAddress + numPages * 0x1000 >= m_heapTop) {
+		PRINT_ERROR("out of memory");
+		return nullptr;
+	}
+
+	m_allocPtr = allocAddress + numPages * 0x1000;
 	return (void *) allocAddress;
 }
