@@ -14,6 +14,11 @@ void print_stack_trace() {
 		kprint("\t#%i rbp: 0x%lx rip: 0x%lx\n", i, rbp, rip);
 		rip = 0;
 		rbp = (uint64_t *) rbp[0];
+		if (((uintptr_t) rbp & 0x7) != 0 || (uintptr_t) rbp > (uintptr_t) (&__bss_boot_stack_end) ||
+			(uintptr_t) rbp < (uintptr_t) (&__bss_boot_stack_start)) {
+			kprint("\t[invalid frame. rbp: 0x%lx]", rbp);
+			break;
+		}
 		if (!rbp) { break; }
 	}
 }
@@ -30,8 +35,8 @@ void panic_handler(const char *msg, PanicParams *params) {
 	get_cr_regs(&cr);
 	get_segment_regs(&sr);
 	__asm__ volatile("pushfq; pop %%rax; mov %%rax, %0" : "=r"(rflags) : : "memory");
-	kprint("[FATAL ERROR: 0x%x] %s\nrax: 0x%lx rbx: 0x%lx rcx: 0x%lx rdx: 0x%lx\n", params->eCode, msg, gpr.rax,
-		   gpr.rbx, gpr.rcx, gpr.rdx);
+	kprint("[FATAL ERROR: 0x%x] %s\n", params->eCode, msg);
+	kprint("rax: 0x%lx rbx: 0x%lx rcx: 0x%lx rdx: 0x%lx\n", gpr.rax, gpr.rbx, gpr.rcx, gpr.rdx);
 	kprint("rdi: 0x%lx rsi: 0x%lx rbp: 0x%lx rsp: 0x%lx\n", gpr.rdi, gpr.rsi, gpr.rbp, gpr.rsp);
 	kprint("r8:  0x%lx r9:  0x%lx r10: 0x%lx r11: 0x%lx\n", gpr.r8, gpr.r9, gpr.r10, gpr.r11);
 	kprint("r12: 0x%lx r13: 0x%lx r14: 0x%lx r15: 0x%lx\n", gpr.r12, gpr.r13, gpr.r14, gpr.r15);

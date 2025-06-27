@@ -39,6 +39,7 @@ typedef struct {
 	uint64_t originalRSI;
 	ErrorCode eCode;
 } PanicParams;
+
 extern void get_gp_regs(GeneralPurposeRegisters *registers);
 extern void get_cr_regs(ControlRegisters *registers);
 extern void get_segment_regs(SegmentRegisters *registers);
