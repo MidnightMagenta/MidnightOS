@@ -1,11 +1,16 @@
 #include <IO/kprint.h>
 #include <error/panic.h>
+#include <memory/memory_limits.h>
 
 void print_stack_trace() {
 	uint64_t *rbp;
 	__asm__ volatile("mov %%rbp, %0" : "=r"(rbp));
-	for (int i = 0; i < 32 && rbp != NULL; i++) {
+	for (int i = 0; i < 64 && rbp != NULL; i++) {
 		uint64_t rip = rbp[1];
+		if (rip < (uintptr_t) (&__kernel_start)) {
+			kprint("\t[trace end]");
+			break;
+		}
 		kprint("\t#%i rbp: 0x%lx rip: 0x%lx\n", i, rbp, rip);
 		rip = 0;
 		rbp = (uint64_t *) rbp[0];
