@@ -2,12 +2,13 @@
 #define MDOS_CHAR_SINK_H
 
 #include <k_utils/result.hpp>
-
-#define MAX_CHAR_SINKS 4
+#include <stddef.h>
 
 namespace MdOS::CharSink {
+constexpr size_t max_char_sinks = 4;
 using CharSink = void (*)(char);
-inline CharSink sinks[MAX_CHAR_SINKS];
+
+inline CharSink sinks[max_char_sinks];
 MdOS::Result register_char_sink(CharSink sink);
 MdOS::Result deregister_char_sink(CharSink sink);
 void putc(char c);

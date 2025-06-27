@@ -32,7 +32,7 @@ SECTIONS
         __data_end = .;
     }
 
-    .bss : ALIGN(0x1000)
+    .bss (NOLOAD) : ALIGN(0x1000)
     {
         __bss_start = .;
         *(COMMON)

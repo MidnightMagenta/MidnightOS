@@ -1,9 +1,9 @@
 #include <boot/init.hpp>
-#include <error/panic.h>
+
 void MdOS::init_krnl(BootInfo *bootInfo) {
 	init_IO(&bootInfo->bootExtra);
 	init_memory(bootInfo);
-	PANIC("Test panic", TEST_ERROR);
+	
 	MdOS::IO::kprint("\nEOF\n");
 }
 
