@@ -1,5 +1,6 @@
-#include <memory/pmm.hpp>
 #include <IO/debug_print.hpp>
+#include <error/panic.h>
+#include <memory/pmm.hpp>
 
 using namespace MdOS::Memory;
 
@@ -7,13 +8,13 @@ bool m_initialized = false;
 utils::Bitmap<uint64_t> m_pageFrameMap;
 
 //memory trackers
-size_t m_lowestPage = 0;		//lowest addressable page reported by UEFI
-size_t m_highestPage = 0;		//highest addressable page reported by UEFI
-size_t m_maxAvailPages = 0;	//number of pages between the lowest and highest addressable pages reported by UEFI
+size_t m_lowestPage = 0;	   //lowest addressable page reported by UEFI
+size_t m_highestPage = 0;	   //highest addressable page reported by UEFI
+size_t m_maxAvailPages = 0;	   //number of pages between the lowest and highest addressable pages reported by UEFI
 size_t m_unusablePageCount = 0;//pages not backed by DRAM
-size_t m_usablePageCount = 0;	//pages backed by DRAM
-size_t m_freePageCount = 0;	//pages marked as EfiConventionalMemory or reclaimed pages backed by DRAM
-size_t m_usedPageCount = 0;	//pages allocated by the pmm
+size_t m_usablePageCount = 0;  //pages backed by DRAM
+size_t m_freePageCount = 0;	   //pages marked as EfiConventionalMemory or reclaimed pages backed by DRAM
+size_t m_usedPageCount = 0;	   //pages allocated by the pmm
 size_t m_reservedPageCount = 0;//pages not marked as EfiConventionalMemory, not reclaimed, but backed by DRAM
 //!memory trackers
 
@@ -35,15 +36,15 @@ MdOS::Result PMM::init(MemMap *memMap) {
 	}
 
 	if (((lowestAddr % 0x1000) != 0) || ((highestAddr % 0x1000) != 0)) {
-		PRINT_ERROR("memory limits not page aligned");
-		return MdOS::Result::INIT_FAILURE;
+		PRINT_ERROR("Kernel panic");
+		PANIC("memory limits not page aligned", INIT_FAIL);
 	}
 
 	m_maxAvailPages = (highestAddr - lowestAddr) / 0x1000;
 
 	if (!m_pageFrameMap.init(m_maxAvailPages, true) /*all pages marked as used*/) {
-		PRINT_ERROR("failed to initialize page frame map");
-		return MdOS::Result::INIT_FAILURE;
+		PRINT_ERROR("Kernel panic");
+		PANIC("failed to initialize page frame map", INIT_FAIL);
 	}
 
 	for (size_t i = 0; i < memMap->size / memMap->descriptorSize; i++) {
