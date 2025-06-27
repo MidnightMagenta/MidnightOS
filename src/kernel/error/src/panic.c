@@ -18,14 +18,12 @@ void panic_handler(const char *msg, PanicParams *params) {
 	GeneralPurposeRegisters gpr;
 	ControlRegisters cr;
 	SegmentRegisters sr;
-	uint64_t rip = 0;
 	uint64_t rflags = 0;
 	gpr.rdi = params->originalRDI;
 	gpr.rsi = params->originalRSI;
 	get_gp_regs(&gpr);
 	get_cr_regs(&cr);
 	get_segment_regs(&sr);
-	__asm__ volatile("lea (%%rip), %0" : "=r"(rip));
 	__asm__ volatile("pushfq; pop %%rax; mov %%rax, %0" : "=r"(rflags) : : "memory");
 	kprint("[FATAL ERROR: 0x%x] %s\nrax: 0x%lx rbx: 0x%lx rcx: 0x%lx rdx: 0x%lx\n", params->eCode, msg, gpr.rax,
 		   gpr.rbx, gpr.rcx, gpr.rdx);
@@ -35,7 +33,7 @@ void panic_handler(const char *msg, PanicParams *params) {
 	kprint("cr0: 0x%lx cr2: 0x%lx cr3: 0x%lx cr4: 0x%lx cr8: 0x%lx\n", cr.cr0, cr.cr2, cr.cr3, cr.cr4, cr.cr8);
 	kprint("ds: 0x%x \tes: 0x%x \tfs: 0x%x \tgs: 0x%x \tss: 0x%x \tcs: 0x%x\n", sr.ds, sr.es, sr.fs, sr.gs, sr.ss,
 		   sr.cs);
-	kprint("rip: 0x%lx rflags: 0x%lx\n\n", rip, rflags);
+	kprint("rflags: 0x%lx\n\n", rflags);
 	kprint("Stack trace:\n");
 	print_stack_trace();
 

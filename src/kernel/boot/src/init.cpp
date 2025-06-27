@@ -22,7 +22,7 @@ void MdOS::init_memory(BootInfo *bootInfo) {
 	MdOS::Memory::BumpAllocator::init(uintptr_t(bootInfo->bootstrapMem.baseAddr),
 									  uintptr_t(bootInfo->bootstrapMem.topAddr));
 
-	if(MdOS::Memory::PMM::init(bootInfo->map) != MdOS::Result::SUCCESS){
+	if (MdOS::Memory::PMM::init(bootInfo->map) != MdOS::Result::SUCCESS) {
 		PRINT_INFO("PMM initialized with status other than Result::SUCESS");
 	}
 }
