@@ -15,11 +15,9 @@ void MdOS::Teletype::putc(const char chr, uint32_t color, uint32_t xOffset, uint
 }
 
 void MdOS::Teletype::print_str(const char *str, size_t strlen) {
-	for (size_t i = 0; i < strlen; i++) {
-		MdOS::IO::BasicSerial::write_serial(str[i]);
-		if (str[i] == '\n') { MdOS::IO::BasicSerial::write_serial('\r'); }
+	if (m_graphicsAvail) {
+		for (size_t i = 0; i < strlen; i++) {
 
-		if (m_graphicsAvail) {
 			if (str[i] == '\n') {
 				if (m_graphicsAvail) {
 					m_yOffset += uint32_t(m_font.glyphHeight);

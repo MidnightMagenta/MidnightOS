@@ -9,7 +9,8 @@ enum class Result {
 	INIT_FAILURE,
 	NOT_INITIALIZED,
 	INVALID_PARAMETER,
-	OUT_OF_MEMORY
+	OUT_OF_MEMORY,
+	OUT_OF_SPACE
 };
 }// namespace MdOS
 

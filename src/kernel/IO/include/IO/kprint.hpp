@@ -21,6 +21,7 @@ public:
 	static size_t print(const char *fmt, va_list params);
 
 private:
+	static void print_str(const char *str, size_t len);
 	static MdOS::GOP_Renderer *m_renderer;
 	static MdOS::Teletype m_tty;
 };
