@@ -35,7 +35,7 @@ DBG_FLAGS = -ex "target remote localhost:1234" \
 			-ex "set step-mode on"
 
 CFLAGS = -g -ffreestanding -fshort-wchar -mno-red-zone -m64 -Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion \
-		-Wundef -Wcast-align -Wshift-overflow -Wdouble-promotion -nostdlib -fno-rtti -mcmodel=kernel \
+		-Wundef -Wcast-align -Wshift-overflow -Wdouble-promotion -nostdlib -fno-rtti -mcmodel=kernel -fno-omit-frame-pointer\
 		-fno-builtin -fno-stack-protector -nostartfiles -nodefaultlibs -fno-exceptions -fno-use-cxa-atexit -O0 -Werror \
 
 ACFLAGS = -f elf64

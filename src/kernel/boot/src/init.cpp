@@ -1,9 +1,10 @@
 #include <boot/init.hpp>
+#include <error/panic.h>
 
 void MdOS::init_krnl(BootInfo *bootInfo) {
 	init_IO(&bootInfo->bootExtra);
 	init_memory(bootInfo);
-
+	PANIC("Test error", TEST_ERROR);
 	MdOS::IO::kprint("\nEOF\n");
 }
 
@@ -23,7 +24,6 @@ void MdOS::init_memory(BootInfo *bootInfo) {
 									  uintptr_t(bootInfo->bootstrapMem.topAddr));
 
 	if (MdOS::Memory::PMM::init(bootInfo->map) != MdOS::Result::SUCCESS) {
-		//TODO: PANIC
-		kassert(!"Failed to initialize");// temporary until panic exists
+		PANIC("Failed to initialize physical memory", INIT_FAIL);
 	}
 }

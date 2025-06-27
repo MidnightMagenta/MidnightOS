@@ -16,6 +16,9 @@ section .text
 	_start:
 		cli						; mask all interupts
 		mov rsp, _stack_top		; set stack pointer to the kernel's stack
+		xor rbp, rbp
+		push rbp
+		mov rbp, rsp
 		push rdi				; store bootInfo prior to calling _init
 		call _init
 		pop rdi					; retrieve bootInfo prior to calling kernel_entry

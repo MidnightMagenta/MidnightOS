@@ -36,7 +36,8 @@ INCLUDE_DIRS = \
 	-IIO/include \
 	-Imemory/include \
 	-Iboot/include \
-	-Ik_utils/include
+	-Ik_utils/include \
+	-Ierror/include
 
 # Default flags
 CFLAGS = -g -ffreestanding -fshort-wchar -mno-red-zone -m64 -Wall -nostdlib -nostdinc \
