@@ -1,6 +1,6 @@
 #include <IO/tty.hpp>
 
-void MdOS::Teletype::putc(const char chr, uint32_t color, uint32_t xOffset, uint32_t yOffset) {
+void MdOS::Teletype::printc(const char chr, uint32_t color, uint32_t xOffset, uint32_t yOffset) {
 	//TODO: turn this into a blit
 	char *glyph = m_font[chr];
 	uint32_t *pixel = (uint32_t *) m_renderer->framebuffer_base();
@@ -14,48 +14,43 @@ void MdOS::Teletype::putc(const char chr, uint32_t color, uint32_t xOffset, uint
 	}
 }
 
-void MdOS::Teletype::print_str(const char *str, size_t strlen) {
+void MdOS::Teletype::putc(char c) {
 	if (m_graphicsAvail) {
-		for (size_t i = 0; i < strlen; i++) {
-
-			if (str[i] == '\n') {
-				if (m_graphicsAvail) {
-					m_yOffset += uint32_t(m_font.glyphHeight);
-					m_xOffset = 0;
-				}
-			} else if (str[i] == '\r') {
-				m_xOffset = 0;
-			} else if (str[i] == '\t') {
-				m_xOffset += m_font.glyphWidth * 3;
-			} else if (str[i] == '\t') {
-				if (int32_t((int32_t(m_xOffset) - m_font.glyphWidth) < 0)) {
-					m_xOffset = m_renderer->framebuffer_width() - m_font.glyphWidth;
-					m_yOffset -= m_font.glyphHeight;
-				} else {
-					m_xOffset -= m_font.glyphWidth;
-				}
-			} else if (str[i] == '\'') {
-				putc('\'', m_color, m_xOffset, m_yOffset);
-				m_xOffset += uint32_t(m_font.glyphWidth);
-			} else if (str[i] == '\"') {
-				putc('\"', m_color, m_xOffset, m_yOffset);
-				m_xOffset += uint32_t(m_font.glyphWidth);
-			} else if (str[i] == '\\') {
-				putc('\\', m_color, m_xOffset, m_yOffset);
-				m_xOffset += uint32_t(m_font.glyphWidth);
+		if (c == '\n') {
+			m_yOffset += uint32_t(m_font.glyphHeight);
+			m_xOffset = 0;
+		} else if (c == '\r') {
+			m_xOffset = 0;
+		} else if (c == '\t') {
+			m_xOffset += m_font.glyphWidth * 3;
+		} else if (c == '\t') {
+			if (int32_t((int32_t(m_xOffset) - m_font.glyphWidth) < 0)) {
+				m_xOffset = m_renderer->framebuffer_width() - m_font.glyphWidth;
+				m_yOffset -= m_font.glyphHeight;
 			} else {
-				putc(str[i], m_color, m_xOffset, m_yOffset);
-				m_xOffset += uint32_t(m_font.glyphWidth);
+				m_xOffset -= m_font.glyphWidth;
 			}
+		} else if (c == '\'') {
+			printc('\'', m_color, m_xOffset, m_yOffset);
+			m_xOffset += uint32_t(m_font.glyphWidth);
+		} else if (c == '\"') {
+			printc('\"', m_color, m_xOffset, m_yOffset);
+			m_xOffset += uint32_t(m_font.glyphWidth);
+		} else if (c == '\\') {
+			printc('\\', m_color, m_xOffset, m_yOffset);
+			m_xOffset += uint32_t(m_font.glyphWidth);
+		} else {
+			printc(c, m_color, m_xOffset, m_yOffset);
+			m_xOffset += uint32_t(m_font.glyphWidth);
+		}
 
-			if (m_xOffset >= m_renderer->framebuffer_width()) {
-				m_yOffset += uint32_t(m_font.glyphHeight);
-				m_xOffset = 0;
-			}
-			if (m_yOffset >= m_renderer->framebuffer_height()) {
-				m_renderer->clear_buffer(MdOS::defaultBgColor);
-				m_yOffset = 0;
-			}
+		if (m_xOffset >= m_renderer->framebuffer_width()) {
+			m_yOffset += uint32_t(m_font.glyphHeight);
+			m_xOffset = 0;
+		}
+		if (m_yOffset >= m_renderer->framebuffer_height()) {
+			m_renderer->clear_buffer(MdOS::defaultBgColor);
+			m_yOffset = 0;
 		}
 	}
 }

@@ -4,7 +4,7 @@ void MdOS::init_krnl(BootInfo *bootInfo) {
 	init_debug_IO(&bootInfo->bootExtra);
 	init_memory(bootInfo);
 
-	kprint("\nEOF\n");
+	DEBUG_LOG("EOF\n");
 }
 
 void MdOS::init_debug_IO(BootExtra *bootExtra) {
@@ -12,8 +12,8 @@ void MdOS::init_debug_IO(BootExtra *bootExtra) {
 					bootExtra->framebuffer->width, bootExtra->framebuffer->height,
 					bootExtra->framebuffer->pixelsPerScanline);
 	g_renderer.clear_buffer(MdOS::defaultBgColor);
-
-	MdOS::IO::kprintSystem::init(&g_renderer, bootExtra->basicFont);
+	MdOS::Teletype::init(&g_renderer, bootExtra->basicFont);
+	MdOS::IO::kprintSystem::init();
 }
 
 void MdOS::init_memory(BootInfo *bootInfo) {

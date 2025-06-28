@@ -17,13 +17,11 @@ public:
 	kprintSystem() {}
 	~kprintSystem() {}
 
-	static void init(MdOS::GOP_Renderer *renderer, PSF1_Font *font);
+	static void init();
 	static size_t print(const char *fmt, va_list params);
 
 private:
 	static void print_str(const char *str, size_t len);
-	static MdOS::GOP_Renderer *m_renderer;
-	static MdOS::Teletype m_tty;
 };
 }// namespace MdOS::IO
 

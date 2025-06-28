@@ -58,11 +58,9 @@ MdOS::Result PMM::init(MemMap *memMap) {
 			/*void*/
 		} else {
 			m_reservedPageCount += entry->pageCount;
-			DEBUG_LOG("Reserving %u pages. Total reserved memory: %u\n", entry->pageCount, m_reservedPageCount);
 		}
 	}
-	DEBUG_LOG("Reserved memory: %lu MiB\n", (m_reservedPageCount * 0x1000) / 1024 / 1024);
-
+	
 	m_usablePageCount = m_freePageCount + m_reservedPageCount;
 	m_unusablePageCount = m_maxAvailPages - m_usablePageCount;
 	m_lowestPage = lowestAddr / 0x1000;

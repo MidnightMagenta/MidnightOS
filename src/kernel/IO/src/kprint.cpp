@@ -2,12 +2,8 @@
 #include <IO/kprint.h>
 #include <IO/kprint.hpp>
 
-MdOS::GOP_Renderer *MdOS::IO::kprintSystem::m_renderer = nullptr;
-MdOS::Teletype MdOS::IO::kprintSystem::m_tty = MdOS::Teletype();
-
-void MdOS::IO::kprintSystem::init(MdOS::GOP_Renderer *renderer, PSF1_Font *font) {
-	m_renderer = renderer;
-	m_tty.init(renderer, font);
+void MdOS::IO::kprintSystem::init() {
+	if (MdOS::Teletype::m_graphicsAvail) { MdOS::CharSink::register_char_sink(MdOS::Teletype::putc); }
 	MdOS::CharSink::register_char_sink(MdOS::IO::BasicSerial::write_serial);
 }
 
@@ -28,7 +24,6 @@ size_t MdOS::IO::kprintSystem::print(const char *fmt, va_list params) {
 				//TODO: error stuff
 				return size_t(0);
 			}
-			m_tty.print_str(fmt, ammount);
 			print_str(fmt, ammount);
 			fmt += ammount;
 			written += ammount;
@@ -44,7 +39,6 @@ size_t MdOS::IO::kprintSystem::print(const char *fmt, va_list params) {
 				//TODO: error
 				return size_t(0);
 			}
-			m_tty.print_str(&c, 1);
 			print_str(&c, 1);
 			written++;
 		} else if (*fmt == 's') {
@@ -55,7 +49,6 @@ size_t MdOS::IO::kprintSystem::print(const char *fmt, va_list params) {
 				//TODO: error
 				return size_t(0);
 			}
-			m_tty.print_str(str, ammount);
 			print_str(str, ammount);
 			written += ammount;
 		} else if (*fmt == 'd' || *fmt == 'i') {
@@ -67,7 +60,6 @@ size_t MdOS::IO::kprintSystem::print(const char *fmt, va_list params) {
 				//TODO: error
 				return size_t(0);
 			}
-			m_tty.print_str(str, ammount);
 			print_str(str, ammount);
 			written += ammount;
 		} else if ((*fmt == 'l' && fmt[1] == 'd') || (*fmt == 'l' && fmt[1] == 'i')) {
@@ -79,7 +71,6 @@ size_t MdOS::IO::kprintSystem::print(const char *fmt, va_list params) {
 				//TODO: error
 				return size_t(0);
 			}
-			m_tty.print_str(str, ammount);
 			print_str(str, ammount);
 			written += ammount;
 		} else if (*fmt == 'u') {
@@ -91,7 +82,6 @@ size_t MdOS::IO::kprintSystem::print(const char *fmt, va_list params) {
 				//TODO: error
 				return size_t(0);
 			}
-			m_tty.print_str(str, ammount);
 			print_str(str, ammount);
 			written += ammount;
 		} else if ((*fmt == 'l' && fmt[1] == 'u')) {
@@ -103,7 +93,6 @@ size_t MdOS::IO::kprintSystem::print(const char *fmt, va_list params) {
 				//TODO: error
 				return size_t(0);
 			}
-			m_tty.print_str(str, ammount);
 			print_str(str, ammount);
 			written += ammount;
 		} else if (*fmt == 'x') {
@@ -115,7 +104,6 @@ size_t MdOS::IO::kprintSystem::print(const char *fmt, va_list params) {
 				//TODO: error
 				return size_t(0);
 			}
-			m_tty.print_str(str, ammount);
 			print_str(str, ammount);
 			written += ammount;
 		} else if ((*fmt == 'l' && fmt[1] == 'x')) {
@@ -127,7 +115,6 @@ size_t MdOS::IO::kprintSystem::print(const char *fmt, va_list params) {
 				//TODO: error
 				return size_t(0);
 			}
-			m_tty.print_str(str, ammount);
 			print_str(str, ammount);
 			written += ammount;
 		} else if (*fmt == 'f') {
@@ -139,7 +126,6 @@ size_t MdOS::IO::kprintSystem::print(const char *fmt, va_list params) {
 				//TODO: error
 				return size_t(0);
 			}
-			m_tty.print_str(str, ammount);
 			print_str(str, ammount);
 			written += ammount;
 		} else {
@@ -149,7 +135,6 @@ size_t MdOS::IO::kprintSystem::print(const char *fmt, va_list params) {
 				//implement errno
 				return size_t(0);
 			}
-			m_tty.print_str(fmt, len);
 			print_str(fmt, len);
 			written += len;
 			fmt += len;
