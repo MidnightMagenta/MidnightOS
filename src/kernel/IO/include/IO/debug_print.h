@@ -18,6 +18,12 @@ extern "C" {
 #define PRINT_INFO(msg) kprint("[INFO][%s:%d in function: %s] %s\n", __FILE__, __LINE__, __func__, msg)
 #endif
 
+#ifdef _DEBUG
+#define DEBUG_LOG(msg, ...) kprint("[DEBUG] " msg, ##__VA_ARGS__)
+#else
+#define DEBUG_LOG("[DEBUG] " msg, ...)
+#endif
+
 #define kassert(condition)                                                                                             \
 	if (!(condition)) {                                                                                                \
 		kprint("[ASSERTION FAILED][%s:%d in function: %s] %s\n", __FILE__, __LINE__, __func__, #condition);            \

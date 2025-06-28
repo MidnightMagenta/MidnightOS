@@ -34,9 +34,10 @@ DBG_FLAGS = -ex "target remote localhost:1234" \
 			-ex "set disassemble-next-line on" \
 			-ex "set step-mode on"
 
+CDEFS = -D_DEBUG
 CFLAGS = -g -ffreestanding -fshort-wchar -mno-red-zone -m64 -Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion \
 		-Wundef -Wcast-align -Wshift-overflow -Wdouble-promotion -nostdlib -fno-rtti -mcmodel=kernel -fno-omit-frame-pointer\
-		-fno-builtin -fno-stack-protector -nostartfiles -nodefaultlibs -fno-exceptions -fno-use-cxa-atexit -O0 -Werror \
+		-fno-builtin -fno-stack-protector -nostartfiles -nodefaultlibs -fno-exceptions -fno-use-cxa-atexit -O0 -Werror $(CDEFS) \
 
 ACFLAGS = -f elf64
 

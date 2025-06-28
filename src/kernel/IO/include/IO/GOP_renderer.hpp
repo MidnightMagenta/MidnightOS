@@ -28,6 +28,7 @@ public:
 	inline uint32_t framebuffer_pps() { return m_pixelsPerScanline; }
 
 private:
+	bool m_initialized = false;
 	void *m_bufferBase;
 	uint64_t m_bufferSize;
 	uint32_t m_width;

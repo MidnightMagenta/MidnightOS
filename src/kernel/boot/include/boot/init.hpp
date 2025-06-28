@@ -11,7 +11,7 @@
 
 namespace MdOS {
 void init_krnl(BootInfo *bootInfo);
-void init_IO(BootExtra *bootExtra);
+void init_debug_IO(BootExtra *bootExtra);
 void init_memory(BootInfo *bootInfo);
 }// namespace MdOS
 #endif

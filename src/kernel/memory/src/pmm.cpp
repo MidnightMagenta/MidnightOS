@@ -58,8 +58,10 @@ MdOS::Result PMM::init(MemMap *memMap) {
 			/*void*/
 		} else {
 			m_reservedPageCount += entry->pageCount;
+			DEBUG_LOG("Reserving %u pages. Total reserved memory: %u\n", entry->pageCount, m_reservedPageCount);
 		}
 	}
+	DEBUG_LOG("Reserved memory: %lu MiB\n", (m_reservedPageCount * 0x1000) / 1024 / 1024);
 
 	m_usablePageCount = m_freePageCount + m_reservedPageCount;
 	m_unusablePageCount = m_maxAvailPages - m_usablePageCount;
@@ -68,6 +70,14 @@ MdOS::Result PMM::init(MemMap *memMap) {
 
 	kassert(m_usablePageCount + m_unusablePageCount == m_maxAvailPages);
 	kassert(m_freePageCount + m_usedPageCount + m_reservedPageCount == m_usablePageCount);
+
+	DEBUG_LOG("Lowest discovered address: 0x%lx\n", lowestAddr);
+	DEBUG_LOG("Highest discovered address: 0x%lx\n", highestAddr);
+	DEBUG_LOG("Maximum available memory: %lu MiB\n", (m_maxAvailPages * 0x1000) / 1024 / 1024);
+	DEBUG_LOG("Usable memory: %lu MiB\n", (m_usablePageCount * 0x1000) / 1024 / 1024);
+	DEBUG_LOG("Unusable memory: %lu MiB\n", (m_unusablePageCount * 0x1000) / 1024 / 1024);
+	DEBUG_LOG("Free memory: %lu MiB\n", (m_freePageCount * 0x1000) / 1024 / 1024);
+	DEBUG_LOG("Reserved memory: %lu MiB\n", (m_reservedPageCount * 0x1000) / 1024 / 1024);
 
 	return MdOS::Result::SUCCESS;
 }
