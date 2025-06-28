@@ -15,6 +15,9 @@ extern "C" {
 					 : "=m"(params.originalRDI), "=m"(params.originalRSI)                                              \
 					 :                                                                                                 \
 					 : "memory");                                                                                      \
+	params.file = __FILE__;                                                                                            \
+	params.function = __PRETTY_FUNCTION__;                                                                             \
+	params.line = __LINE__;                                                                                            \
 	panic_handler(msg, &params);
 
 
@@ -38,6 +41,9 @@ typedef struct {
 	uint64_t originalRDI;
 	uint64_t originalRSI;
 	ErrorCode eCode;
+	const char *file;
+	const char *function;
+	int line;
 } PanicParams;
 
 extern void get_gp_regs(GeneralPurposeRegisters *registers);

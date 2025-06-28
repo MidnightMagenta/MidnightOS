@@ -1,7 +1,9 @@
 #ifndef MDOS_KERNEL_H
 #define MDOS_KERNEL_H
 
-#include <IO/debug_print.hpp>
+#include <IO/debug_print.h>
+#include <IO/kprint.hpp>
+#include <IO/GOP_renderer.hpp>
 #include <boot/boot_info.hpp>
 #include <memory/gdt.h>
 #include <memory/pmm.hpp>

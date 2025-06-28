@@ -1,4 +1,4 @@
-#include <IO/debug_print.hpp>
+#include <IO/debug_print.h>
 #include <error/panic.h>
 #include <memory/pmm.hpp>
 
@@ -36,14 +36,12 @@ MdOS::Result PMM::init(MemMap *memMap) {
 	}
 
 	if (((lowestAddr % 0x1000) != 0) || ((highestAddr % 0x1000) != 0)) {
-		PRINT_ERROR("Kernel panic");
 		PANIC("memory limits not page aligned", INIT_FAIL);
 	}
 
 	m_maxAvailPages = (highestAddr - lowestAddr) / 0x1000;
 
 	if (!m_pageFrameMap.init(m_maxAvailPages, true) /*all pages marked as used*/) {
-		PRINT_ERROR("Kernel panic");
 		PANIC("failed to initialize page frame map", INIT_FAIL);
 	}
 

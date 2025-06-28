@@ -36,6 +36,7 @@ void panic_handler(const char *msg, PanicParams *params) {
 	get_segment_regs(&sr);
 	__asm__ volatile("pushfq; pop %%rax; mov %%rax, %0" : "=r"(rflags) : : "memory");
 	kprint("[FATAL ERROR: 0x%x] %s\n", params->eCode, msg);
+	kprint("Faulting function:\n\tfile: %s\n\tline: %d\n\tfunc: %s\n\n", params->file, params->line, params->function);
 	kprint("rax: 0x%lx rbx: 0x%lx rcx: 0x%lx rdx: 0x%lx\n", gpr.rax, gpr.rbx, gpr.rcx, gpr.rdx);
 	kprint("rdi: 0x%lx rsi: 0x%lx rbp: 0x%lx rsp: 0x%lx\n", gpr.rdi, gpr.rsi, gpr.rbp, gpr.rsp);
 	kprint("r8:  0x%lx r9:  0x%lx r10: 0x%lx r11: 0x%lx\n", gpr.r8, gpr.r9, gpr.r10, gpr.r11);

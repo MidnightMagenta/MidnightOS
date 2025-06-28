@@ -1,4 +1,4 @@
-#include <IO/debug_print.hpp>
+#include <IO/debug_print.h>
 #include <memory/bump_allocator.hpp>
 
 uintptr_t MdOS::Memory::BumpAllocator::m_heapBase = 0;

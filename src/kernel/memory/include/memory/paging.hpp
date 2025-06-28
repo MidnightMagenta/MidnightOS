@@ -1,7 +1,7 @@
 #ifndef MDOS_PAGING_H
 #define MDOS_PAGING_H
 
-#include <IO/debug_print.hpp>
+#include <IO/debug_print.h>
 #include <k_utils/types.h>
 #include <memory/paging_index_helper.hpp>
 #include <stdint.h>
