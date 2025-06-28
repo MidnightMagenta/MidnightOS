@@ -5,12 +5,6 @@
 *.lib
 *.img
 
-temp_dump/
 build/
 .vscode/
 **/tmp/
-tools/**
-!tools/*.sh
-!tools/vagrant/
-!tools/vagrant/**
-.vagrant/
