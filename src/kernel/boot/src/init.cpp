@@ -8,9 +8,7 @@ void MdOS::init_krnl(BootInfo *bootInfo) {
 }
 
 void MdOS::init_debug_IO(BootExtra *bootExtra) {
-	g_renderer.init(bootExtra->framebuffer->bufferBase, bootExtra->framebuffer->bufferSize,
-					bootExtra->framebuffer->width, bootExtra->framebuffer->height,
-					bootExtra->framebuffer->pixelsPerScanline);
+	g_renderer.init(bootExtra->framebuffer);
 	g_renderer.clear_buffer(MdOS::defaultBgColor);
 	MdOS::Teletype::init(&g_renderer, bootExtra->basicFont);
 	MdOS::CharSink::register_char_sink(MdOS::IO::BasicSerial::write_serial);

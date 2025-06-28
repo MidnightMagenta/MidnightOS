@@ -2,15 +2,14 @@
 #define GOP_RENDERER_H
 
 #include <IO/psf.hpp>
+#include <boot/boot_info.hpp>
 #include <stdint.h>
 
 namespace MdOS {
 class GOP_Renderer {
 public:
 	GOP_Renderer() {}
-	GOP_Renderer(void *bufferBase, uint64_t bufferSize, uint32_t width, uint32_t height, uint32_t ppsl) {
-		init(bufferBase, bufferSize, width, height, ppsl);
-	}
+	GOP_Renderer(GOPFramebuffer *framebuffer) { init(framebuffer); }
 	~GOP_Renderer() {}
 
 	static constexpr uint32_t make_color(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
@@ -18,7 +17,7 @@ public:
 	}
 	static constexpr uint32_t make_color_hex(uint32_t hex, uint8_t a) { return uint32_t((uint32_t(a) << 24) | hex); }
 
-	void init(void *bufferBase, uint64_t bufferSize, uint32_t width, uint32_t height, uint32_t ppsl);
+	void init(GOPFramebuffer *framebuffer);
 	void clear_buffer(uint32_t clearColor);
 
 	inline void *framebuffer_base() { return m_bufferBase; }
