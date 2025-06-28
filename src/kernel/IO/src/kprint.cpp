@@ -2,16 +2,11 @@
 #include <IO/kprint.h>
 #include <IO/kprint.hpp>
 
-void MdOS::IO::kprintSystem::init() {
-	if (MdOS::Teletype::m_graphicsAvail) { MdOS::CharSink::register_char_sink(MdOS::Teletype::putc); }
-	MdOS::CharSink::register_char_sink(MdOS::IO::BasicSerial::write_serial);
-}
-
-void MdOS::IO::kprintSystem::print_str(const char *str, size_t len) {
+static void print_str(const char *str, size_t len) {
 	for (size_t i = 0; i < len; i++) { MdOS::CharSink::putc(str[i]); }
 }
 
-size_t MdOS::IO::kprintSystem::print(const char *fmt, va_list params) {
+static size_t print(const char *fmt, va_list params) {
 	size_t written = 0;
 	while (*fmt != '\0') {
 		size_t maxrem = INT_MAX - written;
@@ -148,7 +143,7 @@ size_t MdOS::IO::kprint(const char *fmt, ...) {
 	va_list params;
 	va_start(params, fmt);
 
-	size_t written = MdOS::IO::kprintSystem::print(fmt, params);
+	size_t written = print(fmt, params);
 
 	va_end(params);
 	return written;
@@ -158,7 +153,7 @@ extern "C" int kprint(const char *fmt, ...) {
 	va_list params;
 	va_start(params, fmt);
 
-	size_t written = MdOS::IO::kprintSystem::print(fmt, params);
+	size_t written = print(fmt, params);
 
 	va_end(params);
 	return int(written);

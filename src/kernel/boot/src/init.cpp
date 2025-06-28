@@ -13,7 +13,7 @@ void MdOS::init_debug_IO(BootExtra *bootExtra) {
 					bootExtra->framebuffer->pixelsPerScanline);
 	g_renderer.clear_buffer(MdOS::defaultBgColor);
 	MdOS::Teletype::init(&g_renderer, bootExtra->basicFont);
-	MdOS::IO::kprintSystem::init();
+	MdOS::CharSink::register_char_sink(MdOS::IO::BasicSerial::write_serial);
 }
 
 void MdOS::init_memory(BootInfo *bootInfo) {

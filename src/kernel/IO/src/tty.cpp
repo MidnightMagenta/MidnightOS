@@ -1,5 +1,14 @@
 #include <IO/tty.hpp>
 
+void MdOS::Teletype::init(GOP_Renderer *renderer, PSF1_Font *font) {
+	if (renderer != nullptr && font != nullptr) {
+		m_renderer = renderer;
+		m_font.init(font);
+		m_graphicsAvail = true;
+		MdOS::CharSink::register_char_sink(MdOS::Teletype::putc);
+	}
+}
+
 void MdOS::Teletype::printc(const char chr, uint32_t color, uint32_t xOffset, uint32_t yOffset) {
 	//TODO: turn this into a blit
 	char *glyph = m_font[chr];

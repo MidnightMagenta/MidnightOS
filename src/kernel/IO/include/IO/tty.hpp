@@ -2,6 +2,7 @@
 #define TTY_H
 
 #include <IO/GOP_renderer.hpp>
+#include <IO/char_sink.hpp>
 #include <IO/serial.hpp>
 #include <stddef.h>
 
@@ -14,17 +15,10 @@ inline bool m_graphicsAvail = false;
 inline GOP_Renderer *m_renderer = nullptr;
 inline PSF_DrawableFont m_font;
 
-inline void init(GOP_Renderer *renderer, PSF1_Font *font) {
-	if (renderer != nullptr && font != nullptr) {
-		m_renderer = renderer;
-		m_font.init(font);
-		m_graphicsAvail = true;
-	}
-}
-
-inline void set_color(uint32_t color) { m_color = color; }
+void init(GOP_Renderer *renderer, PSF1_Font *font);
 void putc(char c);
 void printc(const char chr, uint32_t color, uint32_t xOffset, uint32_t yOffset);
+inline void set_color(uint32_t color) { m_color = color; }
 }// namespace MdOS::Teletype
 
 #endif
