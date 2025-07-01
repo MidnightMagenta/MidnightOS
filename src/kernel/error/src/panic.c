@@ -6,13 +6,13 @@ void print_stack_trace() {
 	uint64_t *rbp;
 	__asm__ volatile("mov %%rbp, %0" : "=r"(rbp));
 	for (int i = 0; i < 64 && rbp != NULL; i++) {
-		uint64_t rip = rbp[1];
+		uint64_t rip = 0;
+		rip = rbp[1];
 		if (rip < (uintptr_t) (&__kernel_start)) {
 			kprint("\t[trace end]");
 			break;
 		}
 		kprint("\t#%i rbp: 0x%lx rip: 0x%lx\n", i, rbp, rip);
-		rip = 0;
 		rbp = (uint64_t *) rbp[0];
 		if (((uintptr_t) rbp & 0x7) != 0 || (uintptr_t) rbp > (uintptr_t) (&__bss_boot_stack_end) ||
 			(uintptr_t) rbp < (uintptr_t) (&__bss_boot_stack_start)) {
