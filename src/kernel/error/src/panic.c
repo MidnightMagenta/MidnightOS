@@ -31,6 +31,8 @@ void panic_handler(const char *msg, PanicParams *params) {
 	uint64_t rflags = 0;
 	gpr.rdi = params->originalRDI;
 	gpr.rsi = params->originalRSI;
+	gpr.rbp = params->originalRBP;
+	gpr.rsp = params->originalRSP;
 	get_gp_regs(&gpr);
 	get_cr_regs(&cr);
 	get_segment_regs(&sr);

@@ -10,8 +10,6 @@ get_gp_regs:
     mov [rdi + 8], rbx
     mov [rdi + 16], rcx
     mov [rdi + 24], rdx
-    mov [rdi + 48], rbp
-    mov [rdi + 56], rsp
     mov [rdi + 64], r8
     mov [rdi + 72], r9
     mov [rdi + 80], r10

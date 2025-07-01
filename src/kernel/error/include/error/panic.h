@@ -11,8 +11,11 @@ extern "C" {
 	PanicParams params;                                                                                                \
 	params.eCode = errorCode;                                                                                          \
 	__asm__ volatile("mov %%rdi, %0;"                                                                                  \
-					 "mov %%rsi, %1"                                                                                   \
-					 : "=m"(params.originalRDI), "=m"(params.originalRSI)                                              \
+					 "mov %%rsi, %1;"                                                                                  \
+					 "mov %%rbp, %2;"                                                                                  \
+					 "mov %%rsp, %3"                                                                                   \
+					 : "=m"(params.originalRDI), "=m"(params.originalRSI), "=m"(params.originalRBP),                   \
+					   "=m"(params.originalRSP)                                                                        \
 					 :                                                                                                 \
 					 : "memory");                                                                                      \
 	params.file = __FILE__;                                                                                            \
@@ -40,6 +43,8 @@ typedef struct {
 typedef struct {
 	uint64_t originalRDI;
 	uint64_t originalRSI;
+	uint64_t originalRBP;
+	uint64_t originalRSP;
 	ErrorCode eCode;
 	const char *file;
 	const char *function;
