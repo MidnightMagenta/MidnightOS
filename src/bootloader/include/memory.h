@@ -19,6 +19,8 @@
 #define BOOTSTRAP_HEAP_RATIO 166
 #define MINIMUM_HEAP_SIZE 8192//32 MiB
 
+#define DIRECT_MAP_BASE 0xFFFF800000000000
+
 EFI_STATUS map_page_identity(EFI_SYSTEM_TABLE *systemTable, uint64_t *pml4, EFI_PHYSICAL_ADDRESS addr);
 EFI_STATUS map_pages(EFI_SYSTEM_TABLE *systemTable, uint64_t *pml4, EFI_VIRTUAL_ADDRESS vaddr,
 					 EFI_PHYSICAL_ADDRESS paddr, UINTN pageCount);

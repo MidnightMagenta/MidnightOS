@@ -112,37 +112,9 @@ EFI_STATUS map_mem(EFI_SYSTEM_TABLE *systemTable, uint64_t *pml4, MemMap *memMap
 	EFI_STATUS status;
 	for (EFI_MEMORY_DESCRIPTOR *entry = memMap->map; (char *) entry < (char *) memMap->map + memMap->size;
 		 entry = (EFI_MEMORY_DESCRIPTOR *) ((char *) entry + memMap->descriptorSize)) {
-		switch (entry->Type) {
-			case EfiLoaderCode:
-				status = map_pages(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
-				break;
-			case EfiLoaderData:
-				status = map_pages(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
-				break;
-			case EfiMemoryMappedIO:
-				status = map_pages(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
-				break;
-			case EfiMemoryMappedIOPortSpace:
-				status = map_pages(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
-				break;
-			case EfiACPIReclaimMemory:
-				status = map_pages(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
-				break;
-			case EfiACPIMemoryNVS:
-				status = map_pages(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
-				break;
-			case EfiRuntimeServicesCode:
-				status = map_pages(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
-				break;
-			case EfiRuntimeServicesData:
-				status = map_pages(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
-				break;
-			case EfiBootServicesData:
-				status = map_pages(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
-				break;
-			default:
-				break;
-		}
+		status = map_pages(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
+		status = map_pages(systemTable, pml4, entry->PhysicalStart + DIRECT_MAP_BASE, entry->PhysicalStart,
+						   entry->NumberOfPages);
 		if (status != EFI_SUCCESS) { return status; }
 	}
 
@@ -164,7 +136,7 @@ EFI_STATUS alloc_bootstrap_memory(EFI_SYSTEM_TABLE *systemTable, MemMap *memMap,
 		 entry = (EFI_MEMORY_DESCRIPTOR *) ((char *) entry + memMap->descriptorSize)) {
 		totalMem += entry->NumberOfPages;
 	}
-	
+
 	*heapSize = totalMem / BOOTSTRAP_HEAP_RATIO;
 	if (*heapSize < MINIMUM_HEAP_SIZE) { *heapSize = MINIMUM_HEAP_SIZE; }
 

@@ -66,11 +66,13 @@ inline void invalidate_page(uintptr_t vaddr) { __asm__ volatile("invlpg (%0)" ::
 
 class VirtualMemoryManager {
 public:
+	static inline void bind_vmm(VirtualMemoryManager *vmm) { m_boundVMM = vmm; }
+	static inline VirtualMemoryManager *get_bound_vmm() { return m_boundVMM; }
 private:
+	static VirtualMemoryManager *m_boundVMM;
 	bool m_initialized = false;
 	PageTable m_pml4;
 };
-
 }// namespace MdOS::Memory::Paging
 
 #endif

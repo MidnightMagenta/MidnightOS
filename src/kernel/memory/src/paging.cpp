@@ -202,3 +202,5 @@ void MdOS::Memory::Paging::set_addr(uint64_t addr, PageEntry *entry) {
 }
 
 uint64_t MdOS::Memory::Paging::get_addr(PageEntry *entry) { return *entry & 0x000FFFFFFFFFF000ULL; }
+
+MdOS::Memory::Paging::VirtualMemoryManager *MdOS::Memory::Paging::VirtualMemoryManager::m_boundVMM = nullptr;

@@ -21,6 +21,6 @@ void MdOS::init_memory(BootInfo *bootInfo) {
 									  reinterpret_cast<uintptr_t>(bootInfo->bootstrapMem.topAddr));
 
 	if (MdOS::Memory::PMM::init(bootInfo->map) != MdOS::Result::SUCCESS) {
-		PRINT_INFO("PMM initialized with status other than Result::SUCESS");
+		DEBUG_LOG("PMM initialized sucessfully with status other than Result::SUCESS\n");
 	}
 }
