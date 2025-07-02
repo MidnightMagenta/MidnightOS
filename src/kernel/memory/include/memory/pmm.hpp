@@ -17,6 +17,8 @@ MdOS::Result init(MemMap *memMap);
 
 MdOS::Result alloc_pages(MdOS::Memory::PMM::PhysicalMemoryAllocation *alloc);
 MdOS::Result alloc_pages(size_t numPages, MdOS::Memory::PMM::PhysicalMemoryAllocation *alloc);
+uintptr_t alloc_page();
+void free_page(uintptr_t page);
 MdOS::Result free_pages(const MdOS::Memory::PMM::PhysicalMemoryAllocation &alloc);
 MdOS::Result reserve_pages(PhysicalAddress addr, size_t numPages);
 MdOS::Result unreserve_pages(PhysicalAddress addr, size_t numPages);

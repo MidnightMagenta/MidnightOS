@@ -18,6 +18,10 @@ inline constexpr uintptr_t sign_exted(uintptr_t addr) {
 	return addr;
 }
 
+inline bool is_canonical_pml4(VirtualAddress vaddr) {
+	return ((int64_t) vaddr >> 47) == ((vaddr >> 47) & 1 ? -1 : 0);
+}
+
 inline constexpr uintptr_t make_4_level_addr(uint16_t pml4, uint16_t pdp, uint16_t pd, uint16_t pt, uint16_t offset) {
 	uintptr_t addr = 0;
 	addr |= uintptr_t(pml4 & 0x1FF) << 39;

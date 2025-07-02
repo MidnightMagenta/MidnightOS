@@ -10,7 +10,8 @@ enum class Result {
 	NOT_INITIALIZED,
 	INVALID_PARAMETER,
 	OUT_OF_MEMORY,
-	OUT_OF_SPACE
+	OUT_OF_SPACE,
+	PAGE_NOT_PRESENT
 };
 }// namespace MdOS
 

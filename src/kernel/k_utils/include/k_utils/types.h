@@ -4,7 +4,6 @@
 extern "C" {
 #endif
 
-#include <elf.h>
 #include <stdint.h>
 #include <stddef.h>
 

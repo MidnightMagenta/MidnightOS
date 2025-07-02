@@ -138,6 +138,20 @@ MdOS::Result PMM::alloc_pages(size_t numPages, PMM::PhysicalMemoryAllocation *al
 	return allocSuccess ? MdOS::Result::SUCCESS : MdOS::Result::OUT_OF_MEMORY;
 }
 
+uintptr_t MdOS::Memory::PMM::alloc_page() {
+	PhysicalMemoryAllocation allocation;
+	MdOS::Result res = alloc_pages(&allocation);
+	if (res != MdOS::Result::SUCCESS) { return 0; }
+	return allocation.base;
+}
+
+void MdOS::Memory::PMM::free_page(uintptr_t page) {
+	PhysicalMemoryAllocation allocation;
+	allocation.base = page;
+	allocation.numPages = 1;
+	free_pages(allocation);
+}
+
 MdOS::Result PMM::free_pages(const PMM::PhysicalMemoryAllocation &alloc) {
 	if (!m_initialized) {
 		PRINT_ERROR("PMM not initialized");

@@ -2,7 +2,7 @@
 #define MDOS_K_UTILS_BITMAP_H
 
 #include <memory/bump_allocator.hpp>
-#include <k_utils/limits.hpp>
+#include <k_utils/klimits.hpp>
 #include <k_utils/utils.hpp>
 #include <stddef.h>
 #include <stdint.h>

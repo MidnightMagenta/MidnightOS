@@ -2,9 +2,14 @@
 #define MDOS_PAGING_H
 
 #include <IO/debug_print.h>
+#include <k_utils/result.hpp>
 #include <k_utils/types.h>
-#include <memory/paging_index_helper.hpp>
 #include <stdint.h>
+
+#define MDOS_MEMORY_DIRECT_MAP_REGION_BASE 0xFFFF800000000000ULL
+#define MDOS_MEMORY_DIRECT_MAP_REGION_END 0xFFFF880000000000ULL
+#define MDOS_VIRT_TO_PHYS(vaddr) vaddr - MDOS_MEMORY_DIRECT_MAP_REGION_BASE
+#define MDOS_PHYS_TO_VIRT(paddr) paddr + MDOS_MEMORY_DIRECT_MAP_REGION_BASE
 
 namespace MdOS::Memory::Paging {
 enum class EntryControlBit {
@@ -33,6 +38,18 @@ enum class EntryType : uint8_t {
 	INVALID = 0b000
 };
 
+enum EntryFlagBits : uint16_t {
+	ReadWrite = 1 << 0,
+	UserAccessible = 1 << 1,
+	NoExecute = 1 << 2,
+	WriteThrough = 1 << 3,
+	CacheDisable = 1 << 4,
+	Global = 1 << 5,
+	Page2MiB = 1 << 6,
+	Page1GiB = 1 << 7,
+	PAT = 1 << 8,
+};
+
 using PageEntry = uint64_t;
 
 void set_type(EntryType type, PageEntry *entry);
@@ -53,25 +70,43 @@ struct Entry {
 	inline uint64_t get_addr() { return MdOS::Memory::Paging::get_addr(&m_entry); }
 } __attribute__((aligned(alignof(uint64_t))));
 
-struct PageTable {
-	Entry m_entries[512];
-} __attribute__((aligned(0x1000)));
+static_assert(sizeof(Entry) == sizeof(PageEntry));
 
-static_assert(sizeof(Entry) == 8);
-static_assert(sizeof(PageTable) == 0x1000);
-static_assert(alignof(PageTable) == 0x1000);
-
-inline void flush_cr3(Entry *pml4) { __asm__ volatile("mov %0, %%cr3;" ::"r"(pml4) : "memory"); }
+inline void set_cr3(uint64_t pml4) { __asm__ volatile("mov %0, %%cr3;" ::"r"(pml4) : "memory"); }
 inline void invalidate_page(uintptr_t vaddr) { __asm__ volatile("invlpg (%0)" ::"r"(vaddr) : "memory"); }
 
-class VirtualMemoryManager {
+static constexpr size_t pageSize4KiB = 0x1000;
+static constexpr size_t pageSize2MiB = 0x200000;
+static constexpr size_t pageSize1GiB = 0x40000000;
+
+class VirtualMemoryManagerPML4 {
 public:
-	static inline void bind_vmm(VirtualMemoryManager *vmm) { m_boundVMM = vmm; }
-	static inline VirtualMemoryManager *get_bound_vmm() { return m_boundVMM; }
+	VirtualMemoryManagerPML4() {}
+	~VirtualMemoryManagerPML4() {}
+
+	MdOS::Result init();
+	MdOS::Result init(Entry *pml4);
+	MdOS::Result map_page(PhysicalAddress paddr, VirtualAddress vaddr, EntryFlagBits flags);
+	MdOS::Result unmap_page(VirtualAddress vaddr);
+	MdOS::Result map_range(PhysicalAddress paddrBase, VirtualAddress vaddrBase, size_t numPages, EntryFlagBits flags);
+	MdOS::Result unmap_range(VirtualAddress vaddrBase, size_t numPages);
+	MdOS::Result swap_attributes(VirtualAddress vaddr, EntryFlagBits newFlags);
+
+	inline Entry *get_pml4() { return m_pml4; }
+	inline void activate() { set_cr3(MDOS_VIRT_TO_PHYS(uint64_t(m_pml4))); }
+
+	static inline void bind_vmm(VirtualMemoryManagerPML4 *vmm) { m_boundVMM = vmm; }
+	static inline VirtualMemoryManagerPML4 *get_bound_vmm() { return m_boundVMM; }
+
 private:
-	static VirtualMemoryManager *m_boundVMM;
-	bool m_initialized = false;
-	PageTable m_pml4;
+	bool table_empty(Entry *table);
+	Entry *get_entry(Entry *table, size_t index, EntryType type);
+	MdOS::Result map_4KiB_page(PhysicalAddress paddr, VirtualAddress vaddr, EntryFlagBits flags);
+	MdOS::Result map_2MiB_page(PhysicalAddress paddr, VirtualAddress vaddr, EntryFlagBits flags);
+	MdOS::Result map_1GiB_page(PhysicalAddress paddr, VirtualAddress vaddr, EntryFlagBits flags);
+
+	static VirtualMemoryManagerPML4 *m_boundVMM;
+	Entry *m_pml4 = nullptr;
 };
 }// namespace MdOS::Memory::Paging
 

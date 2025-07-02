@@ -9,7 +9,7 @@ static void print_str(const char *str, size_t len) {
 static size_t print(const char *fmt, va_list params) {
 	size_t written = 0;
 	while (*fmt != '\0') {
-		size_t maxrem = INT_MAX - written;
+		size_t maxrem = SIZE_MAX - written;
 
 		if (fmt[0] != '%' || fmt[1] == '%') {
 			if (fmt[0] == '%') { fmt++; }
