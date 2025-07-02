@@ -3,8 +3,9 @@
 
 #include <IO/psf.hpp>
 #include <boot/efi_structs.hpp>
-#include <stdint.h>
+#include <k_utils/types.h>
 #include <stddef.h>
+#include <stdint.h>
 
 struct MemMap {
 	EFI_MEMORY_DESCRIPTOR *map;
@@ -22,12 +23,12 @@ typedef struct {
 	unsigned int pixelsPerScanline;
 } GOPFramebuffer;
 
-struct BootExtra{
+struct BootExtra {
 	PSF1_Font *basicFont;
 	GOPFramebuffer *framebuffer;
 };
 
-struct BootstrapMemoryRegion{
+struct BootstrapMemoryRegion {
 	void *baseAddr;
 	void *topAddr;
 	void *basePaddr;
@@ -37,9 +38,11 @@ struct BootstrapMemoryRegion{
 
 struct BootInfo {
 	MemMap *map;
-	uint64_t* pml4;
+	uint64_t *pml4;
 	BootExtra bootExtra;
 	BootstrapMemoryRegion bootstrapMem;
+	SectionInfo *kernelSections;
+	uint64_t kernelSectionCount;
 };
 
 #endif

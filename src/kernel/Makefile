@@ -33,6 +33,7 @@ OBJS = $(CRTI_OBJ) $(CRTBEGIN_OBJ) $(C_OBJS) $(CPP_OBJS) $(ASM_OBJS) $(CRTEND_OB
 
 INCLUDE_DIRS = \
 	-I$(abspath $(LIBC_DIR)) \
+	-I/usr/include \
 	-IIO/include \
 	-Imemory/include \
 	-Iboot/include \

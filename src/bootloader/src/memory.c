@@ -112,6 +112,12 @@ EFI_STATUS map_mem(EFI_SYSTEM_TABLE *systemTable, uint64_t *pml4, MemMap *memMap
 	EFI_STATUS status;
 	for (EFI_MEMORY_DESCRIPTOR *entry = memMap->map; (char *) entry < (char *) memMap->map + memMap->size;
 		 entry = (EFI_MEMORY_DESCRIPTOR *) ((char *) entry + memMap->descriptorSize)) {
+		if (entry->Type == EfiUnusableMemory || entry->Type == EfiReservedMemoryType ||
+			entry->Type == EfiMemoryMappedIO || entry->Type == EfiMemoryMappedIOPortSpace ||
+			entry->Type == EfiPalCode || entry->Type == EfiPersistentMemory) {
+			continue;
+		}
+		
 		status = map_pages(systemTable, pml4, entry->PhysicalStart, entry->PhysicalStart, entry->NumberOfPages);
 		status = map_pages(systemTable, pml4, entry->PhysicalStart + DIRECT_MAP_BASE, entry->PhysicalStart,
 						   entry->NumberOfPages);

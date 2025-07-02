@@ -1,6 +1,7 @@
 #ifndef MDBOOT_BOOT_TYPES_H
 #define MDBOOT_BOOT_TYPES_H
 
+#include "../include/elf_loader.h"
 #include "../include/psf.h"
 #include "../include/video.h"
 #include <efi.h>
@@ -32,6 +33,8 @@ typedef struct {
 	uint64_t *pml4;
 	BootExtra bootExtra;
 	BootstrapMemoryRegion bootstrapMem;
+	LoadedSectionInfo *kernelSections;
+	uint64_t kernelSectionCount;
 } BootInfo;
 
 #endif

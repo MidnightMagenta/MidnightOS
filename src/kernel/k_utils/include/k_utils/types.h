@@ -4,8 +4,16 @@
 extern "C" {
 #endif
 
+#include <elf.h>
 #include <stdint.h>
 #include <stddef.h>
+
+typedef struct {
+	uint64_t paddr;
+	uint64_t vaddr;
+	uint64_t pageCount;
+	uint32_t flags;
+} SectionInfo;
 
 typedef unsigned char byte_t;
 typedef uintptr_t PhysicalAddress;

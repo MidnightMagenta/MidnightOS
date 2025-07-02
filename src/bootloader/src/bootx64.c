@@ -93,6 +93,8 @@ EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
 	bootInfo.bootstrapMem.basePaddr = (void *) bootstrapHeap;
 	bootInfo.bootstrapMem.topPaddr = (uint64_t *) ((uint64_t) bootstrapHeap + (bootstreapHeapSize * 0x1000));
 	bootInfo.bootstrapMem.size = bootstreapHeapSize * 0x1000;
+	bootInfo.kernelSections = sectionInfos;
+	bootInfo.kernelSectionCount = sectionInfoCount;
 
 	get_final_EFI_map(systemTable, map, pml4);
 	HandleError(L"Failed to get final EFI map", status);
