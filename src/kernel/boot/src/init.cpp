@@ -1,5 +1,13 @@
+#include <IO/GOP_renderer.hpp>
+#include <IO/debug_print.h>
+#include <IO/kprint.hpp>
 #include <boot/init.hpp>
+#include <error/panic.h>
 #include <k_utils/utils.hpp>
+#include <memory/gdt.h>
+#include <memory/paging.hpp>
+#include <memory/pmm.hpp>
+#include <stdint.h>
 
 void MdOS::init_krnl(BootInfo *bootInfo) {
 	init_debug_IO(&bootInfo->bootExtra);

@@ -2,14 +2,10 @@
 #define MDOS_PAGING_H
 
 #include <boot/boot_info.hpp>
+#include <k_utils/memory.h>
 #include <k_utils/result.hpp>
 #include <k_utils/types.h>
 #include <stdint.h>
-
-#define MDOS_MEMORY_DIRECT_MAP_REGION_BASE 0xFFFF800000000000ULL
-#define MDOS_MEMORY_DIRECT_MAP_REGION_END 0xFFFF880000000000ULL
-#define MDOS_VIRT_TO_PHYS(vaddr) (vaddr - MDOS_MEMORY_DIRECT_MAP_REGION_BASE)
-#define MDOS_PHYS_TO_VIRT(paddr) (paddr + MDOS_MEMORY_DIRECT_MAP_REGION_BASE)
 
 namespace MdOS::Memory::Paging {
 enum class EntryControlBit {
@@ -112,7 +108,7 @@ public:
 
 private:
 	bool table_empty(Entry *table);
-	void free_table_if_empty(Entry* table, Entry &entry);
+	void free_table_if_empty(Entry *table, Entry &entry);
 	Entry *get_entry(Entry *table, size_t index, EntryType type);
 	MdOS::Result map_4KiB_page(PhysicalAddress paddr, VirtualAddress vaddr, EntryFlagBits flags);
 	MdOS::Result map_2MiB_page(PhysicalAddress paddr, VirtualAddress vaddr, EntryFlagBits flags);

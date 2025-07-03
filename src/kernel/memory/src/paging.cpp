@@ -1,6 +1,5 @@
 #include <IO/debug_print.h>
 #include <error/panic.h>
-#include <k_utils/memory.h>
 #include <k_utils/utils.hpp>
 #include <memory/paging.hpp>
 #include <memory/paging_index_helper.hpp>
@@ -208,10 +207,10 @@ MdOS::Result MdOS::Memory::Paging::VirtualMemoryManagerPML4::init(Entry *pml4) {
 	return MdOS::Result::SUCCESS;
 }
 
-MdOS::Result MdOS::Memory::Paging::VirtualMemoryManagerPML4::init(VirtualMemoryManagerPML4 *vmm) {
+MdOS::Result MdOS::Memory::Paging::VirtualMemoryManagerPML4::init(VirtualMemoryManagerPML4 *vmm __attribute__((unused))) {
 	MdOS::Result res = this->init();
 	if (res != MdOS::Result::SUCCESS || m_pml4 == nullptr) { return res; }
-	memcpy(m_pml4, vmm->get_pml4(), pageTableSize);
+	//memcpy(m_pml4, vmm->get_pml4(), pageTableSize);
 	//TODO: implement copy initialization
 	return MdOS::Result::SUCCESS;
 }
