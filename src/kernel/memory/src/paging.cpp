@@ -410,6 +410,11 @@ MdOS::Result MdOS::Memory::Paging::VirtualMemoryManagerPML4::map_1GiB_page(Physi
 
 MdOS::Result MdOS::Memory::Paging::VirtualMemoryManagerPML4::swap_attributes(VirtualAddress vaddr,
 																			 EntryFlagBits newFlags) {
+	if (m_pml4 == nullptr) {
+		MdOS::Result res = init();
+		if (res != MdOS::Result::SUCCESS) { return res; }
+	}
+	kassert(m_pml4 != nullptr);
 	Entry &pml4e = m_pml4[pml4_index(vaddr)];
 	if (!pml4e.get_bit(EntryControlBit::PagePresent)) { return MdOS::Result::PAGE_NOT_PRESENT; }
 	if (!is_canonical_pml4(vaddr)) { return MdOS::Result::INVALID_PARAMETER; }
@@ -462,6 +467,11 @@ MdOS::Result MdOS::Memory::Paging::VirtualMemoryManagerPML4::swap_attributes(Vir
 MdOS::Result MdOS::Memory::Paging::VirtualMemoryManagerPML4::map_range(PhysicalAddress paddrBase,
 																	   VirtualAddress vaddrBase, size_t numPages,
 																	   EntryFlagBits flags) {
+	if (m_pml4 == nullptr) {
+		MdOS::Result res = init();
+		if (res != MdOS::Result::SUCCESS) { return res; }
+	}
+	kassert(m_pml4 != nullptr);
 	kassert((paddrBase % MdOS::Memory::Paging::pageSize4KiB) == 0);
 	kassert((vaddrBase % MdOS::Memory::Paging::pageSize4KiB) == 0);
 	for (size_t i = 0; i < numPages; i++) {
@@ -476,6 +486,11 @@ MdOS::Result MdOS::Memory::Paging::VirtualMemoryManagerPML4::map_range(PhysicalA
 }
 
 MdOS::Result MdOS::Memory::Paging::VirtualMemoryManagerPML4::unmap_range(VirtualAddress vaddrBase, size_t numPages) {
+	if (m_pml4 == nullptr) {
+		MdOS::Result res = init();
+		if (res != MdOS::Result::SUCCESS) { return res; }
+	}
+	kassert(m_pml4 != nullptr);
 	kassert((vaddrBase % MdOS::Memory::Paging::pageSize4KiB) == 0);
 	for (size_t i = 0; i < numPages; i++) {
 		MdOS::Result res = unmap_page(vaddrBase + (i * MdOS::Memory::Paging::pageSize4KiB));
@@ -487,6 +502,11 @@ MdOS::Result MdOS::Memory::Paging::VirtualMemoryManagerPML4::unmap_range(Virtual
 MdOS::Result MdOS::Memory::Paging::VirtualMemoryManagerPML4::map_smart_range(PhysicalAddress paddrBase,
 																			 VirtualAddress vaddrBase, size_t size,
 																			 EntryFlagBits flags) {
+	if (m_pml4 == nullptr) {
+		MdOS::Result res = init();
+		if (res != MdOS::Result::SUCCESS) { return res; }
+	}
+	kassert(m_pml4 != nullptr);
 	kassert((paddrBase % MdOS::Memory::Paging::pageSize4KiB) == 0);
 	kassert((vaddrBase % MdOS::Memory::Paging::pageSize4KiB) == 0);
 	kassert((size % MdOS::Memory::Paging::pageSize4KiB) == 0);
@@ -527,9 +547,14 @@ MdOS::Result MdOS::Memory::Paging::VirtualMemoryManagerPML4::map_smart_range(Phy
 }
 
 MdOS::Result MdOS::Memory::Paging::VirtualMemoryManagerPML4::unmap_smart_range(VirtualAddress vaddrBase, size_t size) {
+	if (m_pml4 == nullptr) {
+		MdOS::Result res = init();
+		if (res != MdOS::Result::SUCCESS) { return res; }
+	}
+	kassert(m_pml4 != nullptr);
 	kassert((vaddrBase % pageSize4KiB) == 0);
 	kassert((size % pageSize4KiB) == 0);
-	
+
 	VirtualAddress vaddr = vaddrBase;
 	size_t rem = size;
 	while (rem > 0) {
@@ -642,6 +667,11 @@ void MdOS::Memory::Paging::VirtualMemoryManagerPML4::print_entry(Entry entry) {
 }
 
 void MdOS::Memory::Paging::VirtualMemoryManagerPML4::dump_pml4(bool presentOnly) {
+	if (m_pml4 == nullptr) {
+		MdOS::Result res = init();
+		if (res != MdOS::Result::SUCCESS) { return; }
+	}
+	kassert(m_pml4 != nullptr);
 	DEBUG_LOG("PML4 dump:\n");
 	for (size_t i = 0; i < pageTableSize / sizeof(PageEntry); i++) {
 		if (presentOnly) {
@@ -659,6 +689,11 @@ void MdOS::Memory::Paging::VirtualMemoryManagerPML4::dump_pml4(bool presentOnly)
 }
 
 void MdOS::Memory::Paging::VirtualMemoryManagerPML4::dump_translation_hierarchy(VirtualAddress vaddr) {
+	if (m_pml4 == nullptr) {
+		MdOS::Result res = init();
+		if (res != MdOS::Result::SUCCESS) { return; }
+	}
+	kassert(m_pml4 != nullptr);
 	Entry pml4e = m_pml4[pml4_index(vaddr)];
 
 	Entry pdpe = {0ULL};
