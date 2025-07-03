@@ -93,6 +93,7 @@ public:
 	MdOS::Result unmap_page(VirtualAddress vaddr);
 	MdOS::Result map_range(PhysicalAddress paddrBase, VirtualAddress vaddrBase, size_t numPages, EntryFlagBits flags);
 	MdOS::Result unmap_range(VirtualAddress vaddrBase, size_t numPages);
+	MdOS::Result map_smart_range(PhysicalAddress paddrBase, VirtualAddress vaddrBase, size_t size, EntryFlagBits flags);
 	MdOS::Result swap_attributes(VirtualAddress vaddr, EntryFlagBits newFlags);
 
 	inline Entry *get_pml4() { return m_pml4; }

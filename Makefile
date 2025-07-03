@@ -37,7 +37,7 @@ DBG_FLAGS = -ex "target remote localhost:1234" \
 CDEFS = -D_DEBUG
 CFLAGS = -g -ffreestanding -fshort-wchar -mno-red-zone -m64 -Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion \
 		-Wundef -Wcast-align -Wshift-overflow -Wdouble-promotion -nostdlib -fno-rtti -mcmodel=kernel -fno-omit-frame-pointer\
-		-fno-builtin -fno-stack-protector -nostartfiles -nodefaultlibs -fno-exceptions -fno-use-cxa-atexit -O2 -Werror $(CDEFS) \
+		-fno-builtin -fno-stack-protector -nostartfiles -nodefaultlibs -fno-exceptions -fno-use-cxa-atexit -O0 -Werror $(CDEFS) \
 		-fno-tree-vectorize -fno-builtin-memcpy -fno-builtin-memset \
 
 ACFLAGS = -f elf64

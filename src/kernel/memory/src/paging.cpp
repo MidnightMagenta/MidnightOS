@@ -469,6 +469,40 @@ MdOS::Result MdOS::Memory::Paging::VirtualMemoryManagerPML4::map_range(PhysicalA
 	return MdOS::Result::SUCCESS;
 }
 
+MdOS::Result MdOS::Memory::Paging::VirtualMemoryManagerPML4::map_smart_range(PhysicalAddress paddrBase,
+																			 VirtualAddress vaddrBase, size_t size,
+																			 EntryFlagBits flags) {
+	kassert((paddrBase % MdOS::Memory::Paging::pageSize4KiB) == 0);
+	kassert((vaddrBase % MdOS::Memory::Paging::pageSize4KiB) == 0);
+
+	PhysicalAddress paddr = paddrBase;
+	VirtualAddress vaddr = vaddrBase;
+	size_t rem = size;
+
+	while (rem > 0) {
+		MdOS::Result res;
+		if ((paddr % pageSize1GiB) == 0 && (vaddr % pageSize1GiB) == 0 && rem > pageSize1GiB) {
+			res = map_1GiB_page(paddr, vaddr, flags);
+			paddr += pageSize1GiB;
+			vaddr += pageSize1GiB;
+			rem -= pageSize1GiB;
+		} else if ((paddr % pageSize2MiB) == 0 && (vaddr % pageSize2MiB) == 0 && rem > pageSize2MiB) {
+			res = map_2MiB_page(paddr, vaddr, flags);
+			paddr += pageSize2MiB;
+			vaddr += pageSize2MiB;
+			rem -= pageSize2MiB;
+		} else {
+			res = map_4KiB_page(paddr, vaddr, flags);
+			paddr += pageSize4KiB;
+			vaddr += pageSize4KiB;
+			rem -= pageSize4KiB;
+		}
+		if (res != MdOS::Result::SUCCESS) { return res; }
+		// TODO: implement unmap_range function that works with 2MiB and 1GiB pages. Unmap pages on failure
+	}
+	return MdOS::Result::SUCCESS;
+}
+
 MdOS::Result MdOS::Memory::Paging::VirtualMemoryManagerPML4::unmap_range(VirtualAddress vaddrBase, size_t numPages) {
 	kassert((vaddrBase % MdOS::Memory::Paging::pageSize4KiB) == 0);
 	for (size_t i = 0; i < numPages; i++) {
@@ -482,32 +516,23 @@ MdOS::Result MdOS::Memory::Paging::map_kernel(SectionInfo *sections, size_t sect
 											  BootstrapMemoryRegion bootHeap, GOPFramebuffer *framebuffer,
 											  VirtualMemoryManagerPML4 *vmm) {
 	MdOS::Result res;
-	uint64_t start = rdtsc();
 	for (size_t i = 0; i < memMap->size / memMap->descriptorSize; i++) {
 		EFI_MEMORY_DESCRIPTOR *entry =
 				(EFI_MEMORY_DESCRIPTOR *) ((uintptr_t) memMap->map + (i * memMap->descriptorSize));
-		res = vmm->map_range(entry->paddr, MDOS_PHYS_TO_VIRT(entry->paddr), entry->pageCount, ReadWrite);
-		//TODO: optimize direct mapping to utilize 2MiB and 1GiB pages
+		res = vmm->map_smart_range(entry->paddr, MDOS_PHYS_TO_VIRT(entry->paddr), entry->pageCount * pageSize4KiB, ReadWrite);
 		if (res != MdOS::Result::SUCCESS) { return res; }
 	}
-	DEBUG_LOG("Direct mapping took %lu cycles\n", rdtsc() - start);
-	start = rdtsc();
 	res = vmm->map_range(PhysicalAddress(bootHeap.basePaddr), VirtualAddress(bootHeap.baseAddr),
 						 bootHeap.size / pageSize4KiB, ReadWrite);
 	if (res != MdOS::Result::SUCCESS) { return res; }
-	DEBUG_LOG("Mapping boot heap took %lu cycles\n", rdtsc() - start);
-	start = rdtsc();
 	res = vmm->map_range(PhysicalAddress(framebuffer->bufferBase), VirtualAddress(framebuffer->bufferBase),
 						 framebuffer->bufferSize / 0x1000, ReadWrite);
 	if (res != MdOS::Result::SUCCESS) { return res; }
-	DEBUG_LOG("Mapping framebuffer took %lu cycles\n", rdtsc() - start);
-	start = rdtsc();
 	for (size_t i = 0; i < sectionInfoCount; i++) {
 		SectionInfo *section = (SectionInfo *) (uintptr_t(sections) + i * sizeof(SectionInfo));
 		res = vmm->map_range(section->paddr, section->vaddr, section->pageCount, ReadWrite);
 		if (res != MdOS::Result::SUCCESS) { return res; }
 	}
-	DEBUG_LOG("Mapping kernel took %lu cycles\n", rdtsc() - start);
 
 	return MdOS::Result::SUCCESS;
 }
