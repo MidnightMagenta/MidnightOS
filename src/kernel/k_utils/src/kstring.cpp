@@ -31,77 +31,41 @@ const char *MdOS::string::to_string(uint64_t num) {
 
 char toH64StrBuffer[128];
 const char *MdOS::string::to_hstring(uint64_t num) {
-	uint64_t *valPtr = &num;
-	uint8_t *ptr;
-	uint8_t temp;
-	constexpr uint64_t size = 8 * 2 - 1;
-	for (uint8_t i = 0; i < size; i++) {
-		ptr = ((uint8_t *) valPtr + i);
-		temp = ((*ptr & 0xF0) >> 4);
-		size_t offset = size - uint64_t(i * 2 + 1);
-		if (offset < size) { toH64StrBuffer[offset] = char(temp + (temp > 9 ? 'A' - 10 : '0')); }
-		temp = ((*ptr & 0x0F));
-		offset = size - uint64_t(i * 2);
-		if (offset < size) { toH64StrBuffer[offset] = char(temp + (temp > 9 ? 'A' - 10 : '0')); }
+	static const char hexDigits[] = "0123456789ABCDEF";
+	for (int i = 0; i < 16; ++i) {
+		toH64StrBuffer[15 - i] = hexDigits[(num >> (i * 4)) & 0xF];
 	}
-	toH64StrBuffer[size + 1] = '\0';
+	toH64StrBuffer[16] = '\0';
 	return toH64StrBuffer;
 }
 
 char toH32StrBuffer[128];
 const char *MdOS::string::to_hstring(uint32_t num) {
-	uint32_t *valPtr = &num;
-	uint8_t *ptr;
-	uint8_t temp;
-	constexpr uint64_t size = 4 * 2 - 1;
-	for (uint8_t i = 0; i < size; i++) {
-		ptr = ((uint8_t *) valPtr + i);
-		temp = ((*ptr & 0xF0) >> 4);
-		size_t offset = size - uint64_t(i * 2 + 1);
-		if (offset < size) { toH32StrBuffer[offset] = char(temp + (temp > 9 ? 'A' - 10 : '0')); }
-		temp = ((*ptr & 0x0F));
-		offset = size - uint64_t(i * 2);
-		if (offset < size) { toH32StrBuffer[offset] = char(temp + (temp > 9 ? 'A' - 10 : '0')); }
+	static const char hexDigits[] = "0123456789ABCDEF";
+	for (int i = 0; i < 8; ++i) {
+		toH32StrBuffer[7 - i] = hexDigits[(num >> (i * 4)) & 0xF];
 	}
-	toH32StrBuffer[size + 1] = '\0';
+	toH32StrBuffer[8] = '\0';
 	return toH32StrBuffer;
 }
 
 char toH16StrBuffer[128];
 const char *MdOS::string::to_hstring(uint16_t num) {
-	uint16_t *valPtr = &num;
-	uint8_t *ptr;
-	uint8_t temp;
-	constexpr uint64_t size = 2 * 2 - 1;
-	for (uint8_t i = 0; i < size; i++) {
-		ptr = ((uint8_t *) valPtr + i);
-		temp = ((*ptr & 0xF0) >> 4);
-		size_t offset = size - uint64_t(i * 2 + 1);
-		if (offset < size) { toH16StrBuffer[offset] = char(temp + (temp > 9 ? 'A' - 10 : '0')); }
-		temp = ((*ptr & 0x0F));
-		offset = size - uint64_t(i * 2);
-		if (offset < size) { toH16StrBuffer[offset] = char(temp + (temp > 9 ? 'A' - 10 : '0')); }
+	static const char hexDigits[] = "0123456789ABCDEF";
+	for (int i = 0; i < 4; ++i) {
+		toH16StrBuffer[3 - i] = hexDigits[(num >> (i * 4)) & 0xF];
 	}
-	toH16StrBuffer[size + 1] = '\0';
+	toH16StrBuffer[4] = '\0';
 	return toH16StrBuffer;
 }
 
 char toH8StrBuffer[128];
 const char *MdOS::string::to_hstring(uint8_t num) {
-	uint8_t *valPtr = &num;
-	uint8_t *ptr;
-	uint8_t temp;
-	constexpr uint64_t size = 1 * 2 - 1;
-	for (uint8_t i = 0; i < size; i++) {
-		ptr = ((uint8_t *) valPtr + i);
-		temp = ((*ptr & 0xF0) >> 4);
-		size_t offset = size - uint64_t(i * 2 + 1);
-		if (offset < size) { toH8StrBuffer[offset] = char(temp + (temp > 9 ? 'A' - 10 : '0')); }
-		temp = ((*ptr & 0x0F));
-		offset = size - uint64_t(i * 2);
-		if (offset < size) { toH8StrBuffer[offset] = char(temp + (temp > 9 ? 'A' - 10 : '0')); }
+	static const char hexDigits[] = "0123456789ABCDEF";
+	for (int i = 0; i < 2; ++i) {
+		toH8StrBuffer[1 - i] = hexDigits[(num >> (i * 4)) & 0xF];
 	}
-	toH8StrBuffer[size + 1] = '\0';
+	toH8StrBuffer[2] = '\0';
 	return toH8StrBuffer;
 }
 

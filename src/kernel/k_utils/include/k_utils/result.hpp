@@ -11,7 +11,8 @@ enum class Result {
 	INVALID_PARAMETER,
 	OUT_OF_MEMORY,
 	OUT_OF_SPACE,
-	PAGE_NOT_PRESENT
+	PAGE_NOT_PRESENT,
+	OVERFLOW
 };
 }// namespace MdOS
 

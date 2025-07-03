@@ -1,7 +1,6 @@
 #ifndef MDOS_PAGING_H
 #define MDOS_PAGING_H
 
-#include <IO/debug_print.h>
 #include <boot/boot_info.hpp>
 #include <k_utils/result.hpp>
 #include <k_utils/types.h>
@@ -79,6 +78,7 @@ inline void invalidate_page(uintptr_t vaddr) { __asm__ volatile("invlpg (%0)" ::
 static constexpr size_t pageSize4KiB = 0x1000;
 static constexpr size_t pageSize2MiB = 0x200000;
 static constexpr size_t pageSize1GiB = 0x40000000;
+static constexpr size_t pageSizePML4 = 0x8000000000;
 static constexpr size_t pageTableSize = 0x1000;
 
 class VirtualMemoryManagerPML4 {
@@ -94,6 +94,7 @@ public:
 	MdOS::Result map_range(PhysicalAddress paddrBase, VirtualAddress vaddrBase, size_t numPages, EntryFlagBits flags);
 	MdOS::Result unmap_range(VirtualAddress vaddrBase, size_t numPages);
 	MdOS::Result map_smart_range(PhysicalAddress paddrBase, VirtualAddress vaddrBase, size_t size, EntryFlagBits flags);
+	MdOS::Result unmap_smart_range(VirtualAddress vaddrBase, size_t size);
 	MdOS::Result swap_attributes(VirtualAddress vaddr, EntryFlagBits newFlags);
 
 	inline Entry *get_pml4() { return m_pml4; }
@@ -102,8 +103,16 @@ public:
 	static inline void bind_vmm(VirtualMemoryManagerPML4 *vmm) { m_boundVMM = vmm; }
 	static inline VirtualMemoryManagerPML4 *get_bound_vmm() { return m_boundVMM; }
 
+#ifdef _DEBUG
+	static void print_entry(Entry entry);
+	void dump_pml4(bool presentOnly);
+	void dump_translation_hierarchy(VirtualAddress vaddr);
+	// TODO: implement full page table dump
+#endif
+
 private:
 	bool table_empty(Entry *table);
+	void free_table_if_empty(Entry* table, Entry &entry);
 	Entry *get_entry(Entry *table, size_t index, EntryType type);
 	MdOS::Result map_4KiB_page(PhysicalAddress paddr, VirtualAddress vaddr, EntryFlagBits flags);
 	MdOS::Result map_2MiB_page(PhysicalAddress paddr, VirtualAddress vaddr, EntryFlagBits flags);
@@ -113,8 +122,8 @@ private:
 	Entry *m_pml4 = nullptr;
 };
 
-MdOS::Result map_kernel(SectionInfo *sections, size_t sectionInfoCount, MemMap *memMap, BootstrapMemoryRegion bootHeap, GOPFramebuffer* framebuffer,
-						VirtualMemoryManagerPML4 *vmm);
+MdOS::Result map_kernel(SectionInfo *sections, size_t sectionInfoCount, MemMap *memMap, BootstrapMemoryRegion bootHeap,
+						GOPFramebuffer *framebuffer, VirtualMemoryManagerPML4 *vmm);
 
 static VirtualMemoryManagerPML4 g_defaultVMM;
 }// namespace MdOS::Memory::Paging
