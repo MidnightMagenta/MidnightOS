@@ -2,14 +2,15 @@
 #define MDOS_PAGING_H
 
 #include <IO/debug_print.h>
+#include <boot/boot_info.hpp>
 #include <k_utils/result.hpp>
 #include <k_utils/types.h>
 #include <stdint.h>
 
 #define MDOS_MEMORY_DIRECT_MAP_REGION_BASE 0xFFFF800000000000ULL
 #define MDOS_MEMORY_DIRECT_MAP_REGION_END 0xFFFF880000000000ULL
-#define MDOS_VIRT_TO_PHYS(vaddr) vaddr - MDOS_MEMORY_DIRECT_MAP_REGION_BASE
-#define MDOS_PHYS_TO_VIRT(paddr) paddr + MDOS_MEMORY_DIRECT_MAP_REGION_BASE
+#define MDOS_VIRT_TO_PHYS(vaddr) (vaddr - MDOS_MEMORY_DIRECT_MAP_REGION_BASE)
+#define MDOS_PHYS_TO_VIRT(paddr) (paddr + MDOS_MEMORY_DIRECT_MAP_REGION_BASE)
 
 namespace MdOS::Memory::Paging {
 enum class EntryControlBit {
@@ -78,6 +79,7 @@ inline void invalidate_page(uintptr_t vaddr) { __asm__ volatile("invlpg (%0)" ::
 static constexpr size_t pageSize4KiB = 0x1000;
 static constexpr size_t pageSize2MiB = 0x200000;
 static constexpr size_t pageSize1GiB = 0x40000000;
+static constexpr size_t pageTableSize = 0x1000;
 
 class VirtualMemoryManagerPML4 {
 public:
@@ -86,6 +88,7 @@ public:
 
 	MdOS::Result init();
 	MdOS::Result init(Entry *pml4);
+	MdOS::Result init(VirtualMemoryManagerPML4 *vmm);
 	MdOS::Result map_page(PhysicalAddress paddr, VirtualAddress vaddr, EntryFlagBits flags);
 	MdOS::Result unmap_page(VirtualAddress vaddr);
 	MdOS::Result map_range(PhysicalAddress paddrBase, VirtualAddress vaddrBase, size_t numPages, EntryFlagBits flags);
@@ -108,6 +111,11 @@ private:
 	static VirtualMemoryManagerPML4 *m_boundVMM;
 	Entry *m_pml4 = nullptr;
 };
+
+MdOS::Result map_kernel(SectionInfo *sections, size_t sectionInfoCount, MemMap *memMap, BootstrapMemoryRegion bootHeap, GOPFramebuffer* framebuffer,
+						VirtualMemoryManagerPML4 *vmm);
+
+static VirtualMemoryManagerPML4 g_defaultVMM;
 }// namespace MdOS::Memory::Paging
 
 #endif

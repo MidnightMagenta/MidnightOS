@@ -1,9 +1,10 @@
 #include <boot/init.hpp>
+#include <k_utils/utils.hpp>
 
 void MdOS::init_krnl(BootInfo *bootInfo) {
 	init_debug_IO(&bootInfo->bootExtra);
 	init_memory(bootInfo);
-
+	
 	DEBUG_LOG("EOF\n");
 }
 
@@ -15,7 +16,8 @@ void MdOS::init_debug_IO(BootExtra *bootExtra) {
 }
 
 void MdOS::init_memory(BootInfo *bootInfo) {
-	mdos_mem_load_gdt(&g_gdtDescriptor);
+	GDTDescriptor *desc = &g_gdtDescriptor;
+	mdos_mem_load_gdt(desc);
 
 	MdOS::Memory::BumpAllocator::init(reinterpret_cast<uintptr_t>(bootInfo->bootstrapMem.baseAddr),
 									  reinterpret_cast<uintptr_t>(bootInfo->bootstrapMem.topAddr));
@@ -23,4 +25,17 @@ void MdOS::init_memory(BootInfo *bootInfo) {
 	if (MdOS::Memory::PMM::init(bootInfo->map) != MdOS::Result::SUCCESS) {
 		DEBUG_LOG("PMM initialized sucessfully with status other than Result::SUCESS\n");
 	}
+
+	if (MdOS::Memory::Paging::g_defaultVMM.init() != MdOS::Result::SUCCESS) {
+		PANIC("Failed to initialize virtual memory", INIT_FAIL);
+	}
+	uint64_t start = rdtsc();
+	if (MdOS::Memory::Paging::map_kernel(bootInfo->kernelSections, bootInfo->kernelSectionCount, bootInfo->map,
+										 bootInfo->bootstrapMem, bootInfo->bootExtra.framebuffer,
+										 &MdOS::Memory::Paging::g_defaultVMM) != MdOS::Result::SUCCESS) {
+		PANIC("Failed to initialize virtual memory", INIT_FAIL);
+	}
+	DEBUG_LOG("Mapping took %lu cycles\n", rdtsc() - start);
+	MdOS::Memory::Paging::VirtualMemoryManagerPML4::bind_vmm(&MdOS::Memory::Paging::g_defaultVMM);
+	MdOS::Memory::Paging::g_defaultVMM.activate();
 }

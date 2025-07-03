@@ -4,6 +4,9 @@
 #include <memory/paging_index_helper.hpp>
 #include <memory/pmm.hpp>
 
+#include <IO/debug_print.h>
+#include <k_utils/utils.hpp>
+
 void MdOS::Memory::Paging::set_type(EntryType type, PageEntry *entry) {
 	*entry &= ~uint64_t(0xE00);
 	*entry |= uint64_t(type) << 9;
@@ -15,7 +18,6 @@ MdOS::Memory::Paging::EntryType MdOS::Memory::Paging::get_type(PageEntry *entry)
 
 void MdOS::Memory::Paging::set_bit(EntryControlBit bit, bool value, PageEntry *entry) {
 	EntryType type = get_type(entry);
-	if (type == EntryType::INVALID || type > EntryType::PML5E) { PRINT_ERROR("Attempted to edit an invalid entry"); }
 	switch (bit) {
 		case EntryControlBit::PagePresent:
 			if (value == true) {
@@ -67,14 +69,10 @@ void MdOS::Memory::Paging::set_bit(EntryControlBit bit, bool value, PageEntry *e
 			}
 			return;
 		case EntryControlBit::PageSize:
-			if (type == EntryType::PDE || type == EntryType::PDPE) {
-				if (value == true) {
-					*entry |= 1ULL << 7;
-				} else {
-					*entry &= ~(1ULL << 7);
-				}
+			if (value == true) {
+				*entry |= 1ULL << 7;
 			} else {
-				PRINT_ERROR("Attempted to set an invalid bit");
+				*entry &= ~(1ULL << 7);
 			}
 			return;
 		case EntryControlBit::Global:
@@ -94,6 +92,9 @@ void MdOS::Memory::Paging::set_bit(EntryControlBit bit, bool value, PageEntry *e
 			PRINT_ERROR("Attempted to set reserved bit 11");
 			return;
 		case EntryControlBit::PageAttributeTable:
+			if (type == EntryType::INVALID || type > EntryType::PML5E) {
+				PRINT_ERROR("Attempted to read an invalid entry");
+			}
 			if (type == EntryType::PTE) {
 				if (value == true) {
 					*entry |= 1ULL << 7;
@@ -129,7 +130,6 @@ void MdOS::Memory::Paging::set_bit(EntryControlBit bit, bool value, PageEntry *e
 
 bool MdOS::Memory::Paging::get_bit(EntryControlBit bit, PageEntry *entry) {
 	EntryType type = get_type(entry);
-	if (type == EntryType::INVALID || type > EntryType::PML5E) { PRINT_ERROR("Attempted to read an invalid entry"); }
 	switch (bit) {
 		case EntryControlBit::PagePresent:
 			return *entry & 1ULL << 0;
@@ -146,12 +146,7 @@ bool MdOS::Memory::Paging::get_bit(EntryControlBit bit, PageEntry *entry) {
 		case EntryControlBit::Dirty:
 			return *entry & 1ULL << 6;
 		case EntryControlBit::PageSize:
-			if (type == EntryType::PDE || type == EntryType::PDPE) {
-				return *entry & 1ULL << 7;
-			} else {
-				PRINT_INFO("Attempted to get an invalid bit");
-				return false;
-			}
+			return *entry & 1ULL << 7;
 		case EntryControlBit::Global:
 			return *entry & 1ULL << 8;
 		case EntryControlBit::IMPL_RES1:
@@ -161,6 +156,9 @@ bool MdOS::Memory::Paging::get_bit(EntryControlBit bit, PageEntry *entry) {
 		case EntryControlBit::IMPL_RES3:
 			return *entry & 1ULL << 11;
 		case EntryControlBit::PageAttributeTable:
+			if (type == EntryType::INVALID || type > EntryType::PML5E) {
+				PRINT_ERROR("Attempted to read an invalid entry");
+			}
 			if (type == EntryType::PTE) {
 				return *entry & 1ULL << 7;
 			} else if (type == EntryType::PDE || type == EntryType::PDPE) {
@@ -208,6 +206,14 @@ MdOS::Result MdOS::Memory::Paging::VirtualMemoryManagerPML4::init() {
 MdOS::Result MdOS::Memory::Paging::VirtualMemoryManagerPML4::init(Entry *pml4) {
 	if (pml4 == nullptr) { return MdOS::Result::INIT_FAILURE; }
 	m_pml4 = pml4;
+	return MdOS::Result::SUCCESS;
+}
+
+MdOS::Result MdOS::Memory::Paging::VirtualMemoryManagerPML4::init(VirtualMemoryManagerPML4 *vmm) {
+	MdOS::Result res = this->init();
+	if (res != MdOS::Result::SUCCESS || m_pml4 == nullptr) { return res; }
+	memcpy(m_pml4, vmm->get_pml4(), pageTableSize);
+	//TODO: implement copy initialization
 	return MdOS::Result::SUCCESS;
 }
 
@@ -450,8 +456,8 @@ MdOS::Result MdOS::Memory::Paging::VirtualMemoryManagerPML4::swap_attributes(Vir
 MdOS::Result MdOS::Memory::Paging::VirtualMemoryManagerPML4::map_range(PhysicalAddress paddrBase,
 																	   VirtualAddress vaddrBase, size_t numPages,
 																	   EntryFlagBits flags) {
-	kassert((paddrBase & MdOS::Memory::Paging::pageSize4KiB) == 0);
-	kassert((vaddrBase & MdOS::Memory::Paging::pageSize4KiB) == 0);
+	kassert((paddrBase % MdOS::Memory::Paging::pageSize4KiB) == 0);
+	kassert((vaddrBase % MdOS::Memory::Paging::pageSize4KiB) == 0);
 	for (size_t i = 0; i < numPages; i++) {
 		MdOS::Result res = map_page(paddrBase + (i * MdOS::Memory::Paging::pageSize4KiB),
 									vaddrBase + (i * MdOS::Memory::Paging::pageSize4KiB), flags);
@@ -464,10 +470,44 @@ MdOS::Result MdOS::Memory::Paging::VirtualMemoryManagerPML4::map_range(PhysicalA
 }
 
 MdOS::Result MdOS::Memory::Paging::VirtualMemoryManagerPML4::unmap_range(VirtualAddress vaddrBase, size_t numPages) {
-	kassert((vaddrBase & MdOS::Memory::Paging::pageSize4KiB) == 0);
+	kassert((vaddrBase % MdOS::Memory::Paging::pageSize4KiB) == 0);
 	for (size_t i = 0; i < numPages; i++) {
 		MdOS::Result res = unmap_page(vaddrBase + (i * MdOS::Memory::Paging::pageSize4KiB));
 		if (res != MdOS::Result::SUCCESS) { PANIC("Failed to unmap memory range", MEMORY_ERROR); }
 	}
+	return MdOS::Result::SUCCESS;
+}
+
+MdOS::Result MdOS::Memory::Paging::map_kernel(SectionInfo *sections, size_t sectionInfoCount, MemMap *memMap,
+											  BootstrapMemoryRegion bootHeap, GOPFramebuffer *framebuffer,
+											  VirtualMemoryManagerPML4 *vmm) {
+	MdOS::Result res;
+	uint64_t start = rdtsc();
+	for (size_t i = 0; i < memMap->size / memMap->descriptorSize; i++) {
+		EFI_MEMORY_DESCRIPTOR *entry =
+				(EFI_MEMORY_DESCRIPTOR *) ((uintptr_t) memMap->map + (i * memMap->descriptorSize));
+		res = vmm->map_range(entry->paddr, MDOS_PHYS_TO_VIRT(entry->paddr), entry->pageCount, ReadWrite);
+		//TODO: optimize direct mapping to utilize 2MiB and 1GiB pages
+		if (res != MdOS::Result::SUCCESS) { return res; }
+	}
+	DEBUG_LOG("Direct mapping took %lu cycles\n", rdtsc() - start);
+	start = rdtsc();
+	res = vmm->map_range(PhysicalAddress(bootHeap.basePaddr), VirtualAddress(bootHeap.baseAddr),
+						 bootHeap.size / pageSize4KiB, ReadWrite);
+	if (res != MdOS::Result::SUCCESS) { return res; }
+	DEBUG_LOG("Mapping boot heap took %lu cycles\n", rdtsc() - start);
+	start = rdtsc();
+	res = vmm->map_range(PhysicalAddress(framebuffer->bufferBase), VirtualAddress(framebuffer->bufferBase),
+						 framebuffer->bufferSize / 0x1000, ReadWrite);
+	if (res != MdOS::Result::SUCCESS) { return res; }
+	DEBUG_LOG("Mapping framebuffer took %lu cycles\n", rdtsc() - start);
+	start = rdtsc();
+	for (size_t i = 0; i < sectionInfoCount; i++) {
+		SectionInfo *section = (SectionInfo *) (uintptr_t(sections) + i * sizeof(SectionInfo));
+		res = vmm->map_range(section->paddr, section->vaddr, section->pageCount, ReadWrite);
+		if (res != MdOS::Result::SUCCESS) { return res; }
+	}
+	DEBUG_LOG("Mapping kernel took %lu cycles\n", rdtsc() - start);
+
 	return MdOS::Result::SUCCESS;
 }

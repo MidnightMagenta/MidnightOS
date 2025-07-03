@@ -38,9 +38,11 @@ const char *MdOS::string::to_hstring(uint64_t num) {
 	for (uint8_t i = 0; i < size; i++) {
 		ptr = ((uint8_t *) valPtr + i);
 		temp = ((*ptr & 0xF0) >> 4);
-		toH64StrBuffer[size - uint64_t(i * 2 + 1)] = char(temp + (temp > 9 ? 'A' - 10 : '0'));
+		size_t offset = size - uint64_t(i * 2 + 1);
+		if (offset < size) { toH64StrBuffer[offset] = char(temp + (temp > 9 ? 'A' - 10 : '0')); }
 		temp = ((*ptr & 0x0F));
-		toH64StrBuffer[size - uint64_t(i * 2)] = char(temp + (temp > 9 ? 'A' - 10 : '0'));
+		offset = size - uint64_t(i * 2);
+		if (offset < size) { toH64StrBuffer[offset] = char(temp + (temp > 9 ? 'A' - 10 : '0')); }
 	}
 	toH64StrBuffer[size + 1] = '\0';
 	return toH64StrBuffer;
@@ -55,9 +57,11 @@ const char *MdOS::string::to_hstring(uint32_t num) {
 	for (uint8_t i = 0; i < size; i++) {
 		ptr = ((uint8_t *) valPtr + i);
 		temp = ((*ptr & 0xF0) >> 4);
-		toH32StrBuffer[size - uint64_t(i * 2 + 1)] = char(temp + (temp > 9 ? 'A' - 10 : '0'));
+		size_t offset = size - uint64_t(i * 2 + 1);
+		if (offset < size) { toH32StrBuffer[offset] = char(temp + (temp > 9 ? 'A' - 10 : '0')); }
 		temp = ((*ptr & 0x0F));
-		toH32StrBuffer[size - (i * 2)] = char(temp + (temp > 9 ? 'A' - 10 : '0'));
+		offset = size - uint64_t(i * 2);
+		if (offset < size) { toH32StrBuffer[offset] = char(temp + (temp > 9 ? 'A' - 10 : '0')); }
 	}
 	toH32StrBuffer[size + 1] = '\0';
 	return toH32StrBuffer;
@@ -72,9 +76,11 @@ const char *MdOS::string::to_hstring(uint16_t num) {
 	for (uint8_t i = 0; i < size; i++) {
 		ptr = ((uint8_t *) valPtr + i);
 		temp = ((*ptr & 0xF0) >> 4);
-		toH16StrBuffer[size - uint64_t(i * 2 + 1)] = char(temp + (temp > 9 ? 'A' - 10 : '0'));
+		size_t offset = size - uint64_t(i * 2 + 1);
+		if (offset < size) { toH16StrBuffer[offset] = char(temp + (temp > 9 ? 'A' - 10 : '0')); }
 		temp = ((*ptr & 0x0F));
-		toH16StrBuffer[size - (i * 2)] = char(temp + (temp > 9 ? 'A' - 10 : '0'));
+		offset = size - uint64_t(i * 2);
+		if (offset < size) { toH16StrBuffer[offset] = char(temp + (temp > 9 ? 'A' - 10 : '0')); }
 	}
 	toH16StrBuffer[size + 1] = '\0';
 	return toH16StrBuffer;
@@ -89,9 +95,11 @@ const char *MdOS::string::to_hstring(uint8_t num) {
 	for (uint8_t i = 0; i < size; i++) {
 		ptr = ((uint8_t *) valPtr + i);
 		temp = ((*ptr & 0xF0) >> 4);
-		toH8StrBuffer[size - uint64_t(i * 2 + 1)] = char(temp + (temp > 9 ? 'A' - 10 : '0'));
+		size_t offset = size - uint64_t(i * 2 + 1);
+		if (offset < size) { toH8StrBuffer[offset] = char(temp + (temp > 9 ? 'A' - 10 : '0')); }
 		temp = ((*ptr & 0x0F));
-		toH8StrBuffer[size - (i * 2)] = char(temp + (temp > 9 ? 'A' - 10 : '0'));
+		offset = size - uint64_t(i * 2);
+		if (offset < size) { toH8StrBuffer[offset] = char(temp + (temp > 9 ? 'A' - 10 : '0')); }
 	}
 	toH8StrBuffer[size + 1] = '\0';
 	return toH8StrBuffer;
