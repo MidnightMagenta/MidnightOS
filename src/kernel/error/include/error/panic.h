@@ -4,6 +4,7 @@
 extern "C" {
 #endif
 
+#include <k_utils/compiler_options.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -30,15 +31,15 @@ typedef struct {
 	uint64_t rax, rbx, rcx, rdx;
 	uint64_t rdi, rsi, rbp, rsp;
 	uint64_t r8, r9, r10, r11, r12, r13, r14, r15;
-} __attribute__((packed)) GeneralPurposeRegisters;
+} MDOS_PACKED GeneralPurposeRegisters;
 
 typedef struct {
 	uint64_t cr0, cr2, cr3, cr4, cr8;
-} __attribute__((packed)) ControlRegisters;
+} MDOS_PACKED ControlRegisters;
 
 typedef struct {
 	uint16_t ds, es, fs, gs, ss, cs;
-} __attribute__((packed)) SegmentRegisters;
+} MDOS_PACKED SegmentRegisters;
 
 typedef struct {
 	uint64_t originalRDI;
@@ -55,7 +56,7 @@ extern void get_gp_regs(GeneralPurposeRegisters *registers);
 extern void get_cr_regs(ControlRegisters *registers);
 extern void get_segment_regs(SegmentRegisters *registers);
 void print_stack_trace();
-void __attribute__((noreturn)) __attribute__((optimize("O0"))) panic_handler(const char *msg, PanicParams *params);
+void MDOS_NORETURN MSOD_NOOPTIMIZE panic_handler(const char *msg, PanicParams *params);
 
 #ifdef __cplusplus
 }

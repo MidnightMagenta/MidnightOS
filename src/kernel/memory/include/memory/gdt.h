@@ -4,6 +4,7 @@
 extern "C" {
 #endif
 
+#include <k_utils/compiler_options.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -19,7 +20,7 @@ typedef struct {
 	uint8_t accessByte;
 	uint8_t limit1_flags;
 	uint8_t base2;
-} __attribute__((packed)) GDTEntry;
+} MDOS_PACKED GDTEntry;
 
 typedef struct {
 	GDTEntry null1;
@@ -28,7 +29,7 @@ typedef struct {
 	GDTEntry null2;
 	GDTEntry userCode;
 	GDTEntry userData;
-} __attribute__((packed)) GDT;
+} MDOS_PACKED GDT;
 
 extern GDT g_defaultGDT;
 extern GDTDescriptor g_gdtDescriptor;
