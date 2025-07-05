@@ -207,7 +207,8 @@ MdOS::Result MdOS::Memory::Paging::VirtualMemoryManagerPML4::init(Entry *pml4) {
 	return MdOS::Result::SUCCESS;
 }
 
-MdOS::Result MdOS::Memory::Paging::VirtualMemoryManagerPML4::init(VirtualMemoryManagerPML4 *vmm __attribute__((unused))) {
+MdOS::Result MdOS::Memory::Paging::VirtualMemoryManagerPML4::init(VirtualMemoryManagerPML4 *vmm
+																  __attribute__((unused))) {
 	MdOS::Result res = this->init();
 	if (res != MdOS::Result::SUCCESS || m_pml4 == nullptr) { return res; }
 	//memcpy(m_pml4, vmm->get_pml4(), pageTableSize);

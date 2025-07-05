@@ -1,5 +1,6 @@
 #include <IO/debug_print.h>
 #include <error/panic.h>
+#include <k_utils/utils.hpp>
 #include <memory/pmm.hpp>
 
 using namespace MdOS::Memory;
