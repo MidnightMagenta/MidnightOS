@@ -36,7 +36,7 @@
 
 SRCDIR = .
 BUILD_DIR = .
-EFI_TARGET = .
+EFI_TARGET = bootx64.efi
 
 VPATH = $(SRCDIR)
 

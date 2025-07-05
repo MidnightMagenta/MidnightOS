@@ -7,6 +7,8 @@
 #include <efilib.h>
 #include <elf.h>
 
+#define KERNEL_PATH L"\\krnl\\kernel.elf"
+
 typedef struct {
 	Elf64_Addr paddr;
 	Elf64_Addr vaddr;

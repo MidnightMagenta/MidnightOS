@@ -9,7 +9,6 @@ DATA_DIR = $(abspath files)
 OVMF_BINARIES_DIR = ovmf-bins
 GNU_EFI_DIR = gnu-efi
 
-EFI_TARGET = bootx64.efi
 KERNEL_ELF_TARGET = kernel.elf
 
 EMU = qemu-system-x86_64
@@ -55,8 +54,7 @@ build-gnu-efi:
 
 build-bootloader:
 	@mkdir -p $(BUILD_DIR)
-	$(MAKE) -C $(SOURCE_DIR)/bootloader EFI_TARGET="$(EFI_TARGET)" BUILD_DIR="$(BUILD_DIR)/bootloader" all
-	$(MAKE) -C $(SOURCE_DIR)/bootloader EFI_TARGET="$(EFI_TARGET).debug" BUILD_DIR="$(BUILD_DIR)/bootloader" all
+	$(MAKE) -C $(SOURCE_DIR)/bootloader BUILD_DIR="$(BUILD_DIR)/bootloader" all
 
 build-kernel:
 	@mkdir -p $(BUILD_DIR)
@@ -75,8 +73,9 @@ update-img:
 	mmd -i $(BUILD_DIR)/$(OS_NAME).img ::/EFI
 	mmd -i $(BUILD_DIR)/$(OS_NAME).img ::/EFI/BOOT
 	mmd -i $(BUILD_DIR)/$(OS_NAME).img ::/BOOT
-	mcopy -i $(BUILD_DIR)/$(OS_NAME).img $(BUILD_DIR)/bootloader/$(EFI_TARGET) ::/EFI/BOOT
-	mcopy -i $(BUILD_DIR)/$(OS_NAME).img $(BUILD_DIR)/kernel/$(KERNEL_ELF_TARGET) ::/BOOT
+	mmd -i $(BUILD_DIR)/$(OS_NAME).img ::/KRNL
+	mcopy -i $(BUILD_DIR)/$(OS_NAME).img $(BUILD_DIR)/bootloader/bootx64.efi ::/EFI/BOOT
+	mcopy -i $(BUILD_DIR)/$(OS_NAME).img $(BUILD_DIR)/kernel/$(KERNEL_ELF_TARGET) ::/KRNL
 	mcopy -si $(BUILD_DIR)/$(OS_NAME).img $(DATA_DIR)/* ::
 
 init-img:
@@ -99,6 +98,7 @@ clean-all: clean
 
 clean:
 	find $(SOURCE_DIR) -name "*.o" -type f -delete
+	find $(SOURCE_DIR) -name "*.so" -type f -delete
 	find $(BUILD_DIR) -name "*.o" -type f -delete
 	find $(BUILD_DIR) -name "*.so" -type f -delete
 	find $(BUILD_DIR) -name "*.efi" -type f -delete

@@ -52,7 +52,7 @@ EFI_STATUS load_kernel(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable, El
 					   UINTN *sectionInfoCount, LoadedSectionInfo **sectionInfos) {
 	EFI_STATUS status;
 	EFI_FILE *kernel = NULL;
-	status = open_file(NULL, L"\\boot\\kernel.elf", imageHandle, systemTable, &kernel);
+	status = open_file(NULL, KERNEL_PATH, imageHandle, systemTable, &kernel);
 	HandleError(L"Failed to open kernel file: 0x%lx\n\r", status);
 
 	if (!kernel) {
