@@ -22,6 +22,13 @@ EFI_STATUS get_final_EFI_map(EFI_SYSTEM_TABLE *systemTable, MemMap *map, uint64_
 	return EFI_SUCCESS;
 }
 
+void build_virtual_address_map(MemMap *map) {
+	for (EFI_MEMORY_DESCRIPTOR *entry = map->map; (char *) entry < (char *) map->map + map->size;
+		 entry = (EFI_MEMORY_DESCRIPTOR *) ((char *) entry + map->descriptorSize)) {
+		entry->VirtualStart = entry->VirtualStart + DIRECT_MAP_BASE;
+	}
+}
+
 void set_CR3_PML4(uint64_t pml4Addr) { __asm__ volatile("mov %0, %%rax; mov %%rax, %%cr3" ::"r"(pml4Addr)); }
 
 EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
@@ -117,6 +124,9 @@ EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
 		}
 	}
 
+	build_virtual_address_map(map);
+	systemTable->RuntimeServices->SetVirtualAddressMap(map->size, map->descriptorSize, map->descriptorVersion,
+													   map->map);
 	set_CR3_PML4((uint64_t) pml4 | PAGE_WSP);
 	_start(&bootInfo);
 
