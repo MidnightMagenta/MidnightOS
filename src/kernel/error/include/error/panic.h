@@ -9,6 +9,7 @@ extern "C" {
 #include <stdint.h>
 
 #define PANIC(msg, errorCode)                                                                                          \
+	__asm__("cli");                                                                                                    \
 	PanicParams params;                                                                                                \
 	params.eCode = errorCode;                                                                                          \
 	__asm__ volatile("mov %%rdi, %0;"                                                                                  \

@@ -13,7 +13,7 @@ void MdOS::init_krnl(BootInfo *bootInfo) {
 	PROFILE_SCOPE("init_krnl");
 	init_debug_IO(&bootInfo->bootExtra);
 	init_memory(bootInfo);
-
+	
 	DEBUG_LOG("EOF\n");
 }
 
@@ -27,8 +27,8 @@ void MdOS::init_debug_IO(BootExtra *bootExtra) {
 
 void MdOS::init_memory(BootInfo *bootInfo) {
 	PROFILE_SCOPE("init_memory");
-	GDTDescriptor *desc = &g_gdtDescriptor;
-	mdos_mem_load_gdt(desc);
+	GDTDescriptor *dsc = &g_gdtDescriptor;
+	mdos_mem_load_gdt(dsc);
 
 	MdOS::Memory::BumpAllocator::init(reinterpret_cast<uintptr_t>(bootInfo->bootstrapMem.baseAddr),
 									  reinterpret_cast<uintptr_t>(bootInfo->bootstrapMem.topAddr));

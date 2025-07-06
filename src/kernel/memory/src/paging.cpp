@@ -240,6 +240,7 @@ MdOS::Memory::Paging::Entry *MdOS::Memory::Paging::VirtualMemoryManagerPML4::get
 		ent.set_bit(EntryControlBit::ReadWrite, true);
 		ent.set_bit(EntryControlBit::UserAccessible, true);
 		ent.set_addr(MdOS::Memory::PMM::alloc_page());
+		kassert(ent.get_addr() != 0);
 		memset((void *) (MDOS_PHYS_TO_VIRT(ent.get_addr())), 0x0, MdOS::Memory::Paging::pageSize4KiB);
 		table[index] = ent;
 	}
@@ -494,7 +495,11 @@ MdOS::Result MdOS::Memory::Paging::VirtualMemoryManagerPML4::unmap_range(Virtual
 	kassert((vaddrBase % MdOS::Memory::Paging::pageSize4KiB) == 0);
 	for (size_t i = 0; i < numPages; i++) {
 		MdOS::Result res = unmap_page(vaddrBase + (i * MdOS::Memory::Paging::pageSize4KiB));
-		if (res != MdOS::Result::SUCCESS) { PANIC("Failed to unmap memory range", MEMORY_ERROR); }
+		if (res != MdOS::Result::SUCCESS) {
+			// attempt smart unmap
+			res = unmap_smart_range(vaddrBase, numPages * pageSize4KiB);
+			if (res != MdOS::Result::SUCCESS) { PANIC("Failed to unmap memory range", MEMORY_ERROR); }
+		}
 	}
 	return MdOS::Result::SUCCESS;
 }
@@ -519,18 +524,21 @@ MdOS::Result MdOS::Memory::Paging::VirtualMemoryManagerPML4::map_smart_range(Phy
 		MdOS::Result res;
 		if ((paddr % pageSize1GiB) == 0 && (vaddr % pageSize1GiB) == 0 && rem > pageSize1GiB) {
 			res = map_1GiB_page(paddr, vaddr, flags);
+			invalidate_page(vaddr);
 			paddr += pageSize1GiB;
 			vaddr += pageSize1GiB;
 			if (rem < pageSize1GiB) return MdOS::Result::OVERFLOW;
 			rem -= pageSize1GiB;
 		} else if ((paddr % pageSize2MiB) == 0 && (vaddr % pageSize2MiB) == 0 && rem > pageSize2MiB) {
 			res = map_2MiB_page(paddr, vaddr, flags);
+			invalidate_page(vaddr);
 			paddr += pageSize2MiB;
 			vaddr += pageSize2MiB;
 			if (rem < pageSize2MiB) return MdOS::Result::OVERFLOW;
 			rem -= pageSize2MiB;
 		} else {
 			res = map_4KiB_page(paddr, vaddr, flags);
+			invalidate_page(vaddr);
 			paddr += pageSize4KiB;
 			vaddr += pageSize4KiB;
 			if (rem < pageSize4KiB) return MdOS::Result::OVERFLOW;
@@ -631,6 +639,7 @@ MdOS::Result MdOS::Memory::Paging::map_kernel(SectionInfo *sections, size_t sect
 											  BootstrapMemoryRegion bootHeap, GOPFramebuffer *framebuffer,
 											  VirtualMemoryManagerPML4 *vmm) {
 	MdOS::Result res;
+	// build the direct map
 	for (size_t i = 0; i < memMap->size / memMap->descriptorSize; i++) {
 		EFI_MEMORY_DESCRIPTOR *entry =
 				(EFI_MEMORY_DESCRIPTOR *) ((uintptr_t) memMap->map + (i * memMap->descriptorSize));
@@ -638,12 +647,18 @@ MdOS::Result MdOS::Memory::Paging::map_kernel(SectionInfo *sections, size_t sect
 								   ReadWrite);
 		if (res != MdOS::Result::SUCCESS) { return res; }
 	}
+
+	// map the boot heap
 	res = vmm->map_smart_range(PhysicalAddress(bootHeap.basePaddr), VirtualAddress(bootHeap.baseAddr), bootHeap.size,
 							   ReadWrite);
 	if (res != MdOS::Result::SUCCESS) { return res; }
+
+	// map the GOP framebuffer
 	res = vmm->map_smart_range(PhysicalAddress(framebuffer->bufferBase), VirtualAddress(framebuffer->bufferBase),
 							   framebuffer->bufferSize, ReadWrite);
 	if (res != MdOS::Result::SUCCESS) { return res; }
+
+	// mape the kernel sections
 	for (size_t i = 0; i < sectionInfoCount; i++) {
 		SectionInfo *section = (SectionInfo *) (uintptr_t(sections) + i * sizeof(SectionInfo));
 		res = vmm->map_smart_range(section->paddr, section->vaddr, section->pageCount * pageSize4KiB, ReadWrite);

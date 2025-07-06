@@ -25,7 +25,7 @@ enum class EntryControlBit {
 	NoExecute
 };
 
-enum class EntryType : uint8_t {
+enum EntryType : uint8_t {
 	PML5E = 0b101,
 	PML4E = 0b100,
 	PDPE = 0b011,

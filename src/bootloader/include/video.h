@@ -11,6 +11,7 @@ typedef struct {
 	unsigned int width;
 	unsigned int height;
 	unsigned int pixelsPerScanline;
+	char pad[4];
 } GOPFramebuffer;
 
 EFI_STATUS init_GOP(EFI_SYSTEM_TABLE *systemTable, GOPFramebuffer *framebuffer);

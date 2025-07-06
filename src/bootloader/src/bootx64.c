@@ -25,13 +25,15 @@ EFI_STATUS get_final_EFI_map(EFI_SYSTEM_TABLE *systemTable, MemMap *map, uint64_
 void build_virtual_address_map(MemMap *map) {
 	for (EFI_MEMORY_DESCRIPTOR *entry = map->map; (char *) entry < (char *) map->map + map->size;
 		 entry = (EFI_MEMORY_DESCRIPTOR *) ((char *) entry + map->descriptorSize)) {
-		entry->VirtualStart = entry->VirtualStart + DIRECT_MAP_BASE;
+		if (entry->Attribute & EFI_MEMORY_RUNTIME) { entry->VirtualStart = entry->PhysicalStart + DIRECT_MAP_BASE; }
 	}
 }
 
 void set_CR3_PML4(uint64_t pml4Addr) { __asm__ volatile("mov %0, %%rax; mov %%rax, %%cr3" ::"r"(pml4Addr)); }
 
 EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
+	uint64_t bootStatus = BOOT_STATUS_SUCCESS;
+	uint64_t bootStatusInfoBits = 0ULL;
 	EFI_STATUS status;
 	InitializeLib(imageHandle, systemTable);
 
@@ -55,12 +57,26 @@ EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
 	status = systemTable->BootServices->AllocatePool(EfiLoaderData, sizeof(framebuffer), (void **) &framebuffer);
 	HandleError(L"Failed to allocate memory for framebuffer info struct", status);
 	status = init_GOP(systemTable, framebuffer);
-	HandleError(L"Failed to initialize GOP", status);
+	if (status != EFI_SUCCESS) {
+		Print(L"Error: "
+			  L"Failed to initialize GOP"
+			  L": 0x%lx\n\r",
+			  status);
+		bootStatus = BOOT_STATUS_PARTIAL;
+		bootStatusInfoBits |= BOOT_STATUS_NO_GOP;
+	}
 
 	PSF1_Font *font = NULL;
 	systemTable->BootServices->AllocatePool(EfiLoaderData, sizeof(PSF1_Font), (void **) &font);
 	status = get_PSF1_font(imageHandle, systemTable, L"FONTS\\zap-light16.psf", font);
-	HandleError(L"Failed to read PSF font", status);
+	if (status != EFI_SUCCESS) {
+		Print(L"Error: "
+			  L"Failed to get boot font"
+			  L": 0x%lx\n\r",
+			  status);
+		bootStatus = BOOT_STATUS_PARTIAL;
+		bootStatusInfoBits |= BOOT_STATUS_NO_FONT;
+	}
 
 	MemMap *map = NULL;
 	status = systemTable->BootServices->AllocatePool(EfiLoaderData, sizeof(MemMap), (void **) &map);
@@ -91,6 +107,8 @@ EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
 	HandleError(L"Failed to map memory for the bootstrap heap", status);
 
 	BootInfo bootInfo;
+	bootInfo.bootStatus = bootStatus;
+	bootInfo.bootStatusBits = bootStatusInfoBits;
 	bootInfo.map = map;
 	bootInfo.pml4 = pml4;
 	bootInfo.bootExtra.framebuffer = framebuffer;
@@ -125,10 +143,15 @@ EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
 	}
 
 	build_virtual_address_map(map);
-	systemTable->RuntimeServices->SetVirtualAddressMap(map->size, map->descriptorSize, map->descriptorVersion,
-													   map->map);
+	status = systemTable->RuntimeServices->SetVirtualAddressMap(map->size, map->descriptorSize, map->descriptorVersion,
+																map->map);
+	if (status != EFI_SUCCESS) {
+		bootInfo.bootStatus = BOOT_STATUS_PARTIAL;
+		bootInfo.bootStatusBits |= BOOT_STATUS_RUNTIME_SERVICES_REMAP_FAIL;
+	}
+
 	set_CR3_PML4((uint64_t) pml4 | PAGE_WSP);
-	_start(&bootInfo);
+	_start((BootInfo*)((uintptr_t)(&bootInfo) + DIRECT_MAP_BASE));
 
 	return EFI_SUCCESS;
 }
