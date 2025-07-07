@@ -48,6 +48,12 @@ enum EntryFlagBits : uint16_t {
 
 using PageEntry = uint64_t;
 
+static constexpr size_t pageSize4KiB = 0x1000;
+static constexpr size_t pageSize2MiB = 0x200000;
+static constexpr size_t pageSize1GiB = 0x40000000;
+static constexpr size_t pageSizePML4 = 0x8000000000;
+static constexpr size_t pageTableSize = 0x1000;
+
 void set_type(EntryType type, PageEntry *entry);
 EntryType get_type(PageEntry *entry);
 void set_bit(EntryControlBit bit, bool value, PageEntry *entry);
@@ -70,12 +76,6 @@ static_assert(sizeof(Entry) == sizeof(PageEntry));
 
 inline void set_cr3(uint64_t pml4) { __asm__ volatile("mov %0, %%cr3;" ::"r"(pml4) : "memory"); }
 inline void invalidate_page(uintptr_t vaddr) { __asm__ volatile("invlpg (%0)" ::"r"(vaddr) : "memory"); }
-
-static constexpr size_t pageSize4KiB = 0x1000;
-static constexpr size_t pageSize2MiB = 0x200000;
-static constexpr size_t pageSize1GiB = 0x40000000;
-static constexpr size_t pageSizePML4 = 0x8000000000;
-static constexpr size_t pageTableSize = 0x1000;
 
 class VirtualMemoryManagerPML4 {
 public:
