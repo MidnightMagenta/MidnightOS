@@ -9,8 +9,6 @@ DATA_DIR = $(abspath files)
 OVMF_BINARIES_DIR = ovmf-bins
 GNU_EFI_DIR = gnu-efi
 
-KERNEL_ELF_TARGET = kernel.elf
-
 EMU = qemu-system-x86_64
 DBG = gdb
 CC = x86_64-elf-g++
@@ -29,7 +27,7 @@ EMU_BASE_FLAGS = -drive file=$(BUILD_DIR)/$(OS_NAME).img,format=raw \
 EMU_DBG_FLAGS = -s -S -d guest_errors,cpu_reset,int -no-reboot -no-shutdown
 
 DBG_FLAGS = -ex "target remote localhost:1234" \
-			-ex "symbol-file $(BUILD_DIR)/kernel/$(KERNEL_ELF_TARGET)" \
+			-ex "symbol-file $(BUILD_DIR)/kernel/kernel.elf" \
 			-ex "set disassemble-next-line on" \
 			-ex "set step-mode on"
 
@@ -47,7 +45,7 @@ partial: build update-img
 
 all: init-img build-gnu-efi partial
 
-build: build-bootloader build-kernel
+build: build-bootloader build-executables
 
 build-gnu-efi:
 	$(MAKE) -C $(GNU_EFI_DIR) all
@@ -56,26 +54,23 @@ build-bootloader:
 	@mkdir -p $(BUILD_DIR)
 	$(MAKE) -C $(SOURCE_DIR)/bootloader BUILD_DIR="$(BUILD_DIR)/bootloader" all
 
-build-kernel:
+build-executables:
 	@mkdir -p $(BUILD_DIR)
-	$(MAKE) -C $(SOURCE_DIR)/kernel ELF_TARGET="$(KERNEL_ELF_TARGET)" \
-									BUILD_DIR="$(BUILD_DIR)/kernel" \
-									CC="$(CC)" \
-									LD="$(LD)" \
-									AC="$(AC)" \
-									CFLAGS="$(CFLAGS)" \
-									LDFLAGS="$(LDFLAGS)" \
-									ACFLAGS="$(ACFLAGS)" \
-									all
+	$(MAKE) -C $(SOURCE_DIR) BUILD_DIR="$(BUILD_DIR)" \
+							FILES_DIR="$(DATA_DIR)" \
+							CC="$(CC)" \
+							LD="$(LD)" \
+							AC="$(AC)" \
+							CFLAGS="$(CFLAGS)" \
+							LDFLAGS="$(LDFLAGS)" \
+							ACFLAGS="$(ACFLAGS)" \
+							all
 
 update-img:
 	mformat -i $(BUILD_DIR)/$(OS_NAME).img -F ::
 	mmd -i $(BUILD_DIR)/$(OS_NAME).img ::/EFI
 	mmd -i $(BUILD_DIR)/$(OS_NAME).img ::/EFI/BOOT
-	mmd -i $(BUILD_DIR)/$(OS_NAME).img ::/BOOT
-	mmd -i $(BUILD_DIR)/$(OS_NAME).img ::/KRNL
 	mcopy -i $(BUILD_DIR)/$(OS_NAME).img $(BUILD_DIR)/bootloader/bootx64.efi ::/EFI/BOOT
-	mcopy -i $(BUILD_DIR)/$(OS_NAME).img $(BUILD_DIR)/kernel/$(KERNEL_ELF_TARGET) ::/KRNL
 	mcopy -si $(BUILD_DIR)/$(OS_NAME).img $(DATA_DIR)/* ::
 
 init-img:

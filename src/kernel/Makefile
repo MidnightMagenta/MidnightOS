@@ -6,7 +6,9 @@ LDS = kernel_linker.ld
 
 BUILD_DIR = .
 SOURCE_DIR = .
+FILES_DIR = .
 LIBC_DIR = $(SOURCE_DIR)/../libc
+IMAGE_DIR = $(FILES_DIR)/KRNL
 
 ELF_TARGET = kernel.elf
 
@@ -46,8 +48,16 @@ CFLAGS = -g -ffreestanding -fshort-wchar -mno-red-zone -m64 -Wall -nostdlib -nos
 ACFLAGS = -f elf64
 LDFLAGS = -T $(LDS) -static -Bsymbolic -nostdlib
 
-all: $(OBJS)
+all: $(OBJS) link copy_build_files
+
+link:
+	@echo "_____LINKING_____"
 	$(LD) -T $(LDS) $(LDFLAGS) -o $(BUILD_DIR)/$(ELF_TARGET) $(OBJS)
+
+copy_build_files:
+	@echo "_____COPYING_FILES_____"
+	mkdir -p $(IMAGE_DIR)
+	cp $(BUILD_DIR)/$(ELF_TARGET) $(IMAGE_DIR)/$(ELF_TARGET)
 
 $(BUILD_DIR)/%.o: $(SOURCE_DIR)/%.c $(C_HDRS)
 	@mkdir -p $(dir $@)

@@ -4,6 +4,7 @@
 *.a
 *.lib
 *.img
+*.elf
 
 build/
 .vscode/
