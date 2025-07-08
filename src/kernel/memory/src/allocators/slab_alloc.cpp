@@ -1,0 +1,123 @@
+#include <IO/debug_print.h>
+#include <memory/allocators/bump_allocator.hpp>
+#include <memory/allocators/slab_alloc.hpp>
+
+void MdOS::Memory::allocators::SlabAllocator::init(void *allocBase, size_t size, size_t slabSize, Allocator* allocator) {
+	kassert(size > slabSize);
+	kassert((size % slabSize) == 0);
+	m_slabCount = size / slabSize;
+	m_freeSlabs = m_slabCount;
+	m_slabSize = slabSize;
+	m_freeList = (Slab *) allocator->alloc_aligned(size, slabSize); //TODO: replace with proper kmalloc
+
+	uintptr_t addr = uintptr_t(allocBase);
+	Slab *prev = nullptr;
+	Slab *current = m_freeList;
+	while (addr < (uintptr_t(allocBase) + size)) {
+		current->prev = prev;
+		current->next = (Slab *) (uintptr_t(current) + slabSize);
+		current->addr = addr;
+
+		prev = current;
+		current = current->next;
+
+		if ((uintptr_t(current->next) + slabSize) < (uintptr_t(allocBase) + size)) {
+			current->next = (Slab *) (uintptr_t(current->next) + slabSize);
+			current = current->next;
+		} else {
+			current->next = nullptr;
+			break;
+		}
+
+		addr += slabSize;
+	}
+}
+
+void *MdOS::Memory::allocators::SlabAllocator::allocate_slab() {
+	if (!m_freeList) { return nullptr; }
+	Slab *allocation = m_freeList;
+	m_freeList = allocation->next;
+	if (m_freeList != nullptr) { m_freeList->prev = nullptr; }
+	allocation->next = m_usedList;
+	allocation->prev = nullptr;
+	m_usedList = allocation;
+
+	m_freeSlabs--;
+	m_usedSlabs++;
+
+	return (void *) allocation->addr;
+}
+
+void MdOS::Memory::allocators::SlabAllocator::free_slab(void *addr) {
+	Slab *current = m_usedList;
+	while (current != nullptr) {
+		if (current->addr == uintptr_t(addr)) {
+			if (current->prev != nullptr) { current->prev->next = current->next; }
+			if (current->next != nullptr) { current->next->prev = current->prev; }
+
+			current->next = m_freeList;
+			if (m_freeList != nullptr) { m_freeList->prev = current; }
+			current->prev = nullptr;
+			m_freeList = current;
+
+			if (current == m_usedList) { m_usedList = current->next; }
+
+			m_freeSlabs++;
+			m_usedSlabs--;
+
+			return;
+		}
+		current = current->next;
+	}
+
+	current = m_freeList;
+	while (current != nullptr) {
+		if (current->addr == uintptr_t(addr)) {
+			PRINT_INFO("Attempted to deallocate a free address");
+			return;
+		}
+		current = current->next;
+	}
+	PRINT_ERROR("Attempted to deallocate an invalid address");
+}
+
+bool MdOS::Memory::allocators::SlabAllocator::verify_allocator_coherency() {
+	Slab *current = m_freeList;
+	size_t slabCount = 0;
+	while (current != nullptr) {
+		slabCount++;
+		current = current->next;
+	}
+	if (slabCount != m_freeSlabs) { return false; }
+
+	current = m_usedList;
+	slabCount = 0;
+	while (current != nullptr) {
+		slabCount++;
+		current = current->next;
+	}
+	if (slabCount != m_usedSlabs) { return false; }
+
+    return true;
+}
+
+void MdOS::Memory::allocators::SlabAllocator::fix_allocator_coherency() {
+	if (verify_allocator_coherency()) { return; }
+
+	Slab *current = m_freeList;
+	size_t freeSlabCount = 0;
+	while (current != nullptr) {
+		freeSlabCount++;
+		current = current->next;
+	}
+	m_freeSlabs = freeSlabCount;
+
+	current = m_usedList;
+	size_t usedSlabCount = 0;
+	while (current != nullptr) {
+		usedSlabCount++;
+		current = current->next;
+	}
+	m_usedSlabs = usedSlabCount;
+	m_slabCount = m_freeSlabs + m_usedSlabs;
+}

@@ -13,7 +13,7 @@ void MdOS::init_krnl(BootInfo *bootInfo) {
 	PROFILE_SCOPE("init_krnl");
 	init_debug_IO(&bootInfo->bootExtra);
 	init_memory(bootInfo);
-	
+
 	DEBUG_LOG("EOF\n");
 }
 
@@ -30,9 +30,8 @@ void MdOS::init_memory(BootInfo *bootInfo) {
 	GDTDescriptor *dsc = &g_gdtDescriptor;
 	mdos_mem_load_gdt(dsc);
 
-	MdOS::Memory::BumpAllocator::init(reinterpret_cast<uintptr_t>(bootInfo->bootstrapMem.baseAddr),
-									  reinterpret_cast<uintptr_t>(bootInfo->bootstrapMem.topAddr));
-
+	MdOS::Memory::allocators::g_bumpAlloc.init(reinterpret_cast<uintptr_t>(bootInfo->bootstrapMem.baseAddr),
+											   reinterpret_cast<uintptr_t>(bootInfo->bootstrapMem.topAddr));
 
 	if (MdOS::Memory::PMM::init(bootInfo->map) != MdOS::Result::SUCCESS) {
 		DEBUG_LOG("PMM initialized sucessfully with status other than Result::SUCESS\n");
