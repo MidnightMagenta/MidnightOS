@@ -73,7 +73,7 @@ void MdOS::memory::allocators::SlabAllocator::free_slab(void *addr) {
 	current = m_freeList;
 	while (current != nullptr) {
 		if (current->addr == uintptr_t(addr)) {
-			PRINT_INFO("Attempted to deallocate a free address");
+			DEBUG_LOG("Attempted to deallocate a free address\n");
 			return;
 		}
 		current = current->next;

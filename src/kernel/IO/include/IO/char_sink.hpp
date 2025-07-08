@@ -14,5 +14,4 @@ MdOS::Result deregister_char_sink(CharSink sink);
 void putc(char c);
 }// namespace MdOS::CharSink
 
-
 #endif

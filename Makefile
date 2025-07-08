@@ -11,7 +11,7 @@ GNU_EFI_DIR = gnu-efi
 
 EMU = qemu-system-x86_64
 DBG = gdb
-CC = x86_64-elf-g++
+CC = x86_64-elf-gcc
 AC = nasm
 LD = x86_64-elf-ld
 
@@ -33,9 +33,11 @@ DBG_FLAGS = -ex "target remote localhost:1234" \
 
 CDEFS = -D_DEBUG
 CFLAGS = -g -ffreestanding -fshort-wchar -mno-red-zone -m64 -Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion \
-		-Wundef -Wcast-align -Wshift-overflow -Wdouble-promotion -nostdlib -fno-rtti -mcmodel=kernel -fno-omit-frame-pointer\
-		-fno-builtin -fno-stack-protector -nostartfiles -nodefaultlibs -fno-exceptions -fno-use-cxa-atexit -O0 -Werror $(CDEFS) \
+		-Wundef -Wcast-align -Wshift-overflow -Wdouble-promotion -nostdlib -mcmodel=kernel -fno-omit-frame-pointer\
+		-fno-builtin -fno-stack-protector -nostartfiles -nodefaultlibs -fno-exceptions -O0 -Werror $(CDEFS) \
 		-fno-tree-vectorize -fno-builtin-memcpy -fno-builtin-memset \
+
+CPPFLAGS = $(CFLAGS) -fno-rtti -fno-use-cxa-atexit
 
 ACFLAGS = -f elf64
 
@@ -62,6 +64,7 @@ build-executables:
 							LD="$(LD)" \
 							AC="$(AC)" \
 							CFLAGS="$(CFLAGS)" \
+							CPPFLAGS="$(CPPFLAGS)" \
 							LDFLAGS="$(LDFLAGS)" \
 							ACFLAGS="$(ACFLAGS)" \
 							all

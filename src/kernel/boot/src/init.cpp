@@ -2,6 +2,7 @@
 #include <IO/debug_print.h>
 #include <IO/kprint.hpp>
 #include <boot/init.hpp>
+#include <boot/kernel_status.h>
 #include <error/panic.h>
 #include <k_utils/utils.hpp>
 #include <memory/gdt.h>
@@ -17,6 +18,11 @@ void MdOS::init_krnl(BootInfo *bootInfo) {
 	PROFILE_SCOPE("init_krnl");
 	init_debug_IO(&bootInfo->bootExtra);
 	init_memory(bootInfo);
+
+	MdOS_krnlStatus_kernelReady = true;
+	MdOS_krnlStatus_globalObjectsReady = true;
+
+	DEBUG_LOG("EOF: init_krnl\n");
 }
 
 void MdOS::init_debug_IO(BootExtra *bootExtra) {

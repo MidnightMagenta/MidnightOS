@@ -2,10 +2,15 @@
 #define MDOS_PAGING_H
 
 #include <boot/boot_info.hpp>
-#include <k_utils/memory.h>
 #include <k_utils/result.hpp>
 #include <k_utils/types.h>
+#include <klibc/string.h>
 #include <stdint.h>
+
+#define MDOS_MEMORY_DIRECT_MAP_REGION_BASE 0xFFFF800000000000ULL
+#define MDOS_MEMORY_DIRECT_MAP_REGION_END 0xFFFF880000000000ULL
+#define MDOS_VIRT_TO_PHYS(vaddr) (vaddr - MDOS_MEMORY_DIRECT_MAP_REGION_BASE)
+#define MDOS_PHYS_TO_VIRT(paddr) (paddr + MDOS_MEMORY_DIRECT_MAP_REGION_BASE)
 
 namespace MdOS::memory::paging {
 enum class EntryControlBit {
@@ -25,14 +30,7 @@ enum class EntryControlBit {
 	NoExecute
 };
 
-enum EntryType : uint8_t {
-	PML5E = 0b101,
-	PML4E = 0b100,
-	PDPE = 0b011,
-	PDE = 0b010,
-	PTE = 0b001,
-	INVALID = 0b000
-};
+enum EntryType : uint8_t { PML5E = 0b101, PML4E = 0b100, PDPE = 0b011, PDE = 0b010, PTE = 0b001, INVALID = 0b000 };
 
 enum EntryFlagBits : uint16_t {
 	ReadWrite = 1 << 0,

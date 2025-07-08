@@ -18,6 +18,8 @@ public:
 	};
 
 	void init(void *allocBase, size_t size, size_t slabSize, Allocator* allocator);
+	// TODO: implement init with kmalloc
+	// TODO: implement heap resizing function
 
 	void *allocate_slab();
 	void free_slab(void *addr);
