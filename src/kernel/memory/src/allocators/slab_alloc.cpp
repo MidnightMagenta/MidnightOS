@@ -2,7 +2,7 @@
 #include <memory/allocators/bump_allocator.hpp>
 #include <memory/allocators/slab_alloc.hpp>
 
-void MdOS::Memory::allocators::SlabAllocator::init(void *allocBase, size_t size, size_t slabSize, Allocator* allocator) {
+void MdOS::memory::allocators::SlabAllocator::init(void *allocBase, size_t size, size_t slabSize, Allocator* allocator) {
 	kassert(size > slabSize);
 	kassert((size % slabSize) == 0);
 	m_slabCount = size / slabSize;
@@ -33,7 +33,7 @@ void MdOS::Memory::allocators::SlabAllocator::init(void *allocBase, size_t size,
 	}
 }
 
-void *MdOS::Memory::allocators::SlabAllocator::allocate_slab() {
+void *MdOS::memory::allocators::SlabAllocator::allocate_slab() {
 	if (!m_freeList) { return nullptr; }
 	Slab *allocation = m_freeList;
 	m_freeList = allocation->next;
@@ -48,7 +48,7 @@ void *MdOS::Memory::allocators::SlabAllocator::allocate_slab() {
 	return (void *) allocation->addr;
 }
 
-void MdOS::Memory::allocators::SlabAllocator::free_slab(void *addr) {
+void MdOS::memory::allocators::SlabAllocator::free_slab(void *addr) {
 	Slab *current = m_usedList;
 	while (current != nullptr) {
 		if (current->addr == uintptr_t(addr)) {
@@ -81,7 +81,7 @@ void MdOS::Memory::allocators::SlabAllocator::free_slab(void *addr) {
 	PRINT_ERROR("Attempted to deallocate an invalid address");
 }
 
-bool MdOS::Memory::allocators::SlabAllocator::verify_allocator_coherency() {
+bool MdOS::memory::allocators::SlabAllocator::verify_allocator_coherency() {
 	Slab *current = m_freeList;
 	size_t slabCount = 0;
 	while (current != nullptr) {
@@ -101,7 +101,7 @@ bool MdOS::Memory::allocators::SlabAllocator::verify_allocator_coherency() {
     return true;
 }
 
-void MdOS::Memory::allocators::SlabAllocator::fix_allocator_coherency() {
+void MdOS::memory::allocators::SlabAllocator::fix_allocator_coherency() {
 	if (verify_allocator_coherency()) { return; }
 
 	Slab *current = m_freeList;

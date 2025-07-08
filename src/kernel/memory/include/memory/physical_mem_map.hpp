@@ -5,7 +5,7 @@
 #include <k_utils/result.hpp>
 #include <memory/pmm.hpp>
 
-namespace MdOS::Memory::PMM {
+namespace MdOS::memory::PMM {
 enum MemoryType {
 	FREE_MEMORY,
 	KERNEL_RESERVED_MEMORY,

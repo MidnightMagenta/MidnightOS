@@ -23,14 +23,14 @@ struct MemMap {
 	char pad[4];
 };
 
-typedef struct {
+struct GOPFramebuffer {
 	void *bufferBase;
 	uint64_t bufferSize;
 	unsigned int width;
 	unsigned int height;
 	unsigned int pixelsPerScanline;
 	char pad[4];
-} GOPFramebuffer;
+};
 
 struct BootExtra {
 	PSF1_Font *basicFont;

@@ -1,16 +1,16 @@
 #include <memory/paging.hpp>
 #include <IO/debug_print.h>
 
-void MdOS::Memory::Paging::set_type(EntryType type, PageEntry *entry) {
+void MdOS::memory::paging::set_type(EntryType type, PageEntry *entry) {
 	*entry &= ~uint64_t(0xE00);
 	*entry |= uint64_t(type) << 9;
 }
 
-MdOS::Memory::Paging::EntryType MdOS::Memory::Paging::get_type(PageEntry *entry) {
+MdOS::memory::paging::EntryType MdOS::memory::paging::get_type(PageEntry *entry) {
 	return EntryType(uint8_t(*entry >> 9) & uint8_t(0b0111));
 }
 
-void MdOS::Memory::Paging::set_bit(EntryControlBit bit, bool value, PageEntry *entry) {
+void MdOS::memory::paging::set_bit(EntryControlBit bit, bool value, PageEntry *entry) {
 	EntryType type = get_type(entry);
 	switch (bit) {
 		case EntryControlBit::PagePresent:
@@ -122,7 +122,7 @@ void MdOS::Memory::Paging::set_bit(EntryControlBit bit, bool value, PageEntry *e
 	}
 }
 
-bool MdOS::Memory::Paging::get_bit(EntryControlBit bit, PageEntry *entry) {
+bool MdOS::memory::paging::get_bit(EntryControlBit bit, PageEntry *entry) {
 	EntryType type = get_type(entry);
 	switch (bit) {
 		case EntryControlBit::PagePresent:
@@ -174,9 +174,9 @@ bool MdOS::Memory::Paging::get_bit(EntryControlBit bit, PageEntry *entry) {
 	}
 }
 
-void MdOS::Memory::Paging::set_addr(uint64_t addr, PageEntry *entry) {
+void MdOS::memory::paging::set_addr(uint64_t addr, PageEntry *entry) {
 	*entry &= ~0x000FFFFFFFFFF000ULL;
 	*entry |= (addr & ~0xFFFULL);
 }
 
-uint64_t MdOS::Memory::Paging::get_addr(PageEntry *entry) { return *entry & 0x000FFFFFFFFFF000ULL; }
+uint64_t MdOS::memory::paging::get_addr(PageEntry *entry) { return *entry & 0x000FFFFFFFFFF000ULL; }

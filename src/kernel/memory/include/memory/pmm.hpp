@@ -7,7 +7,7 @@
 #include <k_utils/result.hpp>
 #include <k_utils/types.h>
 
-namespace MdOS::Memory::PMM {
+namespace MdOS::memory::PMM {
 struct PhysicalMemoryAllocation {
 	PhysicalAddress base;
 	size_t numPages;
@@ -15,11 +15,11 @@ struct PhysicalMemoryAllocation {
 
 MdOS::Result init(MemMap *memMap);
 
-MdOS::Result alloc_pages(MdOS::Memory::PMM::PhysicalMemoryAllocation *alloc);
-MdOS::Result alloc_pages(size_t numPages, MdOS::Memory::PMM::PhysicalMemoryAllocation *alloc);
+MdOS::Result alloc_pages(MdOS::memory::PMM::PhysicalMemoryAllocation *alloc);
+MdOS::Result alloc_pages(size_t numPages, MdOS::memory::PMM::PhysicalMemoryAllocation *alloc);
 uintptr_t alloc_page();
 void free_page(uintptr_t page);
-MdOS::Result free_pages(const MdOS::Memory::PMM::PhysicalMemoryAllocation &alloc);
+MdOS::Result free_pages(const MdOS::memory::PMM::PhysicalMemoryAllocation &alloc);
 MdOS::Result reserve_pages(PhysicalAddress addr, size_t numPages);
 MdOS::Result unreserve_pages(PhysicalAddress addr, size_t numPages);
 

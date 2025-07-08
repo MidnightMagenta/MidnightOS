@@ -1,15 +1,15 @@
 #include <IO/tty.hpp>
 
-void MdOS::Teletype::init(GOP_Renderer *renderer, PSF1_Font *font) {
+void MdOS::teletype::init(GOP_Renderer *renderer, PSF1_Font *font) {
 	if (renderer != nullptr && font != nullptr) {
 		m_renderer = renderer;
 		m_font.init(font);
 		m_graphicsAvail = true;
-		MdOS::CharSink::register_char_sink(MdOS::Teletype::putc);
+		MdOS::CharSink::register_char_sink(MdOS::teletype::putc);
 	}
 }
 
-void MdOS::Teletype::printc(const char chr, uint32_t color, uint32_t xOffset, uint32_t yOffset) {
+void MdOS::teletype::printc(const char chr, uint32_t color, uint32_t xOffset, uint32_t yOffset) {
 	//TODO: turn this into a blit
 	char *glyph = m_font[chr];
 	uint32_t *pixel = (uint32_t *) m_renderer->framebuffer_base();
@@ -23,7 +23,7 @@ void MdOS::Teletype::printc(const char chr, uint32_t color, uint32_t xOffset, ui
 	}
 }
 
-void MdOS::Teletype::putc(char c) {
+void MdOS::teletype::putc(char c) {
 	if (m_graphicsAvail) {
 		if (c == '\n') {
 			m_yOffset += uint32_t(m_font.glyphHeight);

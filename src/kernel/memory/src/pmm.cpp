@@ -3,7 +3,7 @@
 #include <k_utils/utils.hpp>
 #include <memory/pmm.hpp>
 
-using namespace MdOS::Memory;
+using namespace MdOS::memory;
 
 bool m_initialized = false;
 utils::Bitmap<uint64_t> m_pageFrameMap;
@@ -139,14 +139,14 @@ MdOS::Result PMM::alloc_pages(size_t numPages, PMM::PhysicalMemoryAllocation *al
 	return allocSuccess ? MdOS::Result::SUCCESS : MdOS::Result::OUT_OF_MEMORY;
 }
 
-uintptr_t MdOS::Memory::PMM::alloc_page() {
+uintptr_t MdOS::memory::PMM::alloc_page() {
 	PhysicalMemoryAllocation allocation;
 	MdOS::Result res = alloc_pages(&allocation);
 	if (res != MdOS::Result::SUCCESS) { return 0; }
 	return allocation.base;
 }
 
-void MdOS::Memory::PMM::free_page(uintptr_t page) {
+void MdOS::memory::PMM::free_page(uintptr_t page) {
 	PhysicalMemoryAllocation allocation;
 	allocation.base = page;
 	allocation.numPages = 1;

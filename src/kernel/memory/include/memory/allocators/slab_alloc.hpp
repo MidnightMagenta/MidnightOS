@@ -4,7 +4,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-namespace MdOS::Memory::allocators {
+namespace MdOS::memory::allocators {
 class SlabAllocator : Allocator {
 public:
 	SlabAllocator() {}
@@ -41,6 +41,6 @@ private:
 	size_t m_slabSize = 0;
 	// !memory trackers
 };
-}// namespace MdOS::Memory::allocators
+}// namespace MdOS::memory::allocators
 
 #endif

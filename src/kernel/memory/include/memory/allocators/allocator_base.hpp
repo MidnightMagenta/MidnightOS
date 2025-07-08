@@ -3,7 +3,7 @@
 
 #include <stddef.h>
 
-namespace MdOS::Memory::allocators {
+namespace MdOS::memory::allocators {
 class Allocator {
 public:
 	Allocator() {}
@@ -13,7 +13,7 @@ public:
 	virtual void *alloc_aligned(size_t size, size_t alignment) = 0;
 	virtual void free(void *addr) = 0;
 };
-}// namespace MdOS::Memory::allocators
+}// namespace MdOS::memory::allocators
 
 
 #endif

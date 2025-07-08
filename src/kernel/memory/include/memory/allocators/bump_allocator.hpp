@@ -7,7 +7,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-namespace MdOS::Memory::allocators {
+namespace MdOS::memory::allocators {
 class BumpAllocator : public Allocator {
 public:
 	BumpAllocator() {}
@@ -24,7 +24,7 @@ private:
 	uintptr_t m_allocPtr = 0;
 };
 
-inline BumpAllocator g_bumpAlloc;
-}// namespace MdOS::Memory::allocators
+inline BumpAllocator *g_bumpAlloc = nullptr;
+}// namespace MdOS::memory::allocators
 
 #endif

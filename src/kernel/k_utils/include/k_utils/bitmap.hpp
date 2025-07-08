@@ -124,10 +124,10 @@ public:
 				  __is_same(t_bmp, uint64_t));
 
 	bool init(size_t size){
-		return init_internal(size, &MdOS::Memory::allocators::g_bumpAlloc);
+		return init_internal(size, MdOS::memory::allocators::g_bumpAlloc);
 	}
 	bool init(size_t size, bool initValue){
-		return init_internal(size, initValue, &MdOS::Memory::allocators::g_bumpAlloc);
+		return init_internal(size, initValue, MdOS::memory::allocators::g_bumpAlloc);
 	}
 
 	size_t size() const {
@@ -238,7 +238,7 @@ public:
 	}
 
 private:
-	bool init_internal(size_t size, MdOS::Memory::allocators::Allocator* allocator) {
+	bool init_internal(size_t size, MdOS::memory::allocators::Allocator* allocator) {
 		if (m_initialized) { return false; }
 		m_memSize = ROUND_NTH(size, m_bmpEntrySize);
 		m_bitmap = (t_bmp *) allocator->alloc_aligned(m_memSize / m_bmpEntrySize, alignof(t_bmp));
@@ -252,7 +252,7 @@ private:
 		m_initialized = true;
 		return true;
 	}
-	bool init_internal(size_t size, bool initValue, MdOS::Memory::allocators::Allocator* allocator) {
+	bool init_internal(size_t size, bool initValue, MdOS::memory::allocators::Allocator* allocator) {
 		if (m_initialized) { return false; }
 		m_memSize = ROUND_NTH(size, m_bmpEntrySize);
 		m_bitmap = (t_bmp *) allocator->alloc_aligned(m_memSize / m_bmpEntrySize, sizeof(t_bmp));

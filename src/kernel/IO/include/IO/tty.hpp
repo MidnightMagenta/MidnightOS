@@ -6,7 +6,7 @@
 #include <IO/serial.hpp>
 #include <stddef.h>
 
-namespace MdOS::Teletype {
+namespace MdOS::teletype {
 inline uint32_t m_color = 0xFFFFFFFF;
 inline uint32_t m_xOffset = 0;
 inline uint32_t m_yOffset = 0;
@@ -19,6 +19,6 @@ void init(GOP_Renderer *renderer, PSF1_Font *font);
 void putc(char c);
 void printc(const char chr, uint32_t color, uint32_t xOffset, uint32_t yOffset);
 inline void set_color(uint32_t color) { m_color = color; }
-}// namespace MdOS::Teletype
+}// namespace MdOS::teletype
 
 #endif
