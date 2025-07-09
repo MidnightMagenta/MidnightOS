@@ -6,6 +6,7 @@
 #include <memory/pmm.hpp>
 
 MdOS::memory::PMM::PhysicalMemoryMap::PhysicalMemoryMap() {
+	m_initialized = false;
 	MdOS::memory::PMM::PhysicalMemoryAllocation allocation;
 	MdOS::memory::PMM::alloc_pages(2, &allocation);
 	m_mapAllocator.init((void *) (MDOS_PHYS_TO_VIRT(allocation.base)), 2 * 0x1000, sizeof(PhysicalMapEntry),
@@ -20,6 +21,7 @@ MdOS::memory::PMM::PhysicalMemoryMap::PhysicalMemoryMap() {
 
 	m_mapBase = allocation.base;
 	m_mapSize = allocation.numPages * 0x1000;
+	m_initialized = true;
 }
 
 MdOS::memory::PMM::PhysicalMemoryMap::~PhysicalMemoryMap() {
@@ -27,9 +29,11 @@ MdOS::memory::PMM::PhysicalMemoryMap::~PhysicalMemoryMap() {
 	allocation.base = m_mapBase;
 	allocation.numPages = m_mapSize / 0x1000;
 	MdOS::memory::PMM::free_pages(allocation);
+	m_initialized = false;
 }
 
 void MdOS::memory::PMM::PhysicalMemoryMap::set_range(uintptr_t addr, size_t numPages, uint32_t type) {
+	if (!m_initialized) { return; }
 	uintptr_t endAddr = addr + numPages * 0x1000;
 
 	PhysicalMapEntry *entry = m_map;

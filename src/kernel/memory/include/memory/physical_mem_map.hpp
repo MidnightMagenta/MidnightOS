@@ -46,6 +46,7 @@ private:
 
 	uintptr_t m_mapBase;
 	size_t m_mapSize;
+	bool m_initialized = false;
 };
 }// namespace MdOS::memory::PMM
 
