@@ -1,0 +1,3 @@
+# Physical Memory Manager
+### Memory tracking
+Available memory range is determined by scanning the memory map returned by UEFI for the lowest and highest address. The difference between those addresses is used to determine the size of addressable memory in the system, and construct a bitmap of available page frames. The bitmap includes UEFI reserved page frames, MMIO, unusable memory, and memory not tracked by the UEFI memory map. 

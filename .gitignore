@@ -1,0 +1,11 @@
+*.o
+*.so
+*.efi
+*.a
+*.lib
+*.img
+*.elf
+
+build/
+.vscode/
+**/tmp/
