@@ -1,15 +1,18 @@
 #ifndef MDOS_SLAB_ALLOCATOR_H
 #define MDOS_SLAB_ALLOCATOR_H
 
+#include <memory/allocators/allocator_base.hpp>
 #include <stddef.h>
 #include <stdint.h>
 
 namespace MdOS::memory::allocators {
-class SlabAllocator : Allocator {
+class MemMapSlabAllocator {
 public:
-	SlabAllocator() {}
-	SlabAllocator(void *allocBase, size_t size, size_t slabSize, Allocator* allocator) { init(allocBase, size, slabSize, allocator); }
-	~SlabAllocator() {}
+	MemMapSlabAllocator() {}
+	MemMapSlabAllocator(void *allocBase, size_t size, size_t slabSize, Allocator *allocator) {
+		init(allocBase, size, slabSize, allocator);
+	}
+	~MemMapSlabAllocator() {}
 
 	struct Slab {
 		uintptr_t addr = 0;
@@ -17,7 +20,7 @@ public:
 		Slab *next = nullptr;
 	};
 
-	void init(void *allocBase, size_t size, size_t slabSize, Allocator* allocator);
+	void init(void *allocBase, size_t size, size_t slabSize, Allocator *allocator);
 	// TODO: implement init with kmalloc
 	// TODO: implement heap resizing function
 
@@ -29,8 +32,8 @@ public:
 	size_t get_slab_count() { return m_slabCount; }
 	size_t get_slab_size() { return m_slabSize; }
 
-    bool verify_allocator_coherency();
-    void fix_allocator_coherency(); // fallback function to attempt to recover incoherent memory trackers
+	bool verify_allocator_coherency();
+	void fix_allocator_coherency();// fallback function to attempt to recover incoherent memory trackers
 
 private:
 	Slab *m_freeList = nullptr;

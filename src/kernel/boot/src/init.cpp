@@ -10,6 +10,7 @@
 #include <memory/paging.hpp>
 #include <memory/pmm.hpp>
 #include <stdint.h>
+#include <memory/physical_mem_map.hpp>
 
 using namespace MdOS::memory;
 using MdOS::memory::allocators::g_bumpAlloc;
@@ -21,6 +22,8 @@ void MdOS::init_krnl(BootInfo *bootInfo) {
 
 	MdOS_krnlStatus_kernelReady = true;
 	MdOS_krnlStatus_globalObjectsReady = true;
+
+	MdOS::memory::PMM::print_mem_map();
 
 	DEBUG_LOG("EOF: init_krnl\n");
 }

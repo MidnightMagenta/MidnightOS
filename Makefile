@@ -32,11 +32,13 @@ DBG_FLAGS = -ex "target remote localhost:1234" \
 			-ex "set step-mode on"
 
 CDEFS = -D_DEBUG
-CFLAGS = -g -ffreestanding -fshort-wchar -mno-red-zone -m64 -Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion \
-		-Wundef -Wcast-align -Wshift-overflow -Wdouble-promotion -nostdlib -mcmodel=kernel -fno-omit-frame-pointer\
-		-fno-builtin -fno-stack-protector -nostartfiles -nodefaultlibs -fno-exceptions -O0 -Werror $(CDEFS) \
-		-fno-tree-vectorize -fno-builtin-memcpy -fno-builtin-memset \
-
+C_F_FLAGS = -ffreestanding -fshort-wchar -fno-omit-frame-pointer -fno-builtin \
+			-fno-stack-protector -nostartfiles -nodefaultlibs -fno-exceptions \
+			-fno-tree-vectorize -fno-builtin-memcpy -fno-builtin-memset -nostdlib
+C_W_FLALGS = -Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion -Wundef \
+			 -Wcast-align -Wshift-overflow -Wdouble-promotion -Werror
+C_OP_LVL = -O0
+CFLAGS = -g -mno-red-zone -m64 -mcmodel=kernel $(CDEFS) $(C_W_FLALGS) $(C_F_FLAGS)
 CPPFLAGS = $(CFLAGS) -fno-rtti -fno-use-cxa-atexit
 
 ACFLAGS = -f elf64

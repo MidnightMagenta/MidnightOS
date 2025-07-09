@@ -5,12 +5,8 @@
 #include <k_utils/result.hpp>
 #include <k_utils/types.h>
 #include <klibc/string.h>
+#include <memory/phys_virt_conversion.h>
 #include <stdint.h>
-
-#define MDOS_MEMORY_DIRECT_MAP_REGION_BASE 0xFFFF800000000000ULL
-#define MDOS_MEMORY_DIRECT_MAP_REGION_END 0xFFFF880000000000ULL
-#define MDOS_VIRT_TO_PHYS(vaddr) (vaddr - MDOS_MEMORY_DIRECT_MAP_REGION_BASE)
-#define MDOS_PHYS_TO_VIRT(paddr) (paddr + MDOS_MEMORY_DIRECT_MAP_REGION_BASE)
 
 namespace MdOS::memory::paging {
 enum class EntryControlBit {

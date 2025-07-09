@@ -1,6 +1,8 @@
 #include <IO/debug_print.h>
 #include <error/panic.h>
 #include <k_utils/utils.hpp>
+#include <memory/new.hpp>
+#include <memory/physical_mem_map.hpp>
 #include <memory/pmm.hpp>
 
 using namespace MdOS::memory;
@@ -18,6 +20,8 @@ size_t m_freePageCount = 0;	   //pages marked as EfiConventionalMemory or reclai
 size_t m_usedPageCount = 0;	   //pages allocated by the pmm
 size_t m_reservedPageCount = 0;//pages not marked as EfiConventionalMemory, not reclaimed, but backed by DRAM
 //!memory trackers
+
+MdOS::memory::PMM::PhysicalMemoryMap *m_physicalMemoryMap = nullptr;
 
 MdOS::Result PMM::init(MemMap *memMap) {
 	if (m_initialized) { return MdOS::Result::ALREADY_INITIALIZED; }
@@ -67,16 +71,29 @@ MdOS::Result PMM::init(MemMap *memMap) {
 	m_lowestPage = lowestAddr / 0x1000;
 	m_highestPage = highestAddr / 0x1000;
 
+	void *memMapBuffer = MdOS::memory::allocators::g_bumpAlloc->alloc(sizeof(MdOS::memory::PMM::PhysicalMemoryMap));
+	m_physicalMemoryMap = new (memMapBuffer) MdOS::memory::PMM::PhysicalMemoryMap();
+
+	for (size_t i = 0; i < memMap->size / memMap->descriptorSize; i++) {
+		EFI_MEMORY_DESCRIPTOR *entry =
+				(EFI_MEMORY_DESCRIPTOR *) ((uintptr_t) memMap->map + (i * memMap->descriptorSize));
+
+		if (entry->type == EfiConventionalMemory) {
+			m_physicalMemoryMap->set_range(entry->paddr, entry->pageCount, FREE_MEMORY);
+		} else if (entry->type == EfiUnusableMemory || entry->type == EfiReservedMemoryType ||
+				   entry->type == EfiMemoryMappedIO || entry->type == EfiMemoryMappedIOPortSpace ||
+				   entry->type == EfiPalCode || entry->type == EfiPersistentMemory) {
+			m_physicalMemoryMap->set_range(entry->paddr, entry->pageCount, UNUSABLE_MEMORY);
+		} else {
+			m_physicalMemoryMap->set_range(entry->paddr, entry->pageCount, EFI_RESERVED_MEMORY);
+		}
+	}
+
+	m_physicalMemoryMap->set_range(m_physicalMemoryMap->get_map_base(), m_physicalMemoryMap->get_map_size() / 0x1000,
+								   KERNEL_RESERVED_MEMORY);
+
 	kassert(m_usablePageCount + m_unusablePageCount == m_maxAvailPages);
 	kassert(m_freePageCount + m_usedPageCount + m_reservedPageCount == m_usablePageCount);
-
-	DEBUG_LOG("Lowest discovered address: 0x%lx\n", lowestAddr);
-	DEBUG_LOG("Highest discovered address: 0x%lx\n", highestAddr);
-	DEBUG_LOG("Maximum available memory: %lu MiB\n", max_mem_size() / 1048576);
-	DEBUG_LOG("Usable memory: %lu MiB\n", usable_mem_size() / 1048576);
-	DEBUG_LOG("Unusable memory: %lu MiB\n", unusable_mem_size() / 1048576);
-	DEBUG_LOG("Free memory: %lu MiB\n", free_mem_size() / 1048576);
-	DEBUG_LOG("Reserved memory: %lu MiB\n", reserved_mem_size() / 1048576);
 
 	return MdOS::Result::SUCCESS;
 }
@@ -96,6 +113,7 @@ MdOS::Result PMM::alloc_pages(PMM::PhysicalMemoryAllocation *alloc) {
 	m_pageFrameMap.set(firstFreePage);
 	alloc->numPages = 1;
 	alloc->base = (firstFreePage + min_page_index()) * 0x1000;
+	m_physicalMemoryMap->set_range(alloc->base, alloc->numPages, KERNEL_ALLOCATED_MEMORY);
 	return MdOS::Result::SUCCESS;
 }
 
@@ -136,6 +154,8 @@ MdOS::Result PMM::alloc_pages(size_t numPages, PMM::PhysicalMemoryAllocation *al
 			break;
 		}
 	}
+
+	m_physicalMemoryMap->set_range(alloc->base, alloc->numPages, KERNEL_ALLOCATED_MEMORY);
 	return allocSuccess ? MdOS::Result::SUCCESS : MdOS::Result::OUT_OF_MEMORY;
 }
 
@@ -184,6 +204,7 @@ MdOS::Result PMM::free_pages(const PMM::PhysicalMemoryAllocation &alloc) {
 	m_freePageCount += freedPages;
 	m_usedPageCount -= freedPages;
 	m_pageFrameMap.clear_range(baseIndex, baseIndex + alloc.numPages);
+	m_physicalMemoryMap->set_range(alloc.base, alloc.numPages, FREE_MEMORY);
 	return MdOS::Result::SUCCESS;
 }
 
@@ -209,6 +230,7 @@ MdOS::Result PMM::reserve_pages(PhysicalAddress addr, size_t numPages) {
 	m_reservedPageCount += numPages;
 	m_freePageCount -= numPages;
 	m_pageFrameMap.set_range(index, index + numPages);
+	m_physicalMemoryMap->set_range(addr, numPages, KERNEL_RESERVED_MEMORY);
 	return MdOS::Result::SUCCESS;
 }
 
@@ -242,7 +264,19 @@ MdOS::Result PMM::unreserve_pages(PhysicalAddress addr, size_t numPages) {
 	m_reservedPageCount -= freedPages;
 	m_freePageCount += freedPages;
 	m_pageFrameMap.clear_range(baseIndex, baseIndex + numPages);
+	m_physicalMemoryMap->set_range(addr, numPages, FREE_MEMORY);
 	return MdOS::Result::SUCCESS;
+}
+
+void MdOS::memory::PMM::print_mem_map() { m_physicalMemoryMap->print_map(); }
+void MdOS::memory::PMM::print_mem_stats() {
+	DEBUG_LOG("Lowest discovered address: 0x%lx\n", min_page_addr());
+	DEBUG_LOG("Highest discovered address: 0x%lx\n", max_page_addr());
+	DEBUG_LOG("Maximum available memory: %lu MiB\n", max_mem_size() / 1048576);
+	DEBUG_LOG("Usable memory: %lu MiB\n", usable_mem_size() / 1048576);
+	DEBUG_LOG("Unusable memory: %lu MiB\n", unusable_mem_size() / 1048576);
+	DEBUG_LOG("Free memory: %lu MiB\n", free_mem_size() / 1048576);
+	DEBUG_LOG("Reserved memory: %lu MiB\n", reserved_mem_size() / 1048576);
 }
 
 size_t PMM::max_page_count() { return m_maxAvailPages; }

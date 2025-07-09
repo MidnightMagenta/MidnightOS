@@ -23,6 +23,9 @@ MdOS::Result free_pages(const MdOS::memory::PMM::PhysicalMemoryAllocation &alloc
 MdOS::Result reserve_pages(PhysicalAddress addr, size_t numPages);
 MdOS::Result unreserve_pages(PhysicalAddress addr, size_t numPages);
 
+void print_mem_map();
+void print_mem_stats();
+
 size_t max_page_count();
 size_t max_mem_size();
 size_t unusable_page_count();
