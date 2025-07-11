@@ -8,7 +8,7 @@
 #include <memory/phys_virt_conversion.h>
 #include <stdint.h>
 
-namespace MdOS::memory::paging {
+namespace MdOS::mem::virt {
 enum class EntryControlBit {
 	PagePresent,
 	ReadWrite,
@@ -58,12 +58,12 @@ uint64_t get_addr(PageEntry *entry);
 struct Entry {
 	PageEntry m_entry;
 
-	inline void set_type(EntryType type) { MdOS::memory::paging::set_type(type, &m_entry); }
-	inline EntryType get_type() { return MdOS::memory::paging::get_type(&m_entry); }
-	inline void set_bit(EntryControlBit bit, bool value) { MdOS::memory::paging::set_bit(bit, value, &m_entry); }
-	inline bool get_bit(EntryControlBit bit) { return MdOS::memory::paging::get_bit(bit, &m_entry); }
-	inline void set_addr(uint64_t addr) { MdOS::memory::paging::set_addr(addr, &m_entry); }
-	inline uint64_t get_addr() { return MdOS::memory::paging::get_addr(&m_entry); }
+	inline void set_type(EntryType type) { MdOS::mem::virt::set_type(type, &m_entry); }
+	inline EntryType get_type() { return MdOS::mem::virt::get_type(&m_entry); }
+	inline void set_bit(EntryControlBit bit, bool value) { MdOS::mem::virt::set_bit(bit, value, &m_entry); }
+	inline bool get_bit(EntryControlBit bit) { return MdOS::mem::virt::get_bit(bit, &m_entry); }
+	inline void set_addr(uint64_t addr) { MdOS::mem::virt::set_addr(addr, &m_entry); }
+	inline uint64_t get_addr() { return MdOS::mem::virt::get_addr(&m_entry); }
 } __attribute__((aligned(alignof(uint64_t))));
 
 static_assert(sizeof(Entry) == sizeof(PageEntry));
@@ -116,6 +116,6 @@ MdOS::Result map_kernel(SectionInfo *sections, size_t sectionInfoCount, MemMap *
 						GOPFramebuffer *framebuffer, VirtualMemoryManagerPML4 *vmm);
 
 inline VirtualMemoryManagerPML4 *g_defaultVMM = nullptr;
-}// namespace MdOS::memory::paging
+}// namespace MdOS::mem::virt
 
 #endif

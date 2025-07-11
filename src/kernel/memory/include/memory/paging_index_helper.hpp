@@ -4,7 +4,7 @@
 #include <k_utils/types.h>
 #include <stddef.h>
 
-namespace MdOS::memory::paging {
+namespace MdOS::mem::virt {
 inline constexpr uint16_t pml5_index(VirtualAddress addr) { return (addr >> 48) & 0x1FF; }
 inline constexpr uint16_t pml4_index(VirtualAddress addr) { return (addr >> 39) & 0x1FF; }
 inline constexpr uint16_t pdp_index(VirtualAddress addr) { return (addr >> 30) & 0x1FF; }
@@ -44,6 +44,6 @@ inline constexpr uintptr_t make_5_level_addr(uint16_t pml5, uint16_t pml4, uint1
 	addr = sign_exted<56>(addr);
 	return addr;
 }
-}// namespace MdOS::memory::paging
+}// namespace MdOS::mem::virt
 
 #endif

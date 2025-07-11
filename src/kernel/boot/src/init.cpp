@@ -12,9 +12,6 @@
 #include <stdint.h>
 #include <memory/physical_mem_map.hpp>
 
-using namespace MdOS::memory;
-using MdOS::memory::allocators::g_bumpAlloc;
-
 void MdOS::init_krnl(BootInfo *bootInfo) {
 	PROFILE_SCOPE("init_krnl");
 	init_debug_IO(&bootInfo->bootExtra);
@@ -23,7 +20,7 @@ void MdOS::init_krnl(BootInfo *bootInfo) {
 	MdOS_krnlStatus_kernelReady = true;
 	MdOS_krnlStatus_globalObjectsReady = true;
 
-	MdOS::memory::PMM::print_mem_map();
+	MdOS::mem::phys::print_mem_map();
 
 	DEBUG_LOG("EOF: init_krnl\n");
 }
@@ -41,28 +38,28 @@ void MdOS::init_memory(BootInfo *bootInfo) {
 	GDTDescriptor *dsc = &g_gdtDescriptor;
 	mdos_mem_load_gdt(dsc);
 
-	g_bumpAlloc = new (bootInfo->bootstrapMem.baseAddr) allocators::BumpAllocator();
+	MdOS::mem::g_bumpAlloc = new (bootInfo->bootstrapMem.baseAddr) MdOS::mem::BumpAllocator();
 
-	g_bumpAlloc->init(reinterpret_cast<uintptr_t>((void *) (uintptr_t(bootInfo->bootstrapMem.baseAddr) +
-															sizeof(allocators::BumpAllocator))),
+	MdOS::mem::g_bumpAlloc->init(reinterpret_cast<uintptr_t>((void *) (uintptr_t(bootInfo->bootstrapMem.baseAddr) +
+															sizeof(MdOS::mem::BumpAllocator))),
 					  reinterpret_cast<uintptr_t>(bootInfo->bootstrapMem.topAddr));
 
-	if (PMM::init(bootInfo->map) != MdOS::Result::SUCCESS) {
+	if (MdOS::mem::phys::init(bootInfo->map) != MdOS::Result::SUCCESS) {
 		DEBUG_LOG("PMM initialized sucessfully with status other than Result::SUCESS\n");
 	}
 
-	paging::g_defaultVMM =
-			new (g_bumpAlloc->alloc(sizeof(paging::VirtualMemoryManagerPML4))) paging::VirtualMemoryManagerPML4();
+	MdOS::mem::virt::g_defaultVMM =
+			new (MdOS::mem::g_bumpAlloc->alloc(sizeof(MdOS::mem::virt::VirtualMemoryManagerPML4))) MdOS::mem::virt::VirtualMemoryManagerPML4();
 
-	if (paging::g_defaultVMM->init() != MdOS::Result::SUCCESS) {
+	if (MdOS::mem::virt::g_defaultVMM->init() != MdOS::Result::SUCCESS) {
 		PANIC("Failed to initialize virtual memory", INIT_FAIL);
 	}
 
-	if (paging::map_kernel(bootInfo->kernelSections, bootInfo->kernelSectionCount, bootInfo->map,
+	if (MdOS::mem::virt::map_kernel(bootInfo->kernelSections, bootInfo->kernelSectionCount, bootInfo->map,
 						   bootInfo->bootstrapMem, bootInfo->bootExtra.framebuffer,
-						   paging::g_defaultVMM) != MdOS::Result::SUCCESS) {
+						   MdOS::mem::virt::g_defaultVMM) != MdOS::Result::SUCCESS) {
 		PANIC("Failed to initialize virtual memory", INIT_FAIL);
 	}
-	paging::VirtualMemoryManagerPML4::bind_vmm(paging::g_defaultVMM);
-	paging::VirtualMemoryManagerPML4::get_bound_vmm()->activate();
+	MdOS::mem::virt::VirtualMemoryManagerPML4::bind_vmm(MdOS::mem::virt::g_defaultVMM);
+	MdOS::mem::virt::VirtualMemoryManagerPML4::get_bound_vmm()->activate();
 }

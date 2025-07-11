@@ -7,7 +7,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-namespace MdOS::memory::allocators {
+namespace MdOS::mem {
 class BumpAllocator : public Allocator {
 public:
 	BumpAllocator() {}

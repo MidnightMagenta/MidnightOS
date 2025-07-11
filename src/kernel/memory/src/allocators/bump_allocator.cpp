@@ -1,13 +1,13 @@
 #include <IO/debug_print.h>
 #include <memory/allocators/bump_allocator.hpp>
 
-void MdOS::memory::allocators::BumpAllocator::init(uintptr_t heapBase, uintptr_t heapTop) {
+void MdOS::mem::BumpAllocator::init(uintptr_t heapBase, uintptr_t heapTop) {
 	m_heapBase = heapBase;
 	m_heapTop = heapTop;
 	m_allocPtr = heapBase;
 }
 
-void *MdOS::memory::allocators::BumpAllocator::alloc(size_t size) {
+void *MdOS::mem::BumpAllocator::alloc(size_t size) {
 	if (m_allocPtr == 0 || m_heapBase == 0 || m_heapTop == 0) {
 		PRINT_ERROR("uninitialized");
 		return nullptr;
@@ -22,7 +22,7 @@ void *MdOS::memory::allocators::BumpAllocator::alloc(size_t size) {
 	return (void *) allocAddress;
 }
 
-void *MdOS::memory::allocators::BumpAllocator::alloc_aligned(size_t size, size_t alignment) {
+void *MdOS::mem::BumpAllocator::alloc_aligned(size_t size, size_t alignment) {
 	uintptr_t allocAddress = ALIGN_ADDR(m_allocPtr, alignment, uintptr_t);
 
 	if (m_allocPtr == 0 || m_heapBase == 0 || m_heapTop == 0) {

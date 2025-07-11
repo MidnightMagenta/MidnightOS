@@ -5,7 +5,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-namespace MdOS::memory::allocators {
+namespace MdOS::mem {
 class MemMapSlabAllocator {
 public:
 	MemMapSlabAllocator() {}
@@ -46,6 +46,6 @@ private:
 	size_t m_slabSize = 0;
 	// !memory trackers
 };
-}// namespace MdOS::memory::allocators
+}// namespace MdOS::mem::allocators
 
 #endif

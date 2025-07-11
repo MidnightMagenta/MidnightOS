@@ -5,15 +5,15 @@
 #include <memory/physical_mem_map.hpp>
 #include <memory/pmm.hpp>
 
-MdOS::memory::PMM::PhysicalMemoryMap::PhysicalMemoryMap() {
+MdOS::mem::phys::PhysicalMemoryMap::PhysicalMemoryMap() {
 	m_initialized = false;
-	MdOS::memory::PMM::PhysicalMemoryAllocation allocation;
-	MdOS::memory::PMM::alloc_pages(2, &allocation);
+	MdOS::mem::phys::PhysicalMemoryAllocation allocation;
+	MdOS::mem::phys::alloc_pages(2, &allocation);
 	m_mapAllocator.init((void *) (MDOS_PHYS_TO_VIRT(allocation.base)), 2 * 0x1000, sizeof(PhysicalMapEntry),
-						MdOS::memory::allocators::g_bumpAlloc);
+						MdOS::mem::g_bumpAlloc);
 	m_map = (PhysicalMapEntry *) m_mapAllocator.allocate_slab();
 	m_map->physicalBase = 0;
-	m_map->numPages = MdOS::memory::PMM::max_page_count();
+	m_map->numPages = MdOS::mem::phys::max_page_count();
 	m_map->type = UNUSABLE_MEMORY;
 	m_map->next = nullptr;
 	m_map->prev = nullptr;
@@ -24,15 +24,15 @@ MdOS::memory::PMM::PhysicalMemoryMap::PhysicalMemoryMap() {
 	m_initialized = true;
 }
 
-MdOS::memory::PMM::PhysicalMemoryMap::~PhysicalMemoryMap() {
-	MdOS::memory::PMM::PhysicalMemoryAllocation allocation;
+MdOS::mem::phys::PhysicalMemoryMap::~PhysicalMemoryMap() {
+	MdOS::mem::phys::PhysicalMemoryAllocation allocation;
 	allocation.base = m_mapBase;
 	allocation.numPages = m_mapSize / 0x1000;
-	MdOS::memory::PMM::free_pages(allocation);
+	MdOS::mem::phys::free_pages(allocation);
 	m_initialized = false;
 }
 
-void MdOS::memory::PMM::PhysicalMemoryMap::set_range(uintptr_t addr, size_t numPages, uint32_t type) {
+void MdOS::mem::phys::PhysicalMemoryMap::set_range(uintptr_t addr, size_t numPages, uint32_t type) {
 	if (!m_initialized) { return; }
 	uintptr_t endAddr = addr + numPages * 0x1000;
 
@@ -106,7 +106,7 @@ void MdOS::memory::PMM::PhysicalMemoryMap::set_range(uintptr_t addr, size_t numP
 	clean_map();
 }
 
-void MdOS::memory::PMM::PhysicalMemoryMap::print_map() {
+void MdOS::mem::phys::PhysicalMemoryMap::print_map() {
 	PhysicalMapEntry *entry = m_map;
 	while (entry != nullptr) {
 		DEBUG_LOG("Base: 0x%lx | Size: %lu KiB | Type: %u\n", entry->physicalBase, (entry->numPages * 0x1000) / 1024,
@@ -115,7 +115,7 @@ void MdOS::memory::PMM::PhysicalMemoryMap::print_map() {
 	}
 }
 
-void MdOS::memory::PMM::PhysicalMemoryMap::clean_map() {
+void MdOS::mem::phys::PhysicalMemoryMap::clean_map() {
 	PhysicalMapEntry *entry = m_map;
 
 	//delete 0 size entries
@@ -157,13 +157,13 @@ void MdOS::memory::PMM::PhysicalMemoryMap::clean_map() {
 	}
 }
 
-MdOS::memory::PMM::PhysicalMemoryMap::PhysicalMapEntry *MdOS::memory::PMM::PhysicalMemoryMap::get_entry() {
+MdOS::mem::phys::PhysicalMemoryMap::PhysicalMapEntry *MdOS::mem::phys::PhysicalMemoryMap::get_entry() {
 	PhysicalMapEntry *newEntry = (PhysicalMapEntry *) m_mapAllocator.allocate_slab();
 	if (newEntry != nullptr) { m_numberOfEntries++; }
 	return newEntry;
 }
 
-void MdOS::memory::PMM::PhysicalMemoryMap::free_entry(PhysicalMapEntry *entry) {
+void MdOS::mem::phys::PhysicalMemoryMap::free_entry(PhysicalMapEntry *entry) {
 	m_mapAllocator.free_slab((void *) entry);
 	m_numberOfEntries--;
 }

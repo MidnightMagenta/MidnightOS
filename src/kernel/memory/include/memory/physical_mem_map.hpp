@@ -4,7 +4,7 @@
 #include <k_utils/result.hpp>
 #include <memory/allocators/mem_map_slab_allocator.hpp>
 
-namespace MdOS::memory::PMM {
+namespace MdOS::mem::phys {
 enum MemoryType {
 	FREE_MEMORY,
 	KERNEL_RESERVED_MEMORY,
@@ -42,12 +42,12 @@ private:
 
 	PhysicalMapEntry *m_map = nullptr;
 	size_t m_numberOfEntries = 0;
-	MdOS::memory::allocators::MemMapSlabAllocator m_mapAllocator;
+	MdOS::mem::MemMapSlabAllocator m_mapAllocator;
 
 	uintptr_t m_mapBase;
 	size_t m_mapSize;
 	bool m_initialized = false;
 };
-}// namespace MdOS::memory::PMM
+}// namespace MdOS::mem::phys
 
 #endif
