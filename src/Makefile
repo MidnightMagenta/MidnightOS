@@ -18,6 +18,7 @@ LDFLAGS = -T $(LDS) -static -Bsymbolic -nostdlib
 all: build_kernel 
 
 build_kernel: 
+	@echo "\e[1;32m\n_____BUILDING_KERNEL_____\n\e[0m"
 	$(MAKE) -C $(SOURCE_DIR)/kernel BUILD_DIR="$(BUILD_DIR)/kernel" \
 									FILES_DIR="$(FILES_DIR)" \
 									CC="$(CC)" \

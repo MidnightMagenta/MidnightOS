@@ -15,6 +15,8 @@ CC = x86_64-elf-gcc
 AC = nasm
 LD = x86_64-elf-ld
 
+DBG_BUILD = true
+
 EMU_BASE_FLAGS = -drive file=$(BUILD_DIR)/$(OS_NAME).img,format=raw \
 				-m 2G \
 				-cpu qemu64 \
@@ -31,15 +33,25 @@ DBG_FLAGS = -ex "target remote localhost:1234" \
 			-ex "set disassemble-next-line on" \
 			-ex "set step-mode on"
 
-CDEFS = -D_DEBUG
-C_F_FLAGS = -ffreestanding -fshort-wchar -fno-omit-frame-pointer -fno-builtin \
-			-fno-stack-protector -nostartfiles -nodefaultlibs -fno-exceptions \
-			-fno-tree-vectorize -fno-builtin-memcpy -fno-builtin-memset -nostdlib
+
+C_DBG_DEFS = -D_DEBUG
+
+C_F_FLAGS = -ffreestanding -fshort-wchar -fno-omit-frame-pointer -fno-builtin -fno-stack-protector \
+			-fno-exceptions -fno-tree-vectorize -fno-builtin-memcpy -fno-builtin-memset
+
 C_W_FLALGS = -Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion -Wundef \
 			 -Wcast-align -Wshift-overflow -Wdouble-promotion -Werror
+
 C_OP_LVL = -O0
-CFLAGS = -g -mno-red-zone -m64 -mcmodel=kernel $(CDEFS) $(C_W_FLALGS) $(C_F_FLAGS)
+
+CFLAGS = -g -mno-red-zone -m64 -mcmodel=kernel -nostartfiles -nodefaultlibs -nostdlib $(C_W_FLALGS) $(C_F_FLAGS)
+
+ifeq ($(DBG_BUILD),true)
+	CFLAGS += $(C_DBG_DEFS)
+endif
+
 CPPFLAGS = $(CFLAGS) -fno-rtti -fno-use-cxa-atexit
+
 
 ACFLAGS = -f elf64
 
@@ -55,10 +67,12 @@ build-gnu-efi:
 	$(MAKE) -C $(GNU_EFI_DIR) all
 
 build-bootloader:
+	@echo "\e[1;32m\n_____BUILDING_BOOTLOADER_____\n\e[0m"
 	@mkdir -p $(BUILD_DIR)
 	$(MAKE) -C $(SOURCE_DIR)/bootloader BUILD_DIR="$(BUILD_DIR)/bootloader" all
 
 build-executables:
+	@echo "\e[1;32m\n_____BUILDING_EXECUTABLES_____\n\e[0m"
 	@mkdir -p $(BUILD_DIR)
 	$(MAKE) -C $(SOURCE_DIR) BUILD_DIR="$(BUILD_DIR)" \
 							FILES_DIR="$(DATA_DIR)" \
@@ -72,6 +86,7 @@ build-executables:
 							all
 
 update-img:
+	@echo "\e[1;32m\n_____BUILDING_IMAGE_____\n\e[0m"
 	mformat -i $(BUILD_DIR)/$(OS_NAME).img -F ::
 	mmd -i $(BUILD_DIR)/$(OS_NAME).img ::/EFI
 	mmd -i $(BUILD_DIR)/$(OS_NAME).img ::/EFI/BOOT
