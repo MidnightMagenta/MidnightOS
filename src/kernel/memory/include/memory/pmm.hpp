@@ -13,7 +13,8 @@ struct PhysicalMemoryAllocation {
 	size_t numPages;
 };
 
-MdOS::Result init(MemMap *memMap);
+MdOS::Result init(MemMap *memMap, SectionInfo *krnlSections, size_t sectionInfoCount);
+void map_kernel_image(SectionInfo* sections, size_t sectionInfoCount);
 
 MdOS::Result alloc_pages(MdOS::mem::phys::PhysicalMemoryAllocation *alloc);
 MdOS::Result alloc_pages(size_t numPages, MdOS::mem::phys::PhysicalMemoryAllocation *alloc);

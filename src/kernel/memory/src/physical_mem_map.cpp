@@ -115,6 +115,67 @@ void MdOS::mem::phys::PhysicalMemoryMap::print_map() {
 	}
 }
 
+MdOS::mem::phys::PhysicalMemoryDescriptor MdOS::mem::phys::PhysicalMemoryMap::get_first_range(uint32_t type) {
+	PhysicalMapEntry *entry = m_map;
+	PhysicalMemoryDescriptor res{0, 0, INVALID_TYPE};
+
+	while (entry != nullptr) {
+		if (entry->type == type) {
+			res.baseAddr = entry->physicalBase;
+			res.size = entry->numPages * 0x1000;
+			res.type = entry->type;
+			return res;
+		}
+		entry = entry->next;
+	}
+	return res;
+}
+
+MdOS::mem::phys::PhysicalMemoryDescriptor MdOS::mem::phys::PhysicalMemoryMap::get_next_range(uintptr_t addr,
+																							 uint32_t type) {
+	PhysicalMapEntry *entry = m_map;
+	PhysicalMemoryDescriptor res{0, 0, INVALID_TYPE};
+
+	while (entry != nullptr) {
+		if (entry->type == type && entry->physicalBase >= addr) {
+			res.baseAddr = entry->physicalBase;
+			res.size = entry->numPages * 0x1000;
+			res.type = entry->type;
+			return res;
+		}
+		entry = entry->next;
+	}
+	return res;
+}
+
+MdOS::mem::phys::PhysicalMemoryDescriptor MdOS::mem::phys::PhysicalMemoryMap::get_first_range_of_size(size_t numPages,
+																									  uint32_t type) {
+	PhysicalMapEntry *entry = m_map;
+	PhysicalMemoryDescriptor res{0, 0, INVALID_TYPE};
+
+	while (entry != nullptr) {
+		if (entry->type == type && entry->numPages >= numPages) {
+			res.baseAddr = entry->physicalBase;
+			res.size = entry->numPages * 0x1000;
+			res.type = entry->type;
+			return res;
+		}
+		entry = entry->next;
+	}
+	return res;
+}
+
+uint32_t MdOS::mem::phys::PhysicalMemoryMap::get_type_at_addr(uintptr_t addr) {
+	PhysicalMapEntry *entry = m_map;
+	while (entry != nullptr) {
+		uintptr_t entryBase = entry->physicalBase;
+		uintptr_t entryTop = entry->physicalBase + entry->numPages * 0x1000;
+		if (addr >= entryBase && addr <= entryTop) { return entry->type; }
+		entry = entry->next;
+	}
+	return INVALID_TYPE;
+}
+
 void MdOS::mem::phys::PhysicalMemoryMap::clean_map() {
 	PhysicalMapEntry *entry = m_map;
 
@@ -137,7 +198,9 @@ void MdOS::mem::phys::PhysicalMemoryMap::clean_map() {
 	entry = m_map;
 	while (entry != nullptr && entry->next != nullptr) {
 		uintptr_t endAddr = entry->physicalBase + (entry->numPages * 0x1000);
-		if (entry->next->physicalBase != endAddr) { entry->numPages += (entry->next->physicalBase - endAddr) / 0x1000; }
+		if (entry->next->physicalBase != endAddr) { 
+			set_range(endAddr, (entry->next->physicalBase - endAddr) / 0x1000, UNUSABLE_MEMORY);
+		}
 		entry = entry->next;
 	}
 

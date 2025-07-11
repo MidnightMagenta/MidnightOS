@@ -23,7 +23,7 @@ size_t m_reservedPageCount = 0;//pages not marked as EfiConventionalMemory, not 
 
 MdOS::mem::phys::PhysicalMemoryMap *m_physicalMemoryMap = nullptr;
 
-MdOS::Result phys::init(MemMap *memMap) {
+MdOS::Result phys::init(MemMap *memMap, SectionInfo *krnlSections, size_t sectionInfoCount) {
 	if (m_initialized) { return MdOS::Result::ALREADY_INITIALIZED; }
 	m_initialized = true;
 
@@ -84,6 +84,11 @@ MdOS::Result phys::init(MemMap *memMap) {
 				   entry->type == EfiMemoryMappedIO || entry->type == EfiMemoryMappedIOPortSpace ||
 				   entry->type == EfiPalCode || entry->type == EfiPersistentMemory) {
 			m_physicalMemoryMap->set_range(entry->paddr, entry->pageCount, UNUSABLE_MEMORY);
+		} else if (entry->type == EfiACPIReclaimMemory) {
+			m_physicalMemoryMap->set_range(entry->paddr, entry->pageCount, EFI_ACPI_RECLAIMABLE_MEMORY);
+		} else if (entry->type == EfiBootServicesCode || entry->type == EfiBootServicesData ||
+				   entry->type == EfiLoaderCode || entry->type == EfiLoaderData) {
+			m_physicalMemoryMap->set_range(entry->paddr, entry->pageCount, EFI_RECLAIMABLE_MEMORY);
 		} else {
 			m_physicalMemoryMap->set_range(entry->paddr, entry->pageCount, EFI_RESERVED_MEMORY);
 		}
@@ -92,10 +97,19 @@ MdOS::Result phys::init(MemMap *memMap) {
 	m_physicalMemoryMap->set_range(m_physicalMemoryMap->get_map_base(), m_physicalMemoryMap->get_map_size() / 0x1000,
 								   KERNEL_RESERVED_MEMORY);
 
+	map_kernel_image(krnlSections, sectionInfoCount);
+
 	kassert(m_usablePageCount + m_unusablePageCount == m_maxAvailPages);
 	kassert(m_freePageCount + m_usedPageCount + m_reservedPageCount == m_usablePageCount);
 
 	return MdOS::Result::SUCCESS;
+}
+
+void MdOS::mem::phys::map_kernel_image(SectionInfo *sections, size_t sectionInfoCount) {
+	for (size_t i = 0; i < sectionInfoCount; i++) {
+		SectionInfo *section = (SectionInfo *) (uintptr_t(sections) + i * sizeof(SectionInfo));
+		m_physicalMemoryMap->set_range(section->paddr, section->pageCount, KERNEL_RESERVED_MEMORY);
+	}
 }
 
 MdOS::Result phys::alloc_pages(phys::PhysicalMemoryAllocation *alloc) {

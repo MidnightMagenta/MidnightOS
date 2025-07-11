@@ -9,10 +9,19 @@ enum MemoryType {
 	FREE_MEMORY,
 	KERNEL_RESERVED_MEMORY,
 	EFI_RESERVED_MEMORY,
-	UNUSABLE_MEMORY,
+	EFI_ACPI_RECLAIMABLE_MEMORY,
+	EFI_RECLAIMABLE_MEMORY,
 	KERNEL_ALLOCATED_MEMORY,
 	DRIVER_ALLOCATED_MEMORY,
 	USERSPACE_ALLOCATED_MEMORY,
+	UNUSABLE_MEMORY,
+	INVALID_TYPE,
+};
+
+struct PhysicalMemoryDescriptor {
+	uintptr_t baseAddr = 0;
+	size_t size = 0;
+	uint32_t type = INVALID_TYPE;
 };
 
 class PhysicalMemoryMap {
@@ -34,6 +43,11 @@ public:
 	inline size_t get_number_of_entries() { return m_numberOfEntries; }
 	inline uintptr_t get_map_base() { return m_mapBase; }
 	inline size_t get_map_size() { return m_mapSize; }
+
+	PhysicalMemoryDescriptor get_first_range(uint32_t type);
+	PhysicalMemoryDescriptor get_next_range(uintptr_t addr, uint32_t type);
+	PhysicalMemoryDescriptor get_first_range_of_size(size_t numPages, uint32_t type);
+	uint32_t get_type_at_addr(uintptr_t addr);
 
 private:
 	void clean_map();
