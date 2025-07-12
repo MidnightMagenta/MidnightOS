@@ -112,26 +112,42 @@ void MdOS::mem::phys::map_kernel_image(SectionInfo *sections, size_t sectionInfo
 	}
 }
 
-MdOS::Result phys::alloc_pages(phys::PhysicalMemoryAllocation *alloc) {
+MdOS::Result MdOS::mem::phys::alloc_pages(size_t numPages, uint32_t type,
+										  MdOS::mem::phys::PhysicalMemoryAllocation *alloc) {
+	kassert(m_physicalMemoryMap->initialized());
+	if (numPages <= 0) {
+		PRINT_ERROR("attempted to allocate 0 pages");
+		return MdOS::Result::INVALID_PARAMETER;
+	}
 	if (!m_initialized) {
 		PRINT_ERROR("PMM not initialized");
 		return MdOS::Result::NOT_INITIALIZED;
 	}
-	if (m_freePageCount == 0) {
+	if (m_freePageCount < numPages) {
 		PRINT_ERROR("out of memory");
 		return MdOS::Result::OUT_OF_MEMORY;
 	}
-	m_freePageCount -= 1;
-	m_usedPageCount += 1;
-	size_t firstFreePage = m_pageFrameMap.find_first_clear_bit();
-	m_pageFrameMap.set(firstFreePage);
-	alloc->numPages = 1;
-	alloc->base = (firstFreePage + min_page_index()) * 0x1000;
-	m_physicalMemoryMap->set_range(alloc->base, alloc->numPages, KERNEL_ALLOCATED_MEMORY);
+
+	PhysicalMemoryDescriptor freeRange = m_physicalMemoryMap->get_first_fit_range(numPages, FREE_MEMORY);
+	if (freeRange.numPages < numPages) {
+		PRINT_ERROR("Could not find sufficiently large memory range");
+		return MdOS::Result::OUT_OF_MEMORY;
+	}
+
+	size_t index = (freeRange.baseAddr / 0x1000) - min_page_index();
+	m_pageFrameMap.set_range(index, index + numPages);
+	m_physicalMemoryMap->set_range(freeRange.baseAddr, numPages, type);
+
+	alloc->base = freeRange.baseAddr;
+	alloc->numPages = numPages;
+
+	m_freePageCount -= numPages;
+	m_usedPageCount += numPages;
+
 	return MdOS::Result::SUCCESS;
 }
 
-MdOS::Result phys::alloc_pages(size_t numPages, phys::PhysicalMemoryAllocation *alloc) {
+MdOS::Result MdOS::mem::phys::alloc_pages_bmp(size_t numPages, MdOS::mem::phys::PhysicalMemoryAllocation *alloc) {
 	if (numPages <= 0) {
 		PRINT_ERROR("attempted to allocate 0 pages");
 		return MdOS::Result::INVALID_PARAMETER;
@@ -164,13 +180,24 @@ MdOS::Result phys::alloc_pages(size_t numPages, phys::PhysicalMemoryAllocation *
 
 			alloc->base = (lastFreeIndex + min_page_index()) * 0x1000;
 			alloc->numPages = numPages;
+
+			m_pageFrameMap.set_range(lastFreeIndex, lastFreeIndex + numPages);
+			m_physicalMemoryMap->set_range(alloc->base, alloc->numPages, KERNEL_ALLOCATED_MEMORY);
+
 			allocSuccess = true;
 			break;
 		}
 	}
 
-	m_physicalMemoryMap->set_range(alloc->base, alloc->numPages, KERNEL_ALLOCATED_MEMORY);
 	return allocSuccess ? MdOS::Result::SUCCESS : MdOS::Result::OUT_OF_MEMORY;
+}
+
+MdOS::Result phys::alloc_pages(phys::PhysicalMemoryAllocation *alloc) {
+	return alloc_pages(1, KERNEL_ALLOCATED_MEMORY, alloc);
+}
+
+MdOS::Result phys::alloc_pages(size_t numPages, phys::PhysicalMemoryAllocation *alloc) {
+	return alloc_pages(numPages, KERNEL_ALLOCATED_MEMORY, alloc);
 }
 
 uintptr_t MdOS::mem::phys::alloc_page() {
@@ -178,13 +205,6 @@ uintptr_t MdOS::mem::phys::alloc_page() {
 	MdOS::Result res = alloc_pages(&allocation);
 	if (res != MdOS::Result::SUCCESS) { return 0; }
 	return allocation.base;
-}
-
-void MdOS::mem::phys::free_page(uintptr_t page) {
-	PhysicalMemoryAllocation allocation;
-	allocation.base = page;
-	allocation.numPages = 1;
-	free_pages(allocation);
 }
 
 MdOS::Result phys::free_pages(const phys::PhysicalMemoryAllocation &alloc) {
@@ -222,7 +242,14 @@ MdOS::Result phys::free_pages(const phys::PhysicalMemoryAllocation &alloc) {
 	return MdOS::Result::SUCCESS;
 }
 
-MdOS::Result phys::reserve_pages(PhysicalAddress addr, size_t numPages) {
+void MdOS::mem::phys::free_page(uintptr_t page) {
+	PhysicalMemoryAllocation allocation;
+	allocation.base = page;
+	allocation.numPages = 1;
+	free_pages(allocation);
+}
+
+MdOS::Result MdOS::mem::phys::reserve_pages(PhysicalAddress addr, size_t numPages, uint32_t type) {
 	if (!m_initialized) {
 		PRINT_ERROR("phys::reserve_pages: PMM not initialized");
 		return MdOS::Result::NOT_INITIALIZED;
@@ -244,8 +271,12 @@ MdOS::Result phys::reserve_pages(PhysicalAddress addr, size_t numPages) {
 	m_reservedPageCount += numPages;
 	m_freePageCount -= numPages;
 	m_pageFrameMap.set_range(index, index + numPages);
-	m_physicalMemoryMap->set_range(addr, numPages, KERNEL_RESERVED_MEMORY);
+	m_physicalMemoryMap->set_range(addr, numPages, type);
 	return MdOS::Result::SUCCESS;
+}
+
+MdOS::Result phys::reserve_pages(PhysicalAddress addr, size_t numPages) {
+	return reserve_pages(addr, numPages, KERNEL_RESERVED_MEMORY);
 }
 
 MdOS::Result phys::unreserve_pages(PhysicalAddress addr, size_t numPages) {

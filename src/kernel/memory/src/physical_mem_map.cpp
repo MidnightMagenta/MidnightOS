@@ -8,7 +8,7 @@
 MdOS::mem::phys::PhysicalMemoryMap::PhysicalMemoryMap() {
 	m_initialized = false;
 	MdOS::mem::phys::PhysicalMemoryAllocation allocation;
-	MdOS::mem::phys::alloc_pages(2, &allocation);
+	MdOS::mem::phys::alloc_pages_bmp(2, &allocation);
 	m_mapAllocator.init((void *) (MDOS_PHYS_TO_VIRT(allocation.base)), 2 * 0x1000, sizeof(PhysicalMapEntry),
 						MdOS::mem::g_bumpAlloc);
 	m_map = (PhysicalMapEntry *) m_mapAllocator.allocate_slab();
@@ -122,7 +122,7 @@ MdOS::mem::phys::PhysicalMemoryDescriptor MdOS::mem::phys::PhysicalMemoryMap::ge
 	while (entry != nullptr) {
 		if (entry->type == type) {
 			res.baseAddr = entry->physicalBase;
-			res.size = entry->numPages * 0x1000;
+			res.numPages = entry->numPages;
 			res.type = entry->type;
 			return res;
 		}
@@ -139,7 +139,7 @@ MdOS::mem::phys::PhysicalMemoryDescriptor MdOS::mem::phys::PhysicalMemoryMap::ge
 	while (entry != nullptr) {
 		if (entry->type == type && entry->physicalBase >= addr) {
 			res.baseAddr = entry->physicalBase;
-			res.size = entry->numPages * 0x1000;
+			res.numPages = entry->numPages;
 			res.type = entry->type;
 			return res;
 		}
@@ -148,7 +148,7 @@ MdOS::mem::phys::PhysicalMemoryDescriptor MdOS::mem::phys::PhysicalMemoryMap::ge
 	return res;
 }
 
-MdOS::mem::phys::PhysicalMemoryDescriptor MdOS::mem::phys::PhysicalMemoryMap::get_first_range_of_size(size_t numPages,
+MdOS::mem::phys::PhysicalMemoryDescriptor MdOS::mem::phys::PhysicalMemoryMap::get_first_fit_range(size_t numPages,
 																									  uint32_t type) {
 	PhysicalMapEntry *entry = m_map;
 	PhysicalMemoryDescriptor res{0, 0, INVALID_TYPE};
@@ -156,7 +156,7 @@ MdOS::mem::phys::PhysicalMemoryDescriptor MdOS::mem::phys::PhysicalMemoryMap::ge
 	while (entry != nullptr) {
 		if (entry->type == type && entry->numPages >= numPages) {
 			res.baseAddr = entry->physicalBase;
-			res.size = entry->numPages * 0x1000;
+			res.numPages = entry->numPages;
 			res.type = entry->type;
 			return res;
 		}

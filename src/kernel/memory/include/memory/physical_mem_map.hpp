@@ -3,6 +3,7 @@
 
 #include <k_utils/result.hpp>
 #include <memory/allocators/mem_map_slab_allocator.hpp>
+#include <k_utils/compiler_options.h>
 
 namespace MdOS::mem::phys {
 enum MemoryType {
@@ -20,7 +21,7 @@ enum MemoryType {
 
 struct PhysicalMemoryDescriptor {
 	uintptr_t baseAddr = 0;
-	size_t size = 0;
+	size_t numPages = 0;
 	uint32_t type = INVALID_TYPE;
 };
 
@@ -33,10 +34,11 @@ public:
 		uintptr_t physicalBase = 0;
 		size_t numPages = 0;
 		uint32_t type = FREE_MEMORY;
+		char pad[4];
 
 		PhysicalMapEntry *next = nullptr;
 		PhysicalMapEntry *prev = nullptr;
-	};
+	} MDOS_PACKED MDOS_ALIGNED(8);
 
 	void set_range(uintptr_t addr, size_t numPages, uint32_t type);
 	void print_map();
@@ -46,8 +48,10 @@ public:
 
 	PhysicalMemoryDescriptor get_first_range(uint32_t type);
 	PhysicalMemoryDescriptor get_next_range(uintptr_t addr, uint32_t type);
-	PhysicalMemoryDescriptor get_first_range_of_size(size_t numPages, uint32_t type);
+	PhysicalMemoryDescriptor get_first_fit_range(size_t numPages, uint32_t type);
 	uint32_t get_type_at_addr(uintptr_t addr);
+
+	bool initialized() { return m_initialized; }
 
 private:
 	void clean_map();

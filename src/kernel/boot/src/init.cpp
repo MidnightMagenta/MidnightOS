@@ -4,11 +4,9 @@
 #include <boot/init.hpp>
 #include <boot/kernel_status.h>
 #include <error/panic.h>
-#include <k_utils/utils.hpp>
 #include <memory/gdt.h>
 #include <memory/new.hpp>
 #include <memory/paging.hpp>
-#include <memory/physical_mem_map.hpp>
 #include <memory/pmm.hpp>
 #include <stdint.h>
 
@@ -19,9 +17,7 @@ void MdOS::init_krnl(BootInfo *bootInfo) {
 
 	MdOS_krnlStatus_kernelReady = true;
 	MdOS_krnlStatus_globalObjectsReady = true;
-
-	MdOS::mem::phys::print_mem_map();
-
+	
 	DEBUG_LOG("EOF: init_krnl\n");
 }
 

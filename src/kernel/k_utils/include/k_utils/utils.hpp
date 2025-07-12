@@ -28,9 +28,12 @@ private:
 	uint64_t m_start;
 };
 
+#define MDOS_INTERNAL_CONCAT(x, y) x##y
+#define CONCAT(x, y) MDOS_INTERNAL_CONCAT(##x, y)
+
 #ifdef _DEBUG
 #define PROFILE_SCOPE(name)                                                                                            \
-	ScopedProfiler _profiler_##__LINE { name }
+	ScopedProfiler CONCAT(_profiler_, __LINE__) { name }
 #else
 #define PROFILE_SCOPE(name) /*void*/
 #endif

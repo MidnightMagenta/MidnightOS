@@ -51,11 +51,11 @@ LDFLAGS = -T $(LDS) -static -Bsymbolic -nostdlib
 all: $(OBJS) link copy_build_files
 
 link:
-	@echo "\e[1;32m\n_____LINKING_____\n\e[0m"
+	@echo "\e[1;32m\n_____LINKING_____\e[0m"
 	$(LD) -T $(LDS) $(LDFLAGS) -o $(BUILD_DIR)/$(ELF_TARGET) $(OBJS)
 
 copy_build_files:
-	@echo "\e[1;32m\n_____COPYING_FILES_____\n\e[0m"
+	@echo "\e[1;32m\n_____COPYING_FILES_____\e[0m"
 	mkdir -p $(IMAGE_DIR)
 	cp $(BUILD_DIR)/$(ELF_TARGET) $(IMAGE_DIR)/$(ELF_TARGET)
 

@@ -67,12 +67,12 @@ build-gnu-efi:
 	$(MAKE) -C $(GNU_EFI_DIR) all
 
 build-bootloader:
-	@echo "\e[1;32m\n_____BUILDING_BOOTLOADER_____\n\e[0m"
+	@echo "\e[1;32m\n_____BUILDING_BOOTLOADER_____\e[0m"
 	@mkdir -p $(BUILD_DIR)
 	$(MAKE) -C $(SOURCE_DIR)/bootloader BUILD_DIR="$(BUILD_DIR)/bootloader" all
 
 build-executables:
-	@echo "\e[1;32m\n_____BUILDING_EXECUTABLES_____\n\e[0m"
+	@echo "\e[1;32m\n_____BUILDING_EXECUTABLES_____\e[0m"
 	@mkdir -p $(BUILD_DIR)
 	$(MAKE) -C $(SOURCE_DIR) BUILD_DIR="$(BUILD_DIR)" \
 							FILES_DIR="$(DATA_DIR)" \
@@ -86,7 +86,7 @@ build-executables:
 							all
 
 update-img:
-	@echo "\e[1;32m\n_____BUILDING_IMAGE_____\n\e[0m"
+	@echo "\e[1;32m\n_____BUILDING_IMAGE_____\e[0m"
 	mformat -i $(BUILD_DIR)/$(OS_NAME).img -F ::
 	mmd -i $(BUILD_DIR)/$(OS_NAME).img ::/EFI
 	mmd -i $(BUILD_DIR)/$(OS_NAME).img ::/EFI/BOOT

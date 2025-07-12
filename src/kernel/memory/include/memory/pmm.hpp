@@ -16,11 +16,17 @@ struct PhysicalMemoryAllocation {
 MdOS::Result init(MemMap *memMap, SectionInfo *krnlSections, size_t sectionInfoCount);
 void map_kernel_image(SectionInfo* sections, size_t sectionInfoCount);
 
-MdOS::Result alloc_pages(MdOS::mem::phys::PhysicalMemoryAllocation *alloc);
+MdOS::Result alloc_pages(size_t numPages, uint32_t type, MdOS::mem::phys::PhysicalMemoryAllocation *alloc);
+MdOS::Result alloc_pages_bmp(size_t numPages, MdOS::mem::phys::PhysicalMemoryAllocation *alloc);
+
 MdOS::Result alloc_pages(size_t numPages, MdOS::mem::phys::PhysicalMemoryAllocation *alloc);
+MdOS::Result alloc_pages(MdOS::mem::phys::PhysicalMemoryAllocation *alloc);
 uintptr_t alloc_page();
-void free_page(uintptr_t page);
+
 MdOS::Result free_pages(const MdOS::mem::phys::PhysicalMemoryAllocation &alloc);
+void free_page(uintptr_t page);
+
+MdOS::Result reserve_pages(PhysicalAddress addr, size_t numPages, uint32_t type);
 MdOS::Result reserve_pages(PhysicalAddress addr, size_t numPages);
 MdOS::Result unreserve_pages(PhysicalAddress addr, size_t numPages);
 
