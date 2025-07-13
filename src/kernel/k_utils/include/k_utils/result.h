@@ -1,0 +1,23 @@
+#ifndef MDOS_K_UTILS_RESULT_H
+#define MDOS_K_UTILS_RESULT_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef enum {
+	MDOS_SUCCESS,
+	MDOS_NO_WORK,
+	MDOS_ALREADY_INITIALIZED,
+	MDOS_INIT_FAILURE,
+	MDOS_NOT_INITIALIZED,
+	MDOS_INVALID_PARAMETER,
+	MDOS_OUT_OF_MEMORY,
+	MDOS_OUT_OF_SPACE,
+	MDOS_PAGE_NOT_PRESENT,
+	MDOS_OVERFLOW
+} Result;
+
+#ifdef __cplusplus
+}
+#endif
+#endif

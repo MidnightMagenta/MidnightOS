@@ -1,24 +1,24 @@
 #include <IO/char_sink.hpp>
 #include <stddef.h>
 
-MdOS::Result MdOS::CharSink::register_char_sink(CharSink sink) {
+Result MdOS::CharSink::register_char_sink(CharSink sink) {
 	for (size_t i = 0; i < max_char_sinks; i++) {
 		if (sinks[i] == nullptr) {
 			sinks[i] = sink;
-			return MdOS::Result::SUCCESS;
+			return MDOS_SUCCESS;
 		}
 	}
-	return MdOS::Result::OUT_OF_SPACE;
+	return MDOS_OUT_OF_SPACE;
 }
 
-MdOS::Result MdOS::CharSink::deregister_char_sink(CharSink sink) {
+Result MdOS::CharSink::deregister_char_sink(CharSink sink) {
 	for (size_t i = 0; i < max_char_sinks; i++) {
 		if (sinks[i] == sink) {
 			sinks[i] = nullptr;
-			return MdOS::Result::SUCCESS;
+			return MDOS_SUCCESS;
 		}
 	}
-	return MdOS::Result::INVALID_PARAMETER;
+	return MDOS_INVALID_PARAMETER;
 }
 
 void MdOS::CharSink::putc(char c) {

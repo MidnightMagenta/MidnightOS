@@ -2,7 +2,7 @@
 #define SERIAL_H
 
 #include <IO/hwio.hpp>
-#include <k_utils/result.hpp>
+#include <k_utils/result.h>
 
 #define COM1_PORT 0x3F8
 #define COM1_REG(reg) uint16_t(COM1_PORT + reg)
@@ -23,7 +23,7 @@
 namespace MdOS::IO {
 class BasicSerial {
 public:
-	static MdOS::Result init();
+	static Result init();
 	inline static void write_serial(char c) {
 		if (c == '\n') { write_serial('\r'); }
 		if (!m_initialized) { init(); }

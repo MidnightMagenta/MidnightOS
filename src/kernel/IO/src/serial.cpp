@@ -2,8 +2,8 @@
 
 bool MdOS::IO::BasicSerial::m_initialized = false;
 
-MdOS::Result MdOS::IO::BasicSerial::init() {
-	if (m_initialized) { return MdOS::Result::SUCCESS; }
+Result MdOS::IO::BasicSerial::init() {
+	if (m_initialized) { return MDOS_SUCCESS; }
 
 	MdOS::IO::outb(0x00, COM1_REG(COM_RW_INTERUPT_ENABLE_REG));
 	MdOS::IO::outb(0x80, COM1_REG(COM_RW_LINE_CONTROL_REG));
@@ -14,9 +14,9 @@ MdOS::Result MdOS::IO::BasicSerial::init() {
 	MdOS::IO::outb(0x1E, COM1_REG(COM_RW_MODEM_CONTROL_REG));
 
 	MdOS::IO::outb(0xAE, COM1_REG(COM_W_TX_BUFF));
-	if (MdOS::IO::inb(COM1_REG(COM_R_RX_BUFF)) != 0xAE) { return MdOS::Result::INIT_FAILURE; }
+	if (MdOS::IO::inb(COM1_REG(COM_R_RX_BUFF)) != 0xAE) { return MDOS_INIT_FAILURE; }
 
 	MdOS::IO::outb(0x0F, COM1_REG(COM_RW_MODEM_CONTROL_REG));
 	m_initialized = true;
-	return MdOS::Result::SUCCESS;
+	return MDOS_SUCCESS;
 }

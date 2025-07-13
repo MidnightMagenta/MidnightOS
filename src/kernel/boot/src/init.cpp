@@ -44,7 +44,7 @@ void MdOS::init_memory(BootInfo *bootInfo) {
 
 	// initialize the physical memory manager
 	if (MdOS::mem::phys::init(bootInfo->map, bootInfo->kernelSections, bootInfo->kernelSectionCount) !=
-		MdOS::Result::SUCCESS) {
+		MDOS_SUCCESS) {
 		DEBUG_LOG("PMM initialized sucessfully with status other than Result::SUCESS\n");
 	}
 
@@ -53,13 +53,13 @@ void MdOS::init_memory(BootInfo *bootInfo) {
 			new (MdOS::mem::g_bumpAlloc->alloc(sizeof(MdOS::mem::virt::VirtualMemoryManagerPML4)))
 					MdOS::mem::virt::VirtualMemoryManagerPML4();
 
-	if (MdOS::mem::virt::g_defaultVMM->init() != MdOS::Result::SUCCESS) {
+	if (MdOS::mem::virt::g_defaultVMM->init() != MDOS_SUCCESS) {
 		PANIC("Failed to initialize virtual memory", INIT_FAIL);
 	}
 
 	if (MdOS::mem::virt::map_kernel(bootInfo->kernelSections, bootInfo->kernelSectionCount, bootInfo->map,
 									bootInfo->bootstrapMem, bootInfo->bootExtra.framebuffer,
-									MdOS::mem::virt::g_defaultVMM) != MdOS::Result::SUCCESS) {
+									MdOS::mem::virt::g_defaultVMM) != MDOS_SUCCESS) {
 		PANIC("Failed to initialize virtual memory", INIT_FAIL);
 	}
 	MdOS::mem::virt::VirtualMemoryManagerPML4::bind_vmm(MdOS::mem::virt::g_defaultVMM);

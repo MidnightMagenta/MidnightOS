@@ -2,7 +2,7 @@
 #define MDOS_PAGING_H
 
 #include <boot/boot_info.hpp>
-#include <k_utils/result.hpp>
+#include <k_utils/result.h>
 #include <k_utils/types.h>
 #include <klibc/string.h>
 #include <memory/phys_virt_conversion.h>
@@ -76,16 +76,16 @@ public:
 	VirtualMemoryManagerPML4() {}
 	~VirtualMemoryManagerPML4() {}
 
-	MdOS::Result init();
-	MdOS::Result init(Entry *pml4);
-	MdOS::Result init(VirtualMemoryManagerPML4 *vmm);
-	MdOS::Result map_page(PhysicalAddress paddr, VirtualAddress vaddr, EntryFlagBits flags);
-	MdOS::Result unmap_page(VirtualAddress vaddr);
-	MdOS::Result map_range(PhysicalAddress paddrBase, VirtualAddress vaddrBase, size_t numPages, EntryFlagBits flags);
-	MdOS::Result unmap_range(VirtualAddress vaddrBase, size_t numPages);
-	MdOS::Result map_smart_range(PhysicalAddress paddrBase, VirtualAddress vaddrBase, size_t size, EntryFlagBits flags);
-	MdOS::Result unmap_smart_range(VirtualAddress vaddrBase, size_t size);
-	MdOS::Result swap_attributes(VirtualAddress vaddr, EntryFlagBits newFlags);
+	Result init();
+	Result init(Entry *pml4);
+	Result init(VirtualMemoryManagerPML4 *vmm);
+	Result map_page(PhysicalAddress paddr, VirtualAddress vaddr, EntryFlagBits flags);
+	Result unmap_page(VirtualAddress vaddr);
+	Result map_range(PhysicalAddress paddrBase, VirtualAddress vaddrBase, size_t numPages, EntryFlagBits flags);
+	Result unmap_range(VirtualAddress vaddrBase, size_t numPages);
+	Result map_smart_range(PhysicalAddress paddrBase, VirtualAddress vaddrBase, size_t size, EntryFlagBits flags);
+	Result unmap_smart_range(VirtualAddress vaddrBase, size_t size);
+	Result swap_attributes(VirtualAddress vaddr, EntryFlagBits newFlags);
 
 	inline Entry *get_pml4() { return m_pml4; }
 	inline void activate() { set_cr3(MDOS_VIRT_TO_PHYS(uint64_t(m_pml4))); }
@@ -104,15 +104,15 @@ private:
 	bool table_empty(Entry *table);
 	void free_table_if_empty(Entry *table, Entry &entry);
 	Entry *get_entry(Entry *table, size_t index, EntryType type);
-	MdOS::Result map_4KiB_page(PhysicalAddress paddr, VirtualAddress vaddr, EntryFlagBits flags);
-	MdOS::Result map_2MiB_page(PhysicalAddress paddr, VirtualAddress vaddr, EntryFlagBits flags);
-	MdOS::Result map_1GiB_page(PhysicalAddress paddr, VirtualAddress vaddr, EntryFlagBits flags);
+	Result map_4KiB_page(PhysicalAddress paddr, VirtualAddress vaddr, EntryFlagBits flags);
+	Result map_2MiB_page(PhysicalAddress paddr, VirtualAddress vaddr, EntryFlagBits flags);
+	Result map_1GiB_page(PhysicalAddress paddr, VirtualAddress vaddr, EntryFlagBits flags);
 
 	static VirtualMemoryManagerPML4 *m_boundVMM;
 	Entry *m_pml4 = nullptr;
 };
 
-MdOS::Result map_kernel(SectionInfo *sections, size_t sectionInfoCount, MemMap *memMap, BootstrapMemoryRegion bootHeap,
+Result map_kernel(SectionInfo *sections, size_t sectionInfoCount, MemMap *memMap, BootstrapMemoryRegion bootHeap,
 						GOPFramebuffer *framebuffer, VirtualMemoryManagerPML4 *vmm);
 
 inline VirtualMemoryManagerPML4 *g_defaultVMM = nullptr;

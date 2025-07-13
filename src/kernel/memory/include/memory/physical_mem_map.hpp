@@ -1,7 +1,7 @@
 #ifndef MDOS_PHYSICAL_MEM_MAP_H
 #define MDOS_PHYSICAL_MEM_MAP_H
 
-#include <k_utils/result.hpp>
+#include <k_utils/result.h>
 #include <memory/allocators/mem_map_slab_allocator.hpp>
 #include <k_utils/compiler_options.h>
 
