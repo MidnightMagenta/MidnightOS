@@ -347,6 +347,21 @@ Result phys::unreserve_pages(PhysicalAddress addr, size_t numPages) {
 	return MDOS_SUCCESS;
 }
 
+MdOS::mem::phys::PageMetadata *MdOS::mem::phys::get_page(uintptr_t addr) {
+	if ((addr % 0x1000) != 0) { addr = ALIGN_DOWN(addr, 0x1000, uintptr_t); }
+	size_t index = (addr - min_page_addr()) / 0x1000;
+	if (index > m_maxAvailPages) { return nullptr; }
+	return &m_pageFrameMap[index];
+}
+
+MdOS::mem::phys::PageMetadata MdOS::mem::phys::get_page_descriptor(uintptr_t addr) { return *get_page(addr); }
+
+void MdOS::mem::phys::set_page_descriptor(uintptr_t addr, const PageMetadata &metadata) { *get_page(addr) = metadata; }
+
+uint8_t MdOS::mem::phys::get_page_bucket_size(uintptr_t addr) { return get_page_descriptor(addr).bucketSize; }
+
+void MdOS::mem::phys::set_page_bucket_size(uintptr_t addr, uint8_t order) { get_page(addr)->bucketSize = order; }
+
 void MdOS::mem::phys::print_mem_map() { m_physicalMemoryMap->print_map(); }
 void MdOS::mem::phys::print_mem_stats() {
 	DEBUG_LOG("Lowest discovered address: 0x%lx\n", min_page_addr());
