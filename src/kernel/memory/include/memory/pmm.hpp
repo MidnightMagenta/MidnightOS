@@ -2,10 +2,9 @@
 #define MDOS_PMM_H
 
 #include <boot/boot_info.hpp>
-#include <boot/efi_structs.hpp>
-#include <k_utils/bitmap.hpp>
 #include <k_utils/result.h>
 #include <k_utils/types.h>
+#include <memory/memory_types.hpp>
 
 namespace MdOS::mem::phys {
 struct PhysicalMemoryAllocation {
@@ -13,10 +12,15 @@ struct PhysicalMemoryAllocation {
 	size_t numPages;
 };
 
-Result init(MemMap *memMap, SectionInfo *krnlSections, size_t sectionInfoCount);
-void map_kernel_image(SectionInfo* sections, size_t sectionInfoCount);
+struct PageMetadata {
+	uint8_t type;
+	uint8_t flags;
+	uint8_t bucketSize;
+};
 
-Result alloc_pages(size_t numPages, uint32_t type, MdOS::mem::phys::PhysicalMemoryAllocation *alloc);
+Result init(MemMap *memMap, SectionInfo *krnlSections, size_t sectionInfoCount);
+
+Result alloc_pages(size_t numPages, uint8_t type, MdOS::mem::phys::PhysicalMemoryAllocation *alloc);
 Result alloc_pages_bmp(size_t numPages, MdOS::mem::phys::PhysicalMemoryAllocation *alloc);
 
 Result alloc_pages(size_t numPages, MdOS::mem::phys::PhysicalMemoryAllocation *alloc);
@@ -26,7 +30,7 @@ uintptr_t alloc_page();
 Result free_pages(const MdOS::mem::phys::PhysicalMemoryAllocation &alloc);
 void free_page(uintptr_t page);
 
-Result reserve_pages(PhysicalAddress addr, size_t numPages, uint32_t type);
+Result reserve_pages(PhysicalAddress addr, size_t numPages, uint8_t type);
 Result reserve_pages(PhysicalAddress addr, size_t numPages);
 Result unreserve_pages(PhysicalAddress addr, size_t numPages);
 

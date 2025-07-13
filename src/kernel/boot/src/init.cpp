@@ -4,6 +4,8 @@
 #include <boot/init.hpp>
 #include <boot/kernel_status.h>
 #include <error/panic.h>
+#include <klibc/stdlib.h>
+#include <memory/allocators/bump_allocator.hpp>
 #include <memory/gdt.h>
 #include <memory/new.hpp>
 #include <memory/paging.hpp>
@@ -17,7 +19,8 @@ void MdOS::init_krnl(BootInfo *bootInfo) {
 
 	MdOS_krnlStatus_kernelReady = true;
 	MdOS_krnlStatus_globalObjectsReady = true;
-	
+
+	MdOS::mem::phys::print_mem_map();
 	DEBUG_LOG("EOF: init_krnl\n");
 }
 
@@ -32,7 +35,7 @@ void MdOS::init_debug_IO(BootExtra *bootExtra) {
 void MdOS::init_memory(BootInfo *bootInfo) {
 	PROFILE_SCOPE("init_memory");
 
-	// initialize the GDC
+	// initialize the GDT
 	GDTDescriptor *dsc = &g_gdtDescriptor;
 	mdos_mem_load_gdt(dsc);
 
@@ -43,15 +46,13 @@ void MdOS::init_memory(BootInfo *bootInfo) {
 								 reinterpret_cast<uintptr_t>(bootInfo->bootstrapMem.topAddr));
 
 	// initialize the physical memory manager
-	if (MdOS::mem::phys::init(bootInfo->map, bootInfo->kernelSections, bootInfo->kernelSectionCount) !=
-		MDOS_SUCCESS) {
+	if (MdOS::mem::phys::init(bootInfo->map, bootInfo->kernelSections, bootInfo->kernelSectionCount) != MDOS_SUCCESS) {
 		DEBUG_LOG("PMM initialized sucessfully with status other than Result::SUCESS\n");
 	}
 
 	// initialize the default virtual memory manager
 	MdOS::mem::virt::g_defaultVMM =
-			new (MdOS::mem::g_bumpAlloc->alloc(sizeof(MdOS::mem::virt::VirtualMemoryManagerPML4)))
-					MdOS::mem::virt::VirtualMemoryManagerPML4();
+			new (malloc(sizeof(MdOS::mem::virt::VirtualMemoryManagerPML4))) MdOS::mem::virt::VirtualMemoryManagerPML4();
 
 	if (MdOS::mem::virt::g_defaultVMM->init() != MDOS_SUCCESS) {
 		PANIC("Failed to initialize virtual memory", INIT_FAIL);

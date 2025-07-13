@@ -1,17 +1,15 @@
 #include <IO/debug_print.h>
 #include <k_utils/utils.hpp>
-#include <memory/allocators/bump_allocator.hpp>
+#include <klibc/stdlib.h>
 #include <memory/allocators/mem_map_slab_allocator.hpp>
 
-void MdOS::mem::MemMapSlabAllocator::init(void *allocBase, size_t size, size_t slabSize,
-														 Allocator *allocator) {
+void MdOS::mem::MemMapSlabAllocator::init(void *allocBase, size_t size, size_t slabSize) {
 	kassert(size > slabSize);
 	size = ALIGN_DOWN(size, slabSize, uintptr_t);
 	m_slabCount = size / slabSize;
 	m_freeSlabs = m_slabCount;
 	m_slabSize = slabSize;
-	m_freeList = (Slab *) allocator->alloc_aligned(m_slabCount * sizeof(Slab),
-												   sizeof(Slab));//TODO: replace with proper kmalloc
+	m_freeList = (Slab *) malloca(m_slabCount * sizeof(Slab), sizeof(Slab));
 
 	uintptr_t addr = uintptr_t(allocBase);
 	Slab *prev = nullptr;

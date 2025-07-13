@@ -9,8 +9,8 @@ namespace MdOS::mem {
 class MemMapSlabAllocator {
 public:
 	MemMapSlabAllocator() {}
-	MemMapSlabAllocator(void *allocBase, size_t size, size_t slabSize, Allocator *allocator) {
-		init(allocBase, size, slabSize, allocator);
+	MemMapSlabAllocator(void *allocBase, size_t size, size_t slabSize) {
+		init(allocBase, size, slabSize);
 	}
 	~MemMapSlabAllocator() {}
 
@@ -20,7 +20,7 @@ public:
 		Slab *next = nullptr;
 	};
 
-	void init(void *allocBase, size_t size, size_t slabSize, Allocator *allocator);
+	void init(void *allocBase, size_t size, size_t slabSize);
 	// TODO: implement init with kmalloc
 	// TODO: implement heap resizing function
 

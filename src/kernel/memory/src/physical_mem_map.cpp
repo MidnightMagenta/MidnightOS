@@ -1,6 +1,5 @@
 #include <IO/debug_print.h>
 #include <error/panic.h>
-#include <memory/allocators/bump_allocator.hpp>
 #include <memory/phys_virt_conversion.h>
 #include <memory/physical_mem_map.hpp>
 #include <memory/pmm.hpp>
@@ -9,15 +8,14 @@ MdOS::mem::phys::PhysicalMemoryMap::PhysicalMemoryMap() {
 	m_initialized = false;
 	MdOS::mem::phys::PhysicalMemoryAllocation allocation;
 	MdOS::mem::phys::alloc_pages_bmp(2, &allocation);
-	m_mapAllocator.init((void *) (MDOS_PHYS_TO_VIRT(allocation.base)), 2 * 0x1000, sizeof(PhysicalMapEntry),
-						MdOS::mem::g_bumpAlloc);
-	m_map = (PhysicalMapEntry *) m_mapAllocator.allocate_slab();
+	m_mapAllocator.init((void *) (MDOS_PHYS_TO_VIRT(allocation.base)), 2 * 0x1000, sizeof(PhysicalMapEntry));
+	m_numberOfEntries = 0;
+	m_map = get_entry();
 	m_map->physicalBase = 0;
 	m_map->numPages = MdOS::mem::phys::max_page_count();
 	m_map->type = UNUSABLE_MEMORY;
 	m_map->next = nullptr;
 	m_map->prev = nullptr;
-	m_numberOfEntries = 1;
 
 	m_mapBase = allocation.base;
 	m_mapSize = allocation.numPages * 0x1000;
@@ -32,7 +30,7 @@ MdOS::mem::phys::PhysicalMemoryMap::~PhysicalMemoryMap() {
 	m_initialized = false;
 }
 
-void MdOS::mem::phys::PhysicalMemoryMap::set_range(uintptr_t addr, size_t numPages, uint32_t type) {
+void MdOS::mem::phys::PhysicalMemoryMap::set_range(uintptr_t addr, size_t numPages, uint8_t type) {
 	if (!m_initialized) { return; }
 	uintptr_t endAddr = addr + numPages * 0x1000;
 
@@ -115,7 +113,7 @@ void MdOS::mem::phys::PhysicalMemoryMap::print_map() {
 	}
 }
 
-MdOS::mem::phys::PhysicalMemoryDescriptor MdOS::mem::phys::PhysicalMemoryMap::get_first_range(uint32_t type) {
+MdOS::mem::phys::PhysicalMemoryDescriptor MdOS::mem::phys::PhysicalMemoryMap::get_first_range(uint8_t type) {
 	PhysicalMapEntry *entry = m_map;
 	PhysicalMemoryDescriptor res{0, 0, INVALID_TYPE};
 
@@ -132,7 +130,7 @@ MdOS::mem::phys::PhysicalMemoryDescriptor MdOS::mem::phys::PhysicalMemoryMap::ge
 }
 
 MdOS::mem::phys::PhysicalMemoryDescriptor MdOS::mem::phys::PhysicalMemoryMap::get_next_range(uintptr_t addr,
-																							 uint32_t type) {
+																							 uint8_t type) {
 	PhysicalMapEntry *entry = m_map;
 	PhysicalMemoryDescriptor res{0, 0, INVALID_TYPE};
 
@@ -149,7 +147,7 @@ MdOS::mem::phys::PhysicalMemoryDescriptor MdOS::mem::phys::PhysicalMemoryMap::ge
 }
 
 MdOS::mem::phys::PhysicalMemoryDescriptor MdOS::mem::phys::PhysicalMemoryMap::get_first_fit_range(size_t numPages,
-																									  uint32_t type) {
+																								  uint8_t type) {
 	PhysicalMapEntry *entry = m_map;
 	PhysicalMemoryDescriptor res{0, 0, INVALID_TYPE};
 
@@ -165,7 +163,7 @@ MdOS::mem::phys::PhysicalMemoryDescriptor MdOS::mem::phys::PhysicalMemoryMap::ge
 	return res;
 }
 
-uint32_t MdOS::mem::phys::PhysicalMemoryMap::get_type_at_addr(uintptr_t addr) {
+uint8_t MdOS::mem::phys::PhysicalMemoryMap::get_type_at_addr(uintptr_t addr) {
 	PhysicalMapEntry *entry = m_map;
 	while (entry != nullptr) {
 		uintptr_t entryBase = entry->physicalBase;
@@ -198,7 +196,7 @@ void MdOS::mem::phys::PhysicalMemoryMap::clean_map() {
 	entry = m_map;
 	while (entry != nullptr && entry->next != nullptr) {
 		uintptr_t endAddr = entry->physicalBase + (entry->numPages * 0x1000);
-		if (entry->next->physicalBase != endAddr) { 
+		if (entry->next->physicalBase != endAddr) {
 			set_range(endAddr, (entry->next->physicalBase - endAddr) / 0x1000, UNUSABLE_MEMORY);
 		}
 		entry = entry->next;

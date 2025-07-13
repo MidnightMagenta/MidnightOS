@@ -1,5 +1,7 @@
 #include <IO/debug_print.h>
+#include <boot/efi_structs.hpp>
 #include <error/panic.h>
+#include <k_utils/bitmap.hpp>
 #include <k_utils/utils.hpp>
 #include <memory/new.hpp>
 #include <memory/physical_mem_map.hpp>
@@ -8,7 +10,8 @@
 using namespace MdOS::mem;
 
 bool m_initialized = false;
-utils::Bitmap<uint64_t> m_pageFrameMap;
+MdOS::mem::phys::PageMetadata *m_pageFrameMap = nullptr;
+MdOS::mem::phys::PhysicalMemoryMap *m_physicalMemoryMap = nullptr;
 
 //memory trackers
 size_t m_lowestPage = 0;	   //lowest addressable page reported by UEFI
@@ -21,7 +24,24 @@ size_t m_usedPageCount = 0;	   //pages allocated by the pmm
 size_t m_reservedPageCount = 0;//pages not marked as EfiConventionalMemory, not reclaimed, but backed by DRAM
 //!memory trackers
 
-MdOS::mem::phys::PhysicalMemoryMap *m_physicalMemoryMap = nullptr;
+static void set_page_frame_map_range(uintptr_t baseAddr, size_t numPages,
+									 const MdOS::mem::phys::PageMetadata &metadata) {
+	for (size_t i = baseAddr / 0x1000; i < (baseAddr / 0x1000) + numPages; i++) { m_pageFrameMap[i] = metadata; }
+}
+
+static size_t find_first_free_memory_page() {
+	for (size_t i = 0; i < m_maxAvailPages; i++) {
+		if (m_pageFrameMap[i].type == FREE_MEMORY) { return i; }
+	}
+	return m_maxAvailPages + 1;
+}
+
+static size_t find_next_free_memory_page(size_t index) {
+	for (size_t i = index; i < m_maxAvailPages; i++) {
+		if (m_pageFrameMap[i].type == FREE_MEMORY) { return i; }
+	}
+	return m_maxAvailPages + 1;
+}
 
 Result phys::init(MemMap *memMap, SectionInfo *krnlSections, size_t sectionInfoCount) {
 	if (m_initialized) { return MDOS_ALREADY_INITIALIZED; }
@@ -46,23 +66,41 @@ Result phys::init(MemMap *memMap, SectionInfo *krnlSections, size_t sectionInfoC
 
 	m_maxAvailPages = (highestAddr - lowestAddr) / 0x1000;
 
-	if (!m_pageFrameMap.init(m_maxAvailPages, true) /*all pages marked as used*/) {
-		PANIC("failed to initialize page frame map", INIT_FAIL);
-	}
+	m_pageFrameMap = (PageMetadata *) malloc(m_maxAvailPages * sizeof(PageMetadata));
+	if (m_pageFrameMap == nullptr) { PANIC("failed to initialize page frame map", INIT_FAIL); }
+
+	// pre-set page frame map entries to bucket size of order 0, no flags, type of UNUSABLE_MEMORY
+	set_page_frame_map_range(0, m_maxAvailPages, PageMetadata({0, 0, MemoryType::UNUSABLE_MEMORY}));
 
 	for (size_t i = 0; i < memMap->size / memMap->descriptorSize; i++) {
 		EFI_MEMORY_DESCRIPTOR *entry =
 				(EFI_MEMORY_DESCRIPTOR *) ((uintptr_t) memMap->map + (i * memMap->descriptorSize));
 
 		if (entry->type == EfiConventionalMemory) {
+			// mark as free memory in the page frame map, increment m_freePageCount
 			m_freePageCount += entry->pageCount;
-			m_pageFrameMap.clear_range(entry->paddr / 0x1000, (entry->paddr / 0x1000) + entry->pageCount);
+			set_page_frame_map_range(entry->paddr, entry->pageCount, PageMetadata({0, 0, MemoryType::FREE_MEMORY}));
 		} else if (entry->type == EfiUnusableMemory || entry->type == EfiReservedMemoryType ||
 				   entry->type == EfiMemoryMappedIO || entry->type == EfiMemoryMappedIOPortSpace ||
 				   entry->type == EfiPalCode || entry->type == EfiPersistentMemory) {
-			/*void*/
-		} else {
+			// mark as unusable memory in the page frame map
+			set_page_frame_map_range(entry->paddr, entry->pageCount, PageMetadata({0, 0, MemoryType::UNUSABLE_MEMORY}));
+		} else if (entry->type == EfiACPIReclaimMemory) {
+			// mark as ACPI reclaimable memory, increment m_reservedPageCount
 			m_reservedPageCount += entry->pageCount;
+			set_page_frame_map_range(entry->paddr, entry->pageCount,
+									 PageMetadata({0, 0, MemoryType::EFI_ACPI_RECLAIMABLE_MEMORY}));
+		} else if (entry->type == EfiBootServicesCode || entry->type == EfiBootServicesData ||
+				   entry->type == EfiLoaderCode || entry->type == EfiLoaderData) {
+			// mark as reclaimable memory, increment m_reservedPageCount
+			m_reservedPageCount += entry->pageCount;
+			set_page_frame_map_range(entry->paddr, entry->pageCount,
+									 PageMetadata({0, 0, MemoryType::EFI_RECLAIMABLE_MEMORY}));
+		} else {
+			// mark as reserved memory, increment m_reservedPageCount
+			m_reservedPageCount += entry->pageCount;
+			set_page_frame_map_range(entry->paddr, entry->pageCount,
+									 PageMetadata({0, 0, MemoryType::EFI_RESERVED_MEMORY}));
 		}
 	}
 
@@ -71,9 +109,10 @@ Result phys::init(MemMap *memMap, SectionInfo *krnlSections, size_t sectionInfoC
 	m_lowestPage = lowestAddr / 0x1000;
 	m_highestPage = highestAddr / 0x1000;
 
-	void *memMapBuffer = MdOS::mem::g_bumpAlloc->alloc(sizeof(MdOS::mem::phys::PhysicalMemoryMap));
+	void *memMapBuffer = malloc(sizeof(MdOS::mem::phys::PhysicalMemoryMap));
 	m_physicalMemoryMap = new (memMapBuffer) MdOS::mem::phys::PhysicalMemoryMap();
 
+	// build the memory range map
 	for (size_t i = 0; i < memMap->size / memMap->descriptorSize; i++) {
 		EFI_MEMORY_DESCRIPTOR *entry =
 				(EFI_MEMORY_DESCRIPTOR *) ((uintptr_t) memMap->map + (i * memMap->descriptorSize));
@@ -97,7 +136,10 @@ Result phys::init(MemMap *memMap, SectionInfo *krnlSections, size_t sectionInfoC
 	m_physicalMemoryMap->set_range(m_physicalMemoryMap->get_map_base(), m_physicalMemoryMap->get_map_size() / 0x1000,
 								   KERNEL_RESERVED_MEMORY);
 
-	map_kernel_image(krnlSections, sectionInfoCount);
+	for (size_t i = 0; i < sectionInfoCount; i++) {
+		SectionInfo *section = (SectionInfo *) (uintptr_t(krnlSections) + i * sizeof(SectionInfo));
+		m_physicalMemoryMap->set_range(section->paddr, section->pageCount, KERNEL_RESERVED_MEMORY);
+	}
 
 	kassert(m_usablePageCount + m_unusablePageCount == m_maxAvailPages);
 	kassert(m_freePageCount + m_usedPageCount + m_reservedPageCount == m_usablePageCount);
@@ -105,15 +147,7 @@ Result phys::init(MemMap *memMap, SectionInfo *krnlSections, size_t sectionInfoC
 	return MDOS_SUCCESS;
 }
 
-void MdOS::mem::phys::map_kernel_image(SectionInfo *sections, size_t sectionInfoCount) {
-	for (size_t i = 0; i < sectionInfoCount; i++) {
-		SectionInfo *section = (SectionInfo *) (uintptr_t(sections) + i * sizeof(SectionInfo));
-		m_physicalMemoryMap->set_range(section->paddr, section->pageCount, KERNEL_RESERVED_MEMORY);
-	}
-}
-
-Result MdOS::mem::phys::alloc_pages(size_t numPages, uint32_t type,
-										  MdOS::mem::phys::PhysicalMemoryAllocation *alloc) {
+Result MdOS::mem::phys::alloc_pages(size_t numPages, uint8_t type, MdOS::mem::phys::PhysicalMemoryAllocation *alloc) {
 	kassert(m_physicalMemoryMap->initialized());
 	if (numPages <= 0) {
 		PRINT_ERROR("attempted to allocate 0 pages");
@@ -135,7 +169,7 @@ Result MdOS::mem::phys::alloc_pages(size_t numPages, uint32_t type,
 	}
 
 	size_t index = (freeRange.baseAddr / 0x1000) - min_page_index();
-	m_pageFrameMap.set_range(index, index + numPages);
+	set_page_frame_map_range(index, index + numPages, MdOS::mem::phys::PageMetadata({0, 0, type}));
 	m_physicalMemoryMap->set_range(freeRange.baseAddr, numPages, type);
 
 	alloc->base = freeRange.baseAddr;
@@ -162,26 +196,26 @@ Result MdOS::mem::phys::alloc_pages_bmp(size_t numPages, MdOS::mem::phys::Physic
 	}
 
 	bool allocSuccess = false;
-	size_t lastFreeIndex = m_pageFrameMap.find_first_clear_bit();
-	while (lastFreeIndex < m_pageFrameMap.size()) {
-		if (lastFreeIndex + numPages >= m_pageFrameMap.size()) { break; }
+	size_t lastFreeIndex = find_first_free_memory_page();
+	while (lastFreeIndex < m_maxAvailPages) {
+		if (lastFreeIndex + numPages >= m_maxAvailPages) { break; }
 		bool rangeContinous = true;
 		for (size_t i = 0; i < numPages; i++) {
-			if (m_pageFrameMap[lastFreeIndex + i]) {
+			if (m_pageFrameMap[lastFreeIndex + i].type != FREE_MEMORY) {
 				rangeContinous = false;
-				lastFreeIndex = m_pageFrameMap.find_next_clear_bit(lastFreeIndex + i + 1);
+				lastFreeIndex = find_next_free_memory_page(lastFreeIndex + i + 1);
 				break;
 			}
 		}
 		if (rangeContinous) {
-			for (size_t i = 0; i < numPages; i++) { m_pageFrameMap.set(lastFreeIndex + i); }
 			m_freePageCount -= numPages;
 			m_usedPageCount += numPages;
 
 			alloc->base = (lastFreeIndex + min_page_index()) * 0x1000;
 			alloc->numPages = numPages;
 
-			m_pageFrameMap.set_range(lastFreeIndex, lastFreeIndex + numPages);
+			set_page_frame_map_range(lastFreeIndex, lastFreeIndex + numPages,
+									 MdOS::mem::phys::PageMetadata({0, 0, KERNEL_ALLOCATED_MEMORY}));
 			m_physicalMemoryMap->set_range(alloc->base, alloc->numPages, KERNEL_ALLOCATED_MEMORY);
 
 			allocSuccess = true;
@@ -217,14 +251,14 @@ Result phys::free_pages(const phys::PhysicalMemoryAllocation &alloc) {
 		return MDOS_INVALID_PARAMETER;
 	}
 	size_t baseIndex = (alloc.base / 0x1000) - min_page_index();
-	if (baseIndex + alloc.numPages > m_pageFrameMap.size()) {
+	if (baseIndex + alloc.numPages > m_maxAvailPages) {
 		PRINT_ERROR("attempted to free out of range memory");
 		return MDOS_INVALID_PARAMETER;
 	}
 
 	size_t freedPages = 0;
 	for (size_t i = 0; i < alloc.numPages; i++) {
-		if (m_pageFrameMap[baseIndex + i]) { freedPages++; }
+		if (m_pageFrameMap[baseIndex + i].type != FREE_MEMORY) { freedPages++; }
 	}
 	if (freedPages == 0) {
 		PRINT_ERROR("all pages in range are free");
@@ -237,7 +271,7 @@ Result phys::free_pages(const phys::PhysicalMemoryAllocation &alloc) {
 
 	m_freePageCount += freedPages;
 	m_usedPageCount -= freedPages;
-	m_pageFrameMap.clear_range(baseIndex, baseIndex + alloc.numPages);
+	set_page_frame_map_range(baseIndex, baseIndex + alloc.numPages, MdOS::mem::phys::PageMetadata({0, 0, FREE_MEMORY}));
 	m_physicalMemoryMap->set_range(alloc.base, alloc.numPages, FREE_MEMORY);
 	return MDOS_SUCCESS;
 }
@@ -249,7 +283,7 @@ void MdOS::mem::phys::free_page(uintptr_t page) {
 	free_pages(allocation);
 }
 
-Result MdOS::mem::phys::reserve_pages(PhysicalAddress addr, size_t numPages, uint32_t type) {
+Result MdOS::mem::phys::reserve_pages(PhysicalAddress addr, size_t numPages, uint8_t type) {
 	if (!m_initialized) {
 		PRINT_ERROR("phys::reserve_pages: PMM not initialized");
 		return MDOS_NOT_INITIALIZED;
@@ -263,14 +297,14 @@ Result MdOS::mem::phys::reserve_pages(PhysicalAddress addr, size_t numPages, uin
 		return MDOS_OUT_OF_MEMORY;
 	}
 	size_t index = (addr / 0x1000) - min_page_index();
-	if (index + numPages > m_pageFrameMap.size()) {
+	if (index + numPages > m_maxAvailPages) {
 		PRINT_ERROR("attempted to reserve out of range memory");
 		return MDOS_INVALID_PARAMETER;
 	}
 
 	m_reservedPageCount += numPages;
 	m_freePageCount -= numPages;
-	m_pageFrameMap.set_range(index, index + numPages);
+	set_page_frame_map_range(index, index + numPages, MdOS::mem::phys::PageMetadata({0, 0, type}));
 	m_physicalMemoryMap->set_range(addr, numPages, type);
 	return MDOS_SUCCESS;
 }
@@ -289,13 +323,13 @@ Result phys::unreserve_pages(PhysicalAddress addr, size_t numPages) {
 		return MDOS_INVALID_PARAMETER;
 	}
 	size_t baseIndex = (addr / 0x1000) - min_page_index();
-	if (baseIndex + numPages > m_pageFrameMap.size()) {
+	if (baseIndex + numPages > m_maxAvailPages) {
 		PRINT_ERROR("attempted to reserve out of range memory");
 		return MDOS_INVALID_PARAMETER;
 	}
 	size_t freedPages = 0;
 	for (size_t i = 0; i < numPages; i++) {
-		if (m_pageFrameMap[baseIndex + i]) { freedPages++; }
+		if (m_pageFrameMap[baseIndex + i].type != FREE_MEMORY) { freedPages++; }
 	}
 	if (freedPages == 0) {
 		PRINT_ERROR("all pages in range are free");
@@ -308,7 +342,7 @@ Result phys::unreserve_pages(PhysicalAddress addr, size_t numPages) {
 
 	m_reservedPageCount -= freedPages;
 	m_freePageCount += freedPages;
-	m_pageFrameMap.clear_range(baseIndex, baseIndex + numPages);
+	set_page_frame_map_range(baseIndex, baseIndex + numPages, MdOS::mem::phys::PageMetadata({0, 0, FREE_MEMORY}));
 	m_physicalMemoryMap->set_range(addr, numPages, FREE_MEMORY);
 	return MDOS_SUCCESS;
 }

@@ -4,25 +4,14 @@
 #include <k_utils/result.h>
 #include <memory/allocators/mem_map_slab_allocator.hpp>
 #include <k_utils/compiler_options.h>
+#include <memory/memory_types.hpp>
 
 namespace MdOS::mem::phys {
-enum MemoryType {
-	FREE_MEMORY,
-	KERNEL_RESERVED_MEMORY,
-	EFI_RESERVED_MEMORY,
-	EFI_ACPI_RECLAIMABLE_MEMORY,
-	EFI_RECLAIMABLE_MEMORY,
-	KERNEL_ALLOCATED_MEMORY,
-	DRIVER_ALLOCATED_MEMORY,
-	USERSPACE_ALLOCATED_MEMORY,
-	UNUSABLE_MEMORY,
-	INVALID_TYPE,
-};
 
 struct PhysicalMemoryDescriptor {
 	uintptr_t baseAddr = 0;
 	size_t numPages = 0;
-	uint32_t type = INVALID_TYPE;
+	uint8_t type = INVALID_TYPE;
 };
 
 class PhysicalMemoryMap {
@@ -33,23 +22,23 @@ public:
 	struct PhysicalMapEntry {
 		uintptr_t physicalBase = 0;
 		size_t numPages = 0;
-		uint32_t type = FREE_MEMORY;
-		char pad[4];
+		uint8_t type = FREE_MEMORY;
+		char pad[7];
 
 		PhysicalMapEntry *next = nullptr;
 		PhysicalMapEntry *prev = nullptr;
 	} MDOS_PACKED MDOS_ALIGNED(8);
 
-	void set_range(uintptr_t addr, size_t numPages, uint32_t type);
+	void set_range(uintptr_t addr, size_t numPages, uint8_t type);
 	void print_map();
 	inline size_t get_number_of_entries() { return m_numberOfEntries; }
 	inline uintptr_t get_map_base() { return m_mapBase; }
 	inline size_t get_map_size() { return m_mapSize; }
 
-	PhysicalMemoryDescriptor get_first_range(uint32_t type);
-	PhysicalMemoryDescriptor get_next_range(uintptr_t addr, uint32_t type);
-	PhysicalMemoryDescriptor get_first_fit_range(size_t numPages, uint32_t type);
-	uint32_t get_type_at_addr(uintptr_t addr);
+	PhysicalMemoryDescriptor get_first_range(uint8_t type);
+	PhysicalMemoryDescriptor get_next_range(uintptr_t addr, uint8_t type);
+	PhysicalMemoryDescriptor get_first_fit_range(size_t numPages, uint8_t type);
+	uint8_t get_type_at_addr(uintptr_t addr);
 
 	bool initialized() { return m_initialized; }
 

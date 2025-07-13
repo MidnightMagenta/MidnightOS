@@ -1,10 +1,9 @@
 #ifndef MDOS_K_UTILS_BITMAP_H
 #define MDOS_K_UTILS_BITMAP_H
 
-#include <memory/allocators/allocator_base.hpp>
-#include <memory/allocators/bump_allocator.hpp>
 #include <k_utils/klimits.hpp>
 #include <k_utils/utils.hpp>
+#include <klibc/stdlib.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -123,11 +122,34 @@ public:
 	static_assert(__is_same(t_bmp, uint8_t) || __is_same(t_bmp, uint16_t) || __is_same(t_bmp, uint32_t) ||
 				  __is_same(t_bmp, uint64_t));
 
-	bool init(size_t size){
-		return init_internal(size, MdOS::mem::g_bumpAlloc);
+	bool init(size_t size) {
+		if (m_initialized) { return false; }
+		m_memSize = ROUND_NTH(size, m_bmpEntrySize);
+		m_bitmap = (t_bmp *) malloca(m_memSize / m_bmpEntrySize, alignof(t_bmp));
+		if (m_bitmap == nullptr) {
+			m_size = 0;
+			m_memSize = 0;
+			return false;
+		}
+		m_size = size;
+		for (size_t i = 0; i < m_size / m_bmpEntrySize; i++) { m_bitmap[i] = 0; }
+		m_initialized = true;
+		return true;
 	}
-	bool init(size_t size, bool initValue){
-		return init_internal(size, initValue, MdOS::mem::g_bumpAlloc);
+	bool init(size_t size, bool initValue) {
+		if (m_initialized) { return false; }
+		m_memSize = ROUND_NTH(size, m_bmpEntrySize);
+		m_bitmap = (t_bmp *) malloca(m_memSize / m_bmpEntrySize, sizeof(t_bmp));
+		if (m_bitmap == nullptr) {
+			m_size = 0;
+			m_memSize = 0;
+			return false;
+		}
+		m_size = size;
+		t_bmp initVal = initValue ? utils::NumericLimits<t_bmp>::max() : t_bmp(0);
+		for (size_t i = 0; i < m_size / m_bmpEntrySize; i++) { m_bitmap[i] = initVal; }
+		m_initialized = true;
+		return true;
 	}
 
 	size_t size() const {
@@ -238,36 +260,6 @@ public:
 	}
 
 private:
-	bool init_internal(size_t size, MdOS::mem::Allocator* allocator) {
-		if (m_initialized) { return false; }
-		m_memSize = ROUND_NTH(size, m_bmpEntrySize);
-		m_bitmap = (t_bmp *) allocator->alloc_aligned(m_memSize / m_bmpEntrySize, alignof(t_bmp));
-		if (m_bitmap == nullptr) {
-			m_size = 0;
-			m_memSize = 0;
-			return false;
-		}
-		m_size = size;
-		for (size_t i = 0; i < m_size / m_bmpEntrySize; i++) { m_bitmap[i] = 0; }
-		m_initialized = true;
-		return true;
-	}
-	bool init_internal(size_t size, bool initValue, MdOS::mem::Allocator* allocator) {
-		if (m_initialized) { return false; }
-		m_memSize = ROUND_NTH(size, m_bmpEntrySize);
-		m_bitmap = (t_bmp *) allocator->alloc_aligned(m_memSize / m_bmpEntrySize, sizeof(t_bmp));
-		if (m_bitmap == nullptr) {
-			m_size = 0;
-			m_memSize = 0;
-			return false;
-		}
-		m_size = size;
-		t_bmp initVal = initValue ? utils::NumericLimits<t_bmp>::max() : t_bmp(0);
-		for (size_t i = 0; i < m_size / m_bmpEntrySize; i++) { m_bitmap[i] = initVal; }
-		m_initialized = true;
-		return true;
-	}
-
 	t_bmp *m_bitmap = nullptr;
 	size_t m_size = 0;
 	size_t m_memSize = 0;
