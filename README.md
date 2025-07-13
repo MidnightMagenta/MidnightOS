@@ -8,4 +8,5 @@ This code runs in R0 (supervisor mode). It has not been extensively tested on re
  - from the root directory of this project run `make all`
  - from the root directory of this project run `make run` to run the software via QEMU
 Rebuilding the project without re-creating the disk image may be done via `make partial`
+
 This project does not support being burnt onto a bootable disk yet. Any attempt to run any build output of this project on real hardware shall be done at your own risk.
