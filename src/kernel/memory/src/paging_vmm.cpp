@@ -1,9 +1,14 @@
 #include <IO/debug_print.h>
 #include <error/panic.h>
 #include <k_utils/utils.hpp>
+#include <libk/assert.h>
 #include <memory/paging.hpp>
 #include <memory/paging_index_helper.hpp>
 #include <memory/pmm.hpp>
+
+#define OFFSET_MASK_1GiB 0x3FFFFFFF
+#define OFFSET_MASK_2MiB 0x1FFFFF
+#define OFFSET_MASK_4KiB 0xFFF
 
 MdOS::mem::virt::VirtualMemoryManagerPML4 *MdOS::mem::virt::VirtualMemoryManagerPML4::m_boundVMM = nullptr;
 
@@ -450,10 +455,6 @@ Result MdOS::mem::virt::VirtualMemoryManagerPML4::unmap_smart_range(VirtualAddre
 
 	return MDOS_SUCCESS;
 }
-
-#define OFFSET_MASK_1GiB 0x3FFFFFFF
-#define OFFSET_MASK_2MiB 0x1FFFFF
-#define OFFSET_MASK_4KiB 0xFFF
 
 PhysicalAddress MdOS::mem::virt::VirtualMemoryManagerPML4::query_paddr(VirtualAddress vaddr) {
 	if (m_pml4 == nullptr) { return 0; }

@@ -1,5 +1,6 @@
 #include <IO/debug_print.h>
 #include <k_utils/utils.hpp>
+#include <libk/assert.h>
 #include <libk/stdlib.h>
 #include <memory/allocators/mem_map_slab_allocator.hpp>
 

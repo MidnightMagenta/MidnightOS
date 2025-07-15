@@ -3,6 +3,7 @@
 #include <error/panic.h>
 #include <k_utils/bitmap.hpp>
 #include <k_utils/utils.hpp>
+#include <libk/assert.h>
 #include <memory/new.hpp>
 #include <memory/physical_mem_map.hpp>
 #include <memory/pmm.hpp>

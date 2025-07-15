@@ -30,12 +30,6 @@ extern "C" {
 #define ALLOC_LOG(msg, ...) /*void*/
 #endif
 
-#define kassert(condition)                                                                                             \
-	if (!(condition)) {                                                                                                \
-		kprint("[ASSERTION FAILED][%s:%d in function: %s] %s\n", __FILE__, __LINE__, __func__, #condition);            \
-		while (true) { __asm__("cli; hlt"); }                                                                          \
-	}
-
 #ifdef __cplusplus
 }
 #endif

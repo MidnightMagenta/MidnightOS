@@ -14,3 +14,8 @@ void *malloca(size_t size, size_t alignment) {
 	if (!mallocReady) { return MdOS::mem::g_bumpAlloc->alloc_aligned(size, alignment); }
 	return nullptr;
 }
+
+void free(void *addr) {
+	// TODO: implement proper allocator usage
+	if (!mallocReady) { MdOS::mem::g_bumpAlloc->free(addr); }
+}
