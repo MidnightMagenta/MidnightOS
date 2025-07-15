@@ -1,4 +1,4 @@
-#include <klibc/string.h>
+#include <libk/string.h>
 
 int memcmp(const void *ptr1, const void *ptr2, size_t num) {
 	const unsigned char *ptr1Ptr = (const unsigned char *) ptr1;

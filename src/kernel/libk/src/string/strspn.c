@@ -1,4 +1,4 @@
-#include <klibc/string.h>
+#include <libk/string.h>
 
 size_t strspn(const char *s, const char *accept) {
 	const char *p;

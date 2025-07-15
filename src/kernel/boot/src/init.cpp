@@ -4,7 +4,7 @@
 #include <boot/init.hpp>
 #include <boot/kernel_status.h>
 #include <error/panic.h>
-#include <klibc/stdlib.h>
+#include <libk/stdlib.h>
 #include <memory/allocators/bump_allocator.hpp>
 #include <memory/gdt.h>
 #include <memory/new.hpp>

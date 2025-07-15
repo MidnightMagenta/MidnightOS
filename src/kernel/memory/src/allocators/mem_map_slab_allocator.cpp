@@ -1,6 +1,6 @@
 #include <IO/debug_print.h>
 #include <k_utils/utils.hpp>
-#include <klibc/stdlib.h>
+#include <libk/stdlib.h>
 #include <memory/allocators/mem_map_slab_allocator.hpp>
 
 void MdOS::mem::MemMapSlabAllocator::init(void *allocBase, size_t size, size_t slabSize) {

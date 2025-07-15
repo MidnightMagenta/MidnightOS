@@ -3,7 +3,7 @@
 
 #include <k_utils/klimits.hpp>
 #include <k_utils/utils.hpp>
-#include <klibc/stdlib.h>
+#include <libk/stdlib.h>
 #include <stddef.h>
 #include <stdint.h>
 

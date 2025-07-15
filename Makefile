@@ -50,7 +50,7 @@ ifeq ($(DBG_BUILD),true)
 	CFLAGS += $(C_DBG_DEFS)
 endif
 
-CPPFLAGS = $(CFLAGS) -fno-rtti -fno-use-cxa-atexit
+CPPFLAGS = $(CFLAGS) -fno-rtti -fno-use-cxa-atexit -std=c++20
 
 
 ACFLAGS = -f elf64

@@ -33,7 +33,7 @@ ASM_OBJS = $(patsubst $(SOURCE_DIR)%.asm, $(BUILD_DIR)%_asm.o, $(ASM_SRCS))
 OBJS = $(CRTI_OBJ) $(CRTBEGIN_OBJ) $(C_OBJS) $(CPP_OBJS) $(ASM_OBJS) $(CRTEND_OBJ) $(CRTN_OBJ)
 
 INCLUDE_DIRS = \
-	-Iklibc/include \
+	-Ilibk/include \
 	-IIO/include \
 	-Imemory/include \
 	-Iboot/include \

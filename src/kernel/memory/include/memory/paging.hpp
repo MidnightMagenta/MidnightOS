@@ -4,7 +4,7 @@
 #include <boot/boot_info.hpp>
 #include <k_utils/result.h>
 #include <k_utils/types.h>
-#include <klibc/string.h>
+#include <libk/string.h>
 #include <memory/phys_virt_conversion.h>
 #include <stdint.h>
 

@@ -1,4 +1,4 @@
-#include <klibc/string.h>
+#include <libk/string.h>
 
 char *strstr(const char *str1, const char *str2) {
 	size_t str2_len = strlen(str2);

@@ -1,4 +1,4 @@
-#include <klibc/string.h>
+#include <libk/string.h>
 
 void *memchr(const void *str, int val, size_t num) {
 	const unsigned char *ptr = (const unsigned char *) str;

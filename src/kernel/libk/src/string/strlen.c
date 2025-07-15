@@ -1,4 +1,4 @@
-#include <klibc/string.h>
+#include <libk/string.h>
 
 size_t strlen(const char *str) {
 	size_t len = 0;

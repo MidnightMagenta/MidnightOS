@@ -1,4 +1,4 @@
-#include <klibc/string.h>
+#include <libk/string.h>
 
 char *strcat(char *dst, const char *src) {
 	size_t last = strlen(dst);

@@ -1,4 +1,4 @@
-#include <klibc/string.h>
+#include <libk/string.h>
 
 int strcmp(const char *str1, const char *str2) {
 	size_t i = 0;

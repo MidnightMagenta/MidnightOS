@@ -1,4 +1,4 @@
-#include <klibc/stdlib.h>
+#include <libk/stdlib.h>
 #include <memory/allocators/bump_allocator.hpp>
 
 bool mallocReady = false;

@@ -7,6 +7,8 @@
 #include <memory/physical_mem_map.hpp>
 #include <memory/pmm.hpp>
 
+// TODO: clean this up
+
 using namespace MdOS::mem;
 
 bool m_initialized = false;
@@ -43,6 +45,20 @@ static size_t find_next_free_memory_page(size_t index) {
 	return m_maxAvailPages + 1;
 }
 
+phys::PageMetadata phys::build_page_metadata(const PageMetadataCreateInfo &createInfo) {
+	phys::PageMetadata metadata{.flags = 0, .type = 0};
+	metadata.flags |= createInfo.bucketSize & 0xF;
+	metadata.type = createInfo.pageType;
+	return metadata;
+}
+
+static phys::PageMetadata build_page_metadata_from_type(uint8_t type) {
+	phys::PageMetadataCreateInfo createInfo;
+	createInfo.bucketSize = 0;
+	createInfo.pageType = type;
+	return build_page_metadata(createInfo);
+}
+
 Result phys::init(MemMap *memMap, SectionInfo *krnlSections, size_t sectionInfoCount) {
 	if (m_initialized) { return MDOS_ALREADY_INITIALIZED; }
 	m_initialized = true;
@@ -70,7 +86,7 @@ Result phys::init(MemMap *memMap, SectionInfo *krnlSections, size_t sectionInfoC
 	if (m_pageFrameMap == nullptr) { PANIC("failed to initialize page frame map", INIT_FAIL); }
 
 	// pre-set page frame map entries to bucket size of order 0, no flags, type of UNUSABLE_MEMORY
-	set_page_frame_map_range(0, m_maxAvailPages, PageMetadata({0, 0, MemoryType::UNUSABLE_MEMORY}));
+	set_page_frame_map_range(0, m_maxAvailPages, build_page_metadata_from_type(MemoryType::UNUSABLE_MEMORY));
 
 	for (size_t i = 0; i < memMap->size / memMap->descriptorSize; i++) {
 		EFI_MEMORY_DESCRIPTOR *entry =
@@ -79,28 +95,30 @@ Result phys::init(MemMap *memMap, SectionInfo *krnlSections, size_t sectionInfoC
 		if (entry->type == EfiConventionalMemory) {
 			// mark as free memory in the page frame map, increment m_freePageCount
 			m_freePageCount += entry->pageCount;
-			set_page_frame_map_range(entry->paddr, entry->pageCount, PageMetadata({0, 0, MemoryType::FREE_MEMORY}));
+			set_page_frame_map_range(entry->paddr, entry->pageCount,
+									 build_page_metadata_from_type(MemoryType::FREE_MEMORY));
 		} else if (entry->type == EfiUnusableMemory || entry->type == EfiReservedMemoryType ||
 				   entry->type == EfiMemoryMappedIO || entry->type == EfiMemoryMappedIOPortSpace ||
 				   entry->type == EfiPalCode || entry->type == EfiPersistentMemory) {
 			// mark as unusable memory in the page frame map
-			set_page_frame_map_range(entry->paddr, entry->pageCount, PageMetadata({0, 0, MemoryType::UNUSABLE_MEMORY}));
+			set_page_frame_map_range(entry->paddr, entry->pageCount,
+									 build_page_metadata_from_type(MemoryType::UNUSABLE_MEMORY));
 		} else if (entry->type == EfiACPIReclaimMemory) {
 			// mark as ACPI reclaimable memory, increment m_reservedPageCount
 			m_reservedPageCount += entry->pageCount;
 			set_page_frame_map_range(entry->paddr, entry->pageCount,
-									 PageMetadata({0, 0, MemoryType::EFI_ACPI_RECLAIMABLE_MEMORY}));
+									 build_page_metadata_from_type(MemoryType::EFI_ACPI_RECLAIMABLE_MEMORY));
 		} else if (entry->type == EfiBootServicesCode || entry->type == EfiBootServicesData ||
 				   entry->type == EfiLoaderCode || entry->type == EfiLoaderData) {
 			// mark as reclaimable memory, increment m_reservedPageCount
 			m_reservedPageCount += entry->pageCount;
 			set_page_frame_map_range(entry->paddr, entry->pageCount,
-									 PageMetadata({0, 0, MemoryType::EFI_RECLAIMABLE_MEMORY}));
+									 build_page_metadata_from_type(MemoryType::EFI_RECLAIMABLE_MEMORY));
 		} else {
 			// mark as reserved memory, increment m_reservedPageCount
 			m_reservedPageCount += entry->pageCount;
 			set_page_frame_map_range(entry->paddr, entry->pageCount,
-									 PageMetadata({0, 0, MemoryType::EFI_RESERVED_MEMORY}));
+									 build_page_metadata_from_type(MemoryType::EFI_RESERVED_MEMORY));
 		}
 	}
 
@@ -169,7 +187,7 @@ Result MdOS::mem::phys::alloc_pages(size_t numPages, uint8_t type, MdOS::mem::ph
 	}
 
 	size_t index = (freeRange.baseAddr / 0x1000) - min_page_index();
-	set_page_frame_map_range(index, index + numPages, MdOS::mem::phys::PageMetadata({0, 0, type}));
+	set_page_frame_map_range(index, index + numPages, build_page_metadata_from_type(type));
 	m_physicalMemoryMap->set_range(freeRange.baseAddr, numPages, type);
 
 	alloc->base = freeRange.baseAddr;
@@ -215,7 +233,7 @@ Result MdOS::mem::phys::alloc_pages_bmp(size_t numPages, MdOS::mem::phys::Physic
 			alloc->numPages = numPages;
 
 			set_page_frame_map_range(lastFreeIndex, lastFreeIndex + numPages,
-									 MdOS::mem::phys::PageMetadata({0, 0, KERNEL_ALLOCATED_MEMORY}));
+									 build_page_metadata_from_type(KERNEL_ALLOCATED_MEMORY));
 			m_physicalMemoryMap->set_range(alloc->base, alloc->numPages, KERNEL_ALLOCATED_MEMORY);
 
 			allocSuccess = true;
@@ -271,7 +289,7 @@ Result phys::free_pages(const phys::PhysicalMemoryAllocation &alloc) {
 
 	m_freePageCount += freedPages;
 	m_usedPageCount -= freedPages;
-	set_page_frame_map_range(baseIndex, baseIndex + alloc.numPages, MdOS::mem::phys::PageMetadata({0, 0, FREE_MEMORY}));
+	set_page_frame_map_range(baseIndex, baseIndex + alloc.numPages, build_page_metadata_from_type(FREE_MEMORY));
 	m_physicalMemoryMap->set_range(alloc.base, alloc.numPages, FREE_MEMORY);
 	return MDOS_SUCCESS;
 }
@@ -304,7 +322,7 @@ Result MdOS::mem::phys::reserve_pages(PhysicalAddress addr, size_t numPages, uin
 
 	m_reservedPageCount += numPages;
 	m_freePageCount -= numPages;
-	set_page_frame_map_range(index, index + numPages, MdOS::mem::phys::PageMetadata({0, 0, type}));
+	set_page_frame_map_range(index, index + numPages, build_page_metadata_from_type(type));
 	m_physicalMemoryMap->set_range(addr, numPages, type);
 	return MDOS_SUCCESS;
 }
@@ -342,7 +360,7 @@ Result phys::unreserve_pages(PhysicalAddress addr, size_t numPages) {
 
 	m_reservedPageCount -= freedPages;
 	m_freePageCount += freedPages;
-	set_page_frame_map_range(baseIndex, baseIndex + numPages, MdOS::mem::phys::PageMetadata({0, 0, FREE_MEMORY}));
+	set_page_frame_map_range(baseIndex, baseIndex + numPages, build_page_metadata_from_type(FREE_MEMORY));
 	m_physicalMemoryMap->set_range(addr, numPages, FREE_MEMORY);
 	return MDOS_SUCCESS;
 }
@@ -358,9 +376,13 @@ MdOS::mem::phys::PageMetadata MdOS::mem::phys::get_page_descriptor(uintptr_t add
 
 void MdOS::mem::phys::set_page_descriptor(uintptr_t addr, const PageMetadata &metadata) { *get_page(addr) = metadata; }
 
-uint8_t MdOS::mem::phys::get_page_bucket_size(uintptr_t addr) { return get_page_descriptor(addr).bucketSize; }
+uint8_t MdOS::mem::phys::get_page_bucket_size(uintptr_t addr) { return get_page_descriptor(addr).flags & 0xF; }
 
-void MdOS::mem::phys::set_page_bucket_size(uintptr_t addr, uint8_t order) { get_page(addr)->bucketSize = order; }
+void MdOS::mem::phys::set_page_bucket_size(uintptr_t addr, uint8_t order) {
+	PageMetadata *page = get_page(addr);
+	page->flags &= static_cast<uint16_t>(~0xFU);
+	page->flags |= static_cast<uint16_t>(order & uint8_t(0xF));
+}
 
 void MdOS::mem::phys::print_mem_map() { m_physicalMemoryMap->print_map(); }
 void MdOS::mem::phys::print_mem_stats() {

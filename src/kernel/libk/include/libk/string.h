@@ -1,5 +1,5 @@
-#ifndef MDOS_KLIBC_STRING_H
-#define MDOS_KLIBC_STRING_H
+#ifndef MDOS_libk_STRING_H
+#define MDOS_libk_STRING_H
 #ifdef __cplusplus
 extern "C" {
 #endif

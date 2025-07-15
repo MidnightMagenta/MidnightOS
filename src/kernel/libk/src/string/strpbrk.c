@@ -1,4 +1,4 @@
-#include <klibc/string.h>
+#include <libk/string.h>
 
 char *strpbrk(const char *str, const char *accept) {
 	while (*str != '\0') {

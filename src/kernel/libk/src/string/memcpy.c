@@ -1,4 +1,4 @@
-#include <klibc/string.h>
+#include <libk/string.h>
 
 void *memcpy(void *dst, const void *src, size_t num) {
 	unsigned char *dstPtr = (unsigned char *) dst;

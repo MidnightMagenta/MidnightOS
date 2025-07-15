@@ -13,9 +13,13 @@ struct PhysicalMemoryAllocation {
 };
 
 struct PageMetadata {
-	uint8_t flags;
-	uint8_t bucketSize;
+	uint16_t flags;
 	uint8_t type;
+};
+
+struct PageMetadataCreateInfo{
+	uint8_t bucketSize;
+	uint8_t pageType;
 };
 
 Result init(MemMap *memMap, SectionInfo *krnlSections, size_t sectionInfoCount);
@@ -33,6 +37,8 @@ void free_page(uintptr_t page);
 Result reserve_pages(PhysicalAddress addr, size_t numPages, uint8_t type);
 Result reserve_pages(PhysicalAddress addr, size_t numPages);
 Result unreserve_pages(PhysicalAddress addr, size_t numPages);
+
+PageMetadata build_page_metadata(const PageMetadataCreateInfo &createInfo);
 
 PageMetadata *get_page(uintptr_t addr);
 

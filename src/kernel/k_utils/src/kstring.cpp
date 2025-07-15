@@ -1,5 +1,5 @@
 #include <k_utils/kstring.hpp>
-#include <klibc/string.h>
+#include <libk/string.h>
 
 uint64_t MdOS::string::strlen(const char *str) {
 	uint64_t len = 0;
