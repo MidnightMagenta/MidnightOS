@@ -26,7 +26,12 @@ extern "C" {
 	panic_handler(msg, &params);
 
 
-typedef enum { TEST_ERROR, INIT_FAIL, INVALID_STATE, MEMORY_ERROR } ErrorCode;
+typedef enum {
+	MDOS_PANIC_TEST_ERROR,
+	MDOS_PANIC_INIT_FAIL,
+	MDOS_PANIC_INVALID_STATE,
+	MDOS_PANIC_MEMORY_ERROR
+} ErrorCode;
 
 typedef struct {
 	uint64_t rax, rbx, rcx, rdx;

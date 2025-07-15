@@ -55,13 +55,13 @@ void MdOS::init_memory(BootInfo *bootInfo) {
 			new (malloc(sizeof(MdOS::mem::virt::VirtualMemoryManagerPML4))) MdOS::mem::virt::VirtualMemoryManagerPML4();
 
 	if (MdOS::mem::virt::g_defaultVMM->init() != MDOS_SUCCESS) {
-		PANIC("Failed to initialize virtual memory", INIT_FAIL);
+		PANIC("Failed to initialize virtual memory", MDOS_PANIC_INIT_FAIL);
 	}
 
 	if (MdOS::mem::virt::map_kernel(bootInfo->kernelSections, bootInfo->kernelSectionCount, bootInfo->map,
 									bootInfo->bootstrapMem, bootInfo->bootExtra.framebuffer,
 									MdOS::mem::virt::g_defaultVMM) != MDOS_SUCCESS) {
-		PANIC("Failed to initialize virtual memory", INIT_FAIL);
+		PANIC("Failed to initialize virtual memory", MDOS_PANIC_INIT_FAIL);
 	}
 	MdOS::mem::virt::VirtualMemoryManagerPML4::bind_vmm(MdOS::mem::virt::g_defaultVMM);
 	MdOS::mem::virt::VirtualMemoryManagerPML4::get_bound_vmm()->activate();

@@ -8,6 +8,10 @@
 #define ALIGN_ADDR(val, alignment, castType) (castType(val) + (castType(alignment) - 1)) & (~(castType(alignment) - 1))
 #define ALIGN_UP(val, alignment, castType) (castType(val) + (castType(alignment) - 1)) & (~(castType(alignment) - 1))
 #define ALIGN_DOWN(val, alignment, castType) (castType(val) & ~(castType(alignment) - 1))
+
+#define END_ADDR(base, size) base + size
+#define END_PAGE_ADDR(base, numPages) base + (numPages << 12)
+
 inline uint64_t rdtsc() {
 	uint32_t lo, hi;
 	__asm__ volatile("rdtsc" : "=a"(lo), "=d"(hi));

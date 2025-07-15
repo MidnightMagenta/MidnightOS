@@ -12,7 +12,7 @@ struct PhysicalMemoryAllocation {
 	size_t numPages;
 };
 
-struct PageMetadata {
+struct Page {
 	uint16_t flags;
 	uint8_t type;
 };
@@ -25,7 +25,7 @@ struct PageMetadataCreateInfo{
 Result init(MemMap *memMap, SectionInfo *krnlSections, size_t sectionInfoCount);
 
 Result alloc_pages(size_t numPages, uint8_t type, MdOS::mem::phys::PhysicalMemoryAllocation *alloc);
-Result alloc_pages_bmp(size_t numPages, MdOS::mem::phys::PhysicalMemoryAllocation *alloc);
+Result alloc_pages_pfm(size_t numPages, MdOS::mem::phys::PhysicalMemoryAllocation *alloc);
 
 Result alloc_pages(size_t numPages, MdOS::mem::phys::PhysicalMemoryAllocation *alloc);
 Result alloc_pages(MdOS::mem::phys::PhysicalMemoryAllocation *alloc);
@@ -38,12 +38,12 @@ Result reserve_pages(PhysicalAddress addr, size_t numPages, uint8_t type);
 Result reserve_pages(PhysicalAddress addr, size_t numPages);
 Result unreserve_pages(PhysicalAddress addr, size_t numPages);
 
-PageMetadata build_page_metadata(const PageMetadataCreateInfo &createInfo);
+Page pfm_build_entry(const PageMetadataCreateInfo &createInfo);
 
-PageMetadata *get_page(uintptr_t addr);
+Page *get_page(uintptr_t addr);
 
-PageMetadata get_page_descriptor(uintptr_t addr);
-void set_page_descriptor(uintptr_t addr, const PageMetadata &metadata);
+Page get_page_descriptor(uintptr_t addr);
+void set_page_descriptor(uintptr_t addr, const Page &metadata);
 
 uint8_t get_page_bucket_size(uintptr_t addr);
 void set_page_bucket_size(uintptr_t addr, uint8_t order);

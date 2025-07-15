@@ -318,7 +318,7 @@ Result MdOS::mem::virt::VirtualMemoryManagerPML4::unmap_range(VirtualAddress vad
 		if (res != MDOS_SUCCESS) {
 			// attempt smart unmap
 			res = unmap_smart_range(vaddrBase, numPages * pageSize4KiB);
-			if (res != MDOS_SUCCESS) { PANIC("Failed to unmap memory range", MEMORY_ERROR); }
+			if (res != MDOS_SUCCESS) { PANIC("Failed to unmap memory range", MDOS_PANIC_MEMORY_ERROR); }
 		}
 	}
 	return MDOS_SUCCESS;
@@ -366,7 +366,7 @@ Result MdOS::mem::virt::VirtualMemoryManagerPML4::map_smart_range(PhysicalAddres
 		}
 		if (res != MDOS_SUCCESS) {
 			if (unmap_smart_range(vaddrBase, size - rem) != MDOS_SUCCESS) {
-				PANIC("Failed to unmap memory range", MEMORY_ERROR);
+				PANIC("Failed to unmap memory range", MDOS_PANIC_MEMORY_ERROR);
 			}
 			return res;
 		}
