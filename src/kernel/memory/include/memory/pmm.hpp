@@ -17,7 +17,7 @@ struct Page {
 	uint8_t type;
 };
 
-struct PageMetadataCreateInfo{
+struct PageMetadataCreateInfo {
 	uint8_t bucketSize;
 	uint8_t pageType;
 };
@@ -25,9 +25,10 @@ struct PageMetadataCreateInfo{
 Result init(MemMap *memMap, SectionInfo *krnlSections, size_t sectionInfoCount);
 
 Result alloc_pages(size_t numPages, uint8_t type, MdOS::mem::phys::PhysicalMemoryAllocation *alloc);
-Result alloc_pages_pfm(size_t numPages, MdOS::mem::phys::PhysicalMemoryAllocation *alloc);
+Result alloc_pages_pfm(size_t numPages, uint8_t type, MdOS::mem::phys::PhysicalMemoryAllocation *alloc);
 
 Result alloc_pages(size_t numPages, MdOS::mem::phys::PhysicalMemoryAllocation *alloc);
+Result alloc_pages_pfm(size_t numPages, phys::PhysicalMemoryAllocation *alloc);
 Result alloc_pages(MdOS::mem::phys::PhysicalMemoryAllocation *alloc);
 uintptr_t alloc_page();
 
