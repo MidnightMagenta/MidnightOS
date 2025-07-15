@@ -87,6 +87,8 @@ public:
 	Result unmap_smart_range(VirtualAddress vaddrBase, size_t size);
 	Result swap_attributes(VirtualAddress vaddr, EntryFlagBits newFlags);
 
+	PhysicalAddress query_paddr(VirtualAddress vaddr);
+
 	inline Entry *get_pml4() { return m_pml4; }
 	inline void activate() { set_cr3(MDOS_VIRT_TO_PHYS(uint64_t(m_pml4))); }
 

@@ -16,6 +16,7 @@ AC = nasm
 LD = x86_64-elf-ld
 
 DBG_BUILD = true
+VERBOSE_LOG = false
 
 EMU_BASE_FLAGS = -drive file=$(BUILD_DIR)/$(OS_NAME).img,format=raw \
 				-m 2G \
@@ -34,7 +35,11 @@ DBG_FLAGS = -ex "target remote localhost:1234" \
 			-ex "set step-mode on"
 
 
-C_DBG_DEFS = -D_DEBUG -D_LOG_ALLOCATIONS
+C_DBG_DEFS = -D_DEBUG
+
+ifeq ($(VERBOSE_LOG),true)
+	C_DBG_DEFS += -D_LOG_ALLOCATIONS
+endif
 
 C_F_FLAGS = -ffreestanding -fshort-wchar -fno-omit-frame-pointer -fno-builtin -fno-stack-protector \
 			-fno-exceptions -fno-tree-vectorize -fno-builtin-memcpy -fno-builtin-memset

@@ -27,8 +27,7 @@ Result MdOS::mem::virt::VirtualMemoryManagerPML4::init(Entry *pml4) {
 	return MDOS_SUCCESS;
 }
 
-Result MdOS::mem::virt::VirtualMemoryManagerPML4::init(VirtualMemoryManagerPML4 *vmm
-																  __attribute__((unused))) {
+Result MdOS::mem::virt::VirtualMemoryManagerPML4::init(VirtualMemoryManagerPML4 *vmm __attribute__((unused))) {
 	Result res = this->init();
 	if (res != MDOS_SUCCESS || m_pml4 == nullptr) { return res; }
 	//memcpy(m_pml4, vmm->get_pml4(), pageTableSize);
@@ -51,7 +50,7 @@ void MdOS::mem::virt::VirtualMemoryManagerPML4::free_table_if_empty(Entry *table
 }
 
 MdOS::mem::virt::Entry *MdOS::mem::virt::VirtualMemoryManagerPML4::get_entry(Entry *table, size_t index,
-																					   EntryType type) {
+																			 EntryType type) {
 	Entry ent = table[index];
 	if (!ent.get_bit(EntryControlBit::PagePresent)) {
 		ent = {0ULL};
@@ -69,7 +68,7 @@ MdOS::mem::virt::Entry *MdOS::mem::virt::VirtualMemoryManagerPML4::get_entry(Ent
 }
 
 Result MdOS::mem::virt::VirtualMemoryManagerPML4::map_page(PhysicalAddress paddr, VirtualAddress vaddr,
-																	  EntryFlagBits flags) {
+														   EntryFlagBits flags) {
 	Result res;
 	if (m_pml4 == nullptr) {
 		res = init();
@@ -154,7 +153,7 @@ Result MdOS::mem::virt::VirtualMemoryManagerPML4::unmap_page(VirtualAddress vadd
 }
 
 Result MdOS::mem::virt::VirtualMemoryManagerPML4::map_4KiB_page(PhysicalAddress paddr, VirtualAddress vaddr,
-																		   EntryFlagBits flags) {
+																EntryFlagBits flags) {
 	kassert((paddr % MdOS::mem::virt::pageSize4KiB) == 0);
 	kassert((vaddr % MdOS::mem::virt::pageSize4KiB) == 0);
 	Entry *pdp = get_entry(m_pml4, pml4_index(vaddr), EntryType::PML4E);
@@ -180,7 +179,7 @@ Result MdOS::mem::virt::VirtualMemoryManagerPML4::map_4KiB_page(PhysicalAddress 
 }
 
 Result MdOS::mem::virt::VirtualMemoryManagerPML4::map_2MiB_page(PhysicalAddress paddr, VirtualAddress vaddr,
-																		   EntryFlagBits flags) {
+																EntryFlagBits flags) {
 	kassert((paddr % MdOS::mem::virt::pageSize2MiB) == 0);
 	kassert((vaddr % MdOS::mem::virt::pageSize2MiB) == 0);
 
@@ -206,7 +205,7 @@ Result MdOS::mem::virt::VirtualMemoryManagerPML4::map_2MiB_page(PhysicalAddress 
 }
 
 Result MdOS::mem::virt::VirtualMemoryManagerPML4::map_1GiB_page(PhysicalAddress paddr, VirtualAddress vaddr,
-																		   EntryFlagBits flags) {
+																EntryFlagBits flags) {
 	kassert((paddr % MdOS::mem::virt::pageSize1GiB) == 0);
 	kassert((vaddr % MdOS::mem::virt::pageSize1GiB) == 0);
 
@@ -229,8 +228,7 @@ Result MdOS::mem::virt::VirtualMemoryManagerPML4::map_1GiB_page(PhysicalAddress 
 	return MDOS_SUCCESS;
 }
 
-Result MdOS::mem::virt::VirtualMemoryManagerPML4::swap_attributes(VirtualAddress vaddr,
-																			 EntryFlagBits newFlags) {
+Result MdOS::mem::virt::VirtualMemoryManagerPML4::swap_attributes(VirtualAddress vaddr, EntryFlagBits newFlags) {
 	if (m_pml4 == nullptr) {
 		Result res = init();
 		if (res != MDOS_SUCCESS) { return res; }
@@ -285,9 +283,8 @@ Result MdOS::mem::virt::VirtualMemoryManagerPML4::swap_attributes(VirtualAddress
 	return MDOS_SUCCESS;
 }
 
-Result MdOS::mem::virt::VirtualMemoryManagerPML4::map_range(PhysicalAddress paddrBase,
-																	   VirtualAddress vaddrBase, size_t numPages,
-																	   EntryFlagBits flags) {
+Result MdOS::mem::virt::VirtualMemoryManagerPML4::map_range(PhysicalAddress paddrBase, VirtualAddress vaddrBase,
+															size_t numPages, EntryFlagBits flags) {
 	if (m_pml4 == nullptr) {
 		Result res = init();
 		if (res != MDOS_SUCCESS) { return res; }
@@ -297,7 +294,7 @@ Result MdOS::mem::virt::VirtualMemoryManagerPML4::map_range(PhysicalAddress padd
 	kassert((vaddrBase % MdOS::mem::virt::pageSize4KiB) == 0);
 	for (size_t i = 0; i < numPages; i++) {
 		Result res = map_page(paddrBase + (i * MdOS::mem::virt::pageSize4KiB),
-									vaddrBase + (i * MdOS::mem::virt::pageSize4KiB), flags);
+							  vaddrBase + (i * MdOS::mem::virt::pageSize4KiB), flags);
 		if (res != MDOS_SUCCESS) {
 			unmap_range(vaddrBase, i);
 			return res;
@@ -324,9 +321,8 @@ Result MdOS::mem::virt::VirtualMemoryManagerPML4::unmap_range(VirtualAddress vad
 	return MDOS_SUCCESS;
 }
 
-Result MdOS::mem::virt::VirtualMemoryManagerPML4::map_smart_range(PhysicalAddress paddrBase,
-																			 VirtualAddress vaddrBase, size_t size,
-																			 EntryFlagBits flags) {
+Result MdOS::mem::virt::VirtualMemoryManagerPML4::map_smart_range(PhysicalAddress paddrBase, VirtualAddress vaddrBase,
+																  size_t size, EntryFlagBits flags) {
 	if (m_pml4 == nullptr) {
 		Result res = init();
 		if (res != MDOS_SUCCESS) { return res; }
@@ -455,9 +451,35 @@ Result MdOS::mem::virt::VirtualMemoryManagerPML4::unmap_smart_range(VirtualAddre
 	return MDOS_SUCCESS;
 }
 
+#define OFFSET_MASK_1GiB 0x3FFFFFFF
+#define OFFSET_MASK_2MiB 0x1FFFFF
+#define OFFSET_MASK_4KiB 0xFFF
+
+PhysicalAddress MdOS::mem::virt::VirtualMemoryManagerPML4::query_paddr(VirtualAddress vaddr) {
+	if (m_pml4 == nullptr) { return 0; }
+
+	Entry pml4e = m_pml4[pml4_index(vaddr)];
+	if (!pml4e.get_bit(EntryControlBit::PagePresent)) { return 0; }
+
+	Entry *pdp = (Entry *) pml4e.get_addr();
+	Entry pdpe = pdp[pdp_index(vaddr)];
+	if (!pdpe.get_bit(EntryControlBit::PagePresent)) { return 0; }
+	if (pdpe.get_bit(EntryControlBit::PageSize)) { return pdpe.get_addr() + (vaddr & OFFSET_MASK_1GiB); }
+
+	Entry *pd = (Entry *) pdpe.get_addr();
+	Entry pde = pd[pd_index(vaddr)];
+	if (!pde.get_bit(EntryControlBit::PagePresent)) { return 0; }
+	if (pde.get_bit(EntryControlBit::PageSize)) { return pde.get_addr() + (vaddr & OFFSET_MASK_2MiB); }
+
+	Entry *pt = (Entry *) pde.get_addr();
+	Entry pte = pt[pt_index(vaddr)];
+	if (!pte.get_bit(EntryControlBit::PagePresent)) { return 0; }
+	return pte.get_addr() + (vaddr & OFFSET_MASK_4KiB);
+}
+
 Result MdOS::mem::virt::map_kernel(SectionInfo *sections, size_t sectionInfoCount, MemMap *memMap,
-											  BootstrapMemoryRegion bootHeap, GOPFramebuffer *framebuffer,
-											  VirtualMemoryManagerPML4 *vmm) {
+								   BootstrapMemoryRegion bootHeap, GOPFramebuffer *framebuffer,
+								   VirtualMemoryManagerPML4 *vmm) {
 	Result res;
 	// build the direct map
 	for (size_t i = 0; i < memMap->size / memMap->descriptorSize; i++) {
