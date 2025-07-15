@@ -7,7 +7,7 @@
 MdOS::mem::phys::PhysicalMemoryMap::PhysicalMemoryMap() {
 	m_initialized = false;
 	MdOS::mem::phys::PhysicalMemoryAllocation allocation{.base = 0, .numPages = 0};
-	if (MdOS::mem::phys::alloc_pages_pfm(2, &allocation) != MDOS_SUCCESS) { return; }
+	if (MdOS::mem::phys::alloc_pages_pfm(2, KERNEL_RESERVED_MEMORY, &allocation) != MDOS_SUCCESS) { return; }
 	if (allocation.base == 0) { return; }
 	m_mapAllocator.init((void *) (MDOS_PHYS_TO_VIRT(allocation.base)), 2 * 0x1000, sizeof(PhysicalMapEntry));
 	m_numberOfEntries = 0;

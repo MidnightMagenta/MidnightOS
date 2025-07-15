@@ -34,7 +34,7 @@ DBG_FLAGS = -ex "target remote localhost:1234" \
 			-ex "set step-mode on"
 
 
-C_DBG_DEFS = -D_DEBUG
+C_DBG_DEFS = -D_DEBUG -D_LOG_ALLOCATIONS
 
 C_F_FLAGS = -ffreestanding -fshort-wchar -fno-omit-frame-pointer -fno-builtin -fno-stack-protector \
 			-fno-exceptions -fno-tree-vectorize -fno-builtin-memcpy -fno-builtin-memset

@@ -21,7 +21,13 @@ extern "C" {
 #ifdef _DEBUG
 #define DEBUG_LOG(msg, ...) kprint("[DEBUG] " msg, ##__VA_ARGS__)
 #else
-#define DEBUG_LOG("[DEBUG] " msg, ...)
+#define DEBUG_LOG(msg, ...) /*void*/
+#endif
+
+#ifdef _LOG_ALLOCATIONS
+#define ALLOC_LOG(msg, ...) kprint("[ALLOCATION: %s] " msg "\n", __func__, ##__VA_ARGS__)
+#else
+#define ALLOC_LOG(msg, ...) /*void*/
 #endif
 
 #define kassert(condition)                                                                                             \

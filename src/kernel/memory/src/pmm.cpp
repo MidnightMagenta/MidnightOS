@@ -27,7 +27,7 @@ size_t m_usedPageCount = 0;	   //pages allocated by the pmm
 size_t m_reservedPageCount = 0;//pages not marked as EfiConventionalMemory, not reclaimed, but backed by DRAM
 //!memory trackers
 
-static MemoryType from_efi_type(EFI_MEMORY_TYPE type) {
+static constexpr MemoryType from_efi_type(EFI_MEMORY_TYPE type) {
 	switch (type) {
 		case EfiReservedMemoryType:
 			return MemoryType::EFI_RESERVED_MEMORY;
@@ -243,6 +243,7 @@ Result phys::alloc_pages_pfm(size_t numPages, uint8_t type, MdOS::mem::phys::Phy
 		}
 	}
 
+	ALLOC_LOG("Allocated %lu pages at address 0x%lx", alloc->numPages, alloc->base);
 	return allocSuccess ? MDOS_SUCCESS : MDOS_OUT_OF_MEMORY;
 }
 
@@ -266,9 +267,7 @@ Result MdOS::mem::phys::alloc_pages(size_t numPages, uint8_t type, MdOS::mem::ph
 		return alloc_pages_pfm(numPages, type, alloc);
 	}
 
-	size_t index = pfm_addr_to_index(freeRange.baseAddr);
-	pfm_set_range(index, pfm_addr_to_index(END_PAGE_ADDR(freeRange.baseAddr, freeRange.numPages)),
-				  pfm_build_entry_from_type(type));
+	pfm_set_range(freeRange.baseAddr, numPages, pfm_build_entry_from_type(type));
 	if (m_memMap->initialized() && m_regionMapAvail) { m_memMap->set_range(freeRange.baseAddr, numPages, type); }
 
 	m_freePageCount -= numPages;
@@ -277,6 +276,7 @@ Result MdOS::mem::phys::alloc_pages(size_t numPages, uint8_t type, MdOS::mem::ph
 	alloc->base = freeRange.baseAddr;
 	alloc->numPages = numPages;
 
+	ALLOC_LOG("Allocated %lu pages at address 0x%lx", alloc->numPages, alloc->base);
 	return MDOS_SUCCESS;
 }
 
@@ -314,11 +314,12 @@ Result phys::free_pages(const phys::PhysicalMemoryAllocation &alloc) {
 
 	m_freePageCount += freedPages;
 	m_usedPageCount -= freedPages;
-	pfm_set_range(baseIndex, baseIndex + alloc.numPages, pfm_build_entry_from_type(FREE_MEMORY));
+	pfm_set_range(alloc.base, alloc.numPages, pfm_build_entry_from_type(FREE_MEMORY));
 	if (m_memMap->initialized() && m_regionMapAvail) { m_memMap->set_range(alloc.base, alloc.numPages, FREE_MEMORY); }
 
 	if (baseIndex < m_lastFreePage) { m_lastFreePage = baseIndex; }
 
+	ALLOC_LOG("Freed %lu pages at address 0x%lx", freedPages, alloc.base);
 	return MDOS_SUCCESS;
 }
 
@@ -338,8 +339,10 @@ Result MdOS::mem::phys::reserve_pages(PhysicalAddress addr, size_t numPages, uin
 
 	m_reservedPageCount += numPages;
 	m_freePageCount -= numPages;
-	pfm_set_range(index, index + numPages, pfm_build_entry_from_type(type));
+	pfm_set_range(addr, numPages, pfm_build_entry_from_type(type));
 	if (m_memMap->initialized() && m_regionMapAvail) { m_memMap->set_range(addr, numPages, type); }
+
+	ALLOC_LOG("Reserved %u pages at address 0x%lx", numPages, addr);
 	return MDOS_SUCCESS;
 }
 
@@ -362,11 +365,12 @@ Result phys::unreserve_pages(PhysicalAddress addr, size_t numPages) {
 
 	m_reservedPageCount -= freedPages;
 	m_freePageCount += freedPages;
-	pfm_set_range(baseIndex, baseIndex + numPages, pfm_build_entry_from_type(FREE_MEMORY));
+	pfm_set_range(addr, numPages, pfm_build_entry_from_type(FREE_MEMORY));
 	if (m_memMap->initialized() && m_regionMapAvail) { m_memMap->set_range(addr, numPages, FREE_MEMORY); }
 
 	if (baseIndex < m_lastFreePage) { m_lastFreePage = baseIndex; }
 
+	ALLOC_LOG("Unreserved %lu pages at address 0x%lx", freedPages, addr);
 	return MDOS_SUCCESS;
 }
 
