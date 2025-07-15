@@ -10,8 +10,8 @@
 using namespace MdOS::mem;
 
 bool m_initialized = false;
-MdOS::mem::phys::Page *m_pfm = nullptr;
-MdOS::mem::phys::PhysicalMemoryMap *m_memMap = nullptr;
+phys::Page *m_pfm = nullptr;
+phys::PhysicalMemoryMap *m_memMap = nullptr;
 bool m_regionMapAvail = false;
 
 size_t m_lastFreePage = 0;
@@ -72,7 +72,7 @@ static constexpr MemoryType from_efi_type(EFI_MEMORY_TYPE type) {
 static size_t pfm_addr_to_index(uintptr_t addr) { return (addr >> 12) - m_lowestPage; }
 static uintptr_t pfm_index_to_addr(size_t index) { return (index + m_lowestPage) << 12; }
 
-static void pfm_set_range(uintptr_t baseAddr, size_t numPages, const MdOS::mem::phys::Page &metadata) {
+static void pfm_set_range(uintptr_t baseAddr, size_t numPages, const phys::Page &metadata) {
 	for (size_t i = pfm_addr_to_index(baseAddr); i < pfm_addr_to_index(baseAddr) + numPages; i++) {
 		m_pfm[i] = metadata;
 	}
@@ -156,7 +156,7 @@ static void build_pfm(MemMap *map) {
 }
 
 static bool init_pfm(MemMap *map) {
-	m_pfm = (MdOS::mem::phys::Page *) malloc(m_maxAvailPages * sizeof(MdOS::mem::phys::Page));
+	m_pfm = (phys::Page *) malloc(m_maxAvailPages * sizeof(phys::Page));
 	if (m_pfm == nullptr) { return false; }
 	pfm_set_range(m_lowestPage << 12, m_maxAvailPages, pfm_build_entry_from_type(MemoryType::UNUSABLE_MEMORY));
 	build_pfm(map);
@@ -173,9 +173,9 @@ static void build_mem_map(MemMap *map) {
 }
 
 static bool init_mem_map(MemMap *map) {
-	void *buffer = malloc(sizeof(MdOS::mem::phys::PhysicalMemoryMap));
+	void *buffer = malloc(sizeof(phys::PhysicalMemoryMap));
 	if (buffer == nullptr) { return false; }
-	m_memMap = new (buffer) MdOS::mem::phys::PhysicalMemoryMap();
+	m_memMap = new (buffer) phys::PhysicalMemoryMap();
 	if (m_memMap == nullptr) { return false; }
 	build_mem_map(map);
 	m_memMap->set_range(m_memMap->get_map_base(), m_memMap->get_map_size() / 0x1000, KERNEL_RESERVED_MEMORY);
@@ -209,7 +209,7 @@ Result phys::init(MemMap *memMap, SectionInfo *krnlSections, size_t sectionInfoC
 	return MDOS_SUCCESS;
 }
 
-Result phys::alloc_pages_pfm(size_t numPages, uint8_t type, MdOS::mem::phys::PhysicalMemoryAllocation *alloc) {
+Result phys::alloc_pages_pfm(size_t numPages, uint8_t type, phys::PhysicalMemoryAllocation *alloc) {
 	if (numPages <= 0) { return MDOS_INVALID_PARAMETER; }
 	if (!m_initialized) { return MDOS_NOT_INITIALIZED; }
 	if (m_freePageCount < numPages) { return MDOS_OUT_OF_MEMORY; }
@@ -247,7 +247,7 @@ Result phys::alloc_pages_pfm(size_t numPages, uint8_t type, MdOS::mem::phys::Phy
 	return allocSuccess ? MDOS_SUCCESS : MDOS_OUT_OF_MEMORY;
 }
 
-Result MdOS::mem::phys::alloc_pages(size_t numPages, uint8_t type, MdOS::mem::phys::PhysicalMemoryAllocation *alloc) {
+Result phys::alloc_pages(size_t numPages, uint8_t type, phys::PhysicalMemoryAllocation *alloc) {
 	if (!m_regionMapAvail || !m_memMap->initialized()) { return alloc_pages_pfm(numPages, type, alloc); }
 	if (numPages <= 0) { return MDOS_INVALID_PARAMETER; }
 	if (!m_initialized) { return MDOS_NOT_INITIALIZED; }
@@ -323,14 +323,14 @@ Result phys::free_pages(const phys::PhysicalMemoryAllocation &alloc) {
 	return MDOS_SUCCESS;
 }
 
-void MdOS::mem::phys::free_page(uintptr_t page) {
+void phys::free_page(uintptr_t page) {
 	PhysicalMemoryAllocation allocation;
 	allocation.base = page;
 	allocation.numPages = 1;
 	free_pages(allocation);
 }
 
-Result MdOS::mem::phys::reserve_pages(PhysicalAddress addr, size_t numPages, uint8_t type) {
+Result phys::reserve_pages(PhysicalAddress addr, size_t numPages, uint8_t type) {
 	if (!m_initialized) { return MDOS_NOT_INITIALIZED; }
 	if ((addr % 0x1000) != 0) { return MDOS_INVALID_PARAMETER; }
 	if (numPages > m_freePageCount) { return MDOS_OUT_OF_MEMORY; }
@@ -374,27 +374,27 @@ Result phys::unreserve_pages(PhysicalAddress addr, size_t numPages) {
 	return MDOS_SUCCESS;
 }
 
-MdOS::mem::phys::Page *MdOS::mem::phys::get_page(uintptr_t addr) {
+phys::Page *phys::get_page(uintptr_t addr) {
 	if ((addr % 0x1000) != 0) { addr = ALIGN_DOWN(addr, 0x1000, uintptr_t); }
 	size_t index = pfm_addr_to_index(addr);
 	if (index > m_maxAvailPages) { return nullptr; }
 	return &m_pfm[index];
 }
 
-MdOS::mem::phys::Page MdOS::mem::phys::get_page_descriptor(uintptr_t addr) { return *get_page(addr); }
+phys::Page phys::get_page_descriptor(uintptr_t addr) { return *get_page(addr); }
 
-void MdOS::mem::phys::set_page_descriptor(uintptr_t addr, const Page &metadata) { *get_page(addr) = metadata; }
+void phys::set_page_descriptor(uintptr_t addr, const Page &metadata) { *get_page(addr) = metadata; }
 
-uint8_t MdOS::mem::phys::get_page_bucket_size(uintptr_t addr) { return get_page_descriptor(addr).flags & 0xF; }
+uint8_t phys::get_page_bucket_size(uintptr_t addr) { return get_page_descriptor(addr).flags & 0xF; }
 
-void MdOS::mem::phys::set_page_bucket_size(uintptr_t addr, uint8_t order) {
+void phys::set_page_bucket_size(uintptr_t addr, uint8_t order) {
 	Page *page = get_page(addr);
 	page->flags &= static_cast<uint16_t>(~0xFU);
 	page->flags |= static_cast<uint16_t>(order & uint8_t(0xF));
 }
 
-void MdOS::mem::phys::print_mem_map() { m_memMap->print_map(); }
-void MdOS::mem::phys::print_mem_stats() {
+void phys::print_mem_map() { m_memMap->print_map(); }
+void phys::print_mem_stats() {
 	DEBUG_LOG("Lowest discovered address: 0x%lx\n", min_page_addr());
 	DEBUG_LOG("Highest discovered address: 0x%lx\n", max_page_addr());
 	DEBUG_LOG("Maximum available memory: %lu MiB\n", max_mem_size() / 1048576);

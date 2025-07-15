@@ -25,7 +25,7 @@ extern "C" {
 #endif
 
 #ifdef _LOG_ALLOCATIONS
-#define ALLOC_LOG(msg, ...) kprint("[ALLOCATION: %s] " msg "\n", __func__, ##__VA_ARGS__)
+#define ALLOC_LOG(msg, ...) kprint("[ALLOCATION: %s] " msg "\n", __PRETTY_FUNCTION__, ##__VA_ARGS__)
 #else
 #define ALLOC_LOG(msg, ...) /*void*/
 #endif

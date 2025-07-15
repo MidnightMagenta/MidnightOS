@@ -19,6 +19,8 @@ void *MdOS::mem::BumpAllocator::alloc(size_t size) {
 
 	uintptr_t allocAddress = m_allocPtr;
 	m_allocPtr = m_allocPtr + size;
+
+	ALLOC_LOG("Allocated %lu bytes at address 0x%lx", size, allocAddress);
 	return (void *) allocAddress;
 }
 
@@ -35,5 +37,7 @@ void *MdOS::mem::BumpAllocator::alloc_aligned(size_t size, size_t alignment) {
 	}
 
 	m_allocPtr = allocAddress + size;
+	
+	ALLOC_LOG("Allocated %lu bytes at address 0x%lx", size, allocAddress);
 	return (void *) allocAddress;
 }
