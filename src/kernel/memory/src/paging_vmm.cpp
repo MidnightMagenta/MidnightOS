@@ -10,9 +10,9 @@
 #define OFFSET_MASK_2MiB 0x1FFFFF
 #define OFFSET_MASK_4KiB 0xFFF
 
-MdOS::mem::virt::VirtualMemoryManagerPML4 *MdOS::mem::virt::VirtualMemoryManagerPML4::m_boundVMM = nullptr;
-
 Result MdOS::mem::virt::VirtualMemoryManagerPML4::init() {
+	MdOS::thread::LockGuard<MdOS::thread::Spinlock> lock(&m_lock);
+
 	if (m_pml4 != nullptr) { return MDOS_ALREADY_INITIALIZED; }
 	MdOS::mem::phys::PhysicalMemoryAllocation allocation;
 	Result res = MdOS::mem::phys::alloc_pages(&allocation);
@@ -27,12 +27,14 @@ Result MdOS::mem::virt::VirtualMemoryManagerPML4::init() {
 }
 
 Result MdOS::mem::virt::VirtualMemoryManagerPML4::init(Entry *pml4) {
+	MdOS::thread::LockGuard<MdOS::thread::Spinlock> lock(&m_lock);
 	if (pml4 == nullptr) { return MDOS_INIT_FAILURE; }
 	m_pml4 = pml4;
 	return MDOS_SUCCESS;
 }
 
 Result MdOS::mem::virt::VirtualMemoryManagerPML4::init(VirtualMemoryManagerPML4 *vmm __attribute__((unused))) {
+	MdOS::thread::LockGuard<MdOS::thread::Spinlock> lock(&m_lock);
 	Result res = this->init();
 	if (res != MDOS_SUCCESS || m_pml4 == nullptr) { return res; }
 	//memcpy(m_pml4, vmm->get_pml4(), pageTableSize);
@@ -70,91 +72,6 @@ MdOS::mem::virt::Entry *MdOS::mem::virt::VirtualMemoryManagerPML4::get_entry(Ent
 	}
 	kassert(ent.get_addr() != 0);
 	return (Entry *) MDOS_PHYS_TO_VIRT(ent.get_addr());
-}
-
-Result MdOS::mem::virt::VirtualMemoryManagerPML4::map_page(PhysicalAddress paddr, VirtualAddress vaddr,
-														   EntryFlagBits flags) {
-	Result res;
-	if (m_pml4 == nullptr) {
-		res = init();
-		if (res != MDOS_SUCCESS) { return res; }
-	}
-	kassert(m_pml4 != nullptr);
-	if (!is_canonical_pml4(vaddr)) { return MDOS_INVALID_PARAMETER; }
-
-	if (flags & EntryFlagBits::Page2MiB) {
-		res = map_2MiB_page(paddr, vaddr, flags);
-	} else if (flags & EntryFlagBits::Page1GiB) {
-		res = map_1GiB_page(paddr, vaddr, flags);
-	} else {
-		res = map_4KiB_page(paddr, vaddr, flags);
-	}
-
-	if (res == MDOS_SUCCESS) { invalidate_page(vaddr); }
-
-	return res;
-}
-
-Result MdOS::mem::virt::VirtualMemoryManagerPML4::unmap_page(VirtualAddress vaddr) {
-	Result res;
-	if (m_pml4 == nullptr) {
-		res = init();
-		if (res != MDOS_SUCCESS) { return res; }
-	}
-	kassert((vaddr % MdOS::mem::virt::pageSize4KiB) == 0);
-	if (!is_canonical_pml4(vaddr)) { return MDOS_INVALID_PARAMETER; }
-
-	Entry &pml4e = m_pml4[pml4_index(vaddr)];
-	if (!pml4e.get_bit(EntryControlBit::PagePresent)) { return MDOS_SUCCESS; }
-
-	Entry *pdp = (Entry *) MDOS_PHYS_TO_VIRT(pml4e.get_addr());
-	Entry &pdpe = pdp[pdp_index(vaddr)];
-	if (!pdpe.get_bit(EntryControlBit::PagePresent)) { return MDOS_SUCCESS; }
-	if (pdpe.get_bit(EntryControlBit::PageSize)) {
-		pdpe.set_bit(EntryControlBit::PagePresent, false);
-		if (table_empty(pdp)) {
-			m_pml4[pml4_index(vaddr)].set_bit(EntryControlBit::PagePresent, false);
-			MdOS::mem::phys::free_page(uintptr_t(MDOS_VIRT_TO_PHYS(pdp)));
-		}
-		invalidate_page(vaddr);
-		return MDOS_SUCCESS;
-	}
-
-	Entry *pd = (Entry *) MDOS_PHYS_TO_VIRT(pdpe.get_addr());
-	Entry &pde = pd[pd_index(vaddr)];
-	if (!pde.get_bit(EntryControlBit::PagePresent)) { return MDOS_SUCCESS; }
-	if (pde.get_bit(EntryControlBit::PageSize)) {
-		pde.set_bit(EntryControlBit::PagePresent, false);
-		if (table_empty(pd)) {
-			pdpe.set_bit(EntryControlBit::PagePresent, false);
-			MdOS::mem::phys::free_page(uintptr_t(MDOS_VIRT_TO_PHYS(pd)));
-			if (table_empty(pdp)) {
-				m_pml4[pml4_index(vaddr)].set_bit(EntryControlBit::PagePresent, false);
-				MdOS::mem::phys::free_page(uintptr_t(MDOS_VIRT_TO_PHYS(pdp)));
-			}
-		}
-		invalidate_page(vaddr);
-		return MDOS_SUCCESS;
-	}
-
-	Entry *pt = (Entry *) MDOS_PHYS_TO_VIRT(pd[pd_index(vaddr)].get_addr());
-	Entry &pte = pt[pt_index(vaddr)];
-	if (!pte.get_bit(EntryControlBit::PagePresent)) { return MDOS_SUCCESS; }
-	pte.set_bit(EntryControlBit::PagePresent, false);
-	if (table_empty(pt)) {
-		pd[pd_index(vaddr)].set_bit(EntryControlBit::PagePresent, false);
-		MdOS::mem::phys::free_page(uintptr_t(MDOS_VIRT_TO_PHYS(pt)));
-		if (table_empty(pd)) {
-			pdpe.set_bit(EntryControlBit::PagePresent, false);
-			MdOS::mem::phys::free_page(uintptr_t(MDOS_VIRT_TO_PHYS(pd)));
-		}
-		if (table_empty(pdp)) {
-			m_pml4[pml4_index(vaddr)].set_bit(EntryControlBit::PagePresent, false);
-			MdOS::mem::phys::free_page(uintptr_t(MDOS_VIRT_TO_PHYS(pdp)));
-		}
-	}
-	invalidate_page(vaddr);
-	return MDOS_SUCCESS;
 }
 
 Result MdOS::mem::virt::VirtualMemoryManagerPML4::map_4KiB_page(PhysicalAddress paddr, VirtualAddress vaddr,
@@ -234,6 +151,8 @@ Result MdOS::mem::virt::VirtualMemoryManagerPML4::map_1GiB_page(PhysicalAddress 
 }
 
 Result MdOS::mem::virt::VirtualMemoryManagerPML4::swap_attributes(VirtualAddress vaddr, EntryFlagBits newFlags) {
+	MdOS::thread::LockGuard<MdOS::thread::Spinlock> lock(&m_lock);
+
 	if (m_pml4 == nullptr) {
 		Result res = init();
 		if (res != MDOS_SUCCESS) { return res; }
@@ -289,45 +208,9 @@ Result MdOS::mem::virt::VirtualMemoryManagerPML4::swap_attributes(VirtualAddress
 }
 
 Result MdOS::mem::virt::VirtualMemoryManagerPML4::map_range(PhysicalAddress paddrBase, VirtualAddress vaddrBase,
-															size_t numPages, EntryFlagBits flags) {
-	if (m_pml4 == nullptr) {
-		Result res = init();
-		if (res != MDOS_SUCCESS) { return res; }
-	}
-	kassert(m_pml4 != nullptr);
-	kassert((paddrBase % MdOS::mem::virt::pageSize4KiB) == 0);
-	kassert((vaddrBase % MdOS::mem::virt::pageSize4KiB) == 0);
-	for (size_t i = 0; i < numPages; i++) {
-		Result res = map_page(paddrBase + (i * MdOS::mem::virt::pageSize4KiB),
-							  vaddrBase + (i * MdOS::mem::virt::pageSize4KiB), flags);
-		if (res != MDOS_SUCCESS) {
-			unmap_range(vaddrBase, i);
-			return res;
-		}
-	}
-	return MDOS_SUCCESS;
-}
+															size_t size, EntryFlagBits flags) {
+	MdOS::thread::LockGuard<MdOS::thread::Spinlock> lock(&m_lock);
 
-Result MdOS::mem::virt::VirtualMemoryManagerPML4::unmap_range(VirtualAddress vaddrBase, size_t numPages) {
-	if (m_pml4 == nullptr) {
-		Result res = init();
-		if (res != MDOS_SUCCESS) { return res; }
-	}
-	kassert(m_pml4 != nullptr);
-	kassert((vaddrBase % MdOS::mem::virt::pageSize4KiB) == 0);
-	for (size_t i = 0; i < numPages; i++) {
-		Result res = unmap_page(vaddrBase + (i * MdOS::mem::virt::pageSize4KiB));
-		if (res != MDOS_SUCCESS) {
-			// attempt smart unmap
-			res = unmap_smart_range(vaddrBase, numPages * pageSize4KiB);
-			if (res != MDOS_SUCCESS) { PANIC("Failed to unmap memory range", MDOS_PANIC_MEMORY_ERROR); }
-		}
-	}
-	return MDOS_SUCCESS;
-}
-
-Result MdOS::mem::virt::VirtualMemoryManagerPML4::map_smart_range(PhysicalAddress paddrBase, VirtualAddress vaddrBase,
-																  size_t size, EntryFlagBits flags) {
 	if (m_pml4 == nullptr) {
 		Result res = init();
 		if (res != MDOS_SUCCESS) { return res; }
@@ -366,7 +249,7 @@ Result MdOS::mem::virt::VirtualMemoryManagerPML4::map_smart_range(PhysicalAddres
 			rem -= pageSize4KiB;
 		}
 		if (res != MDOS_SUCCESS) {
-			if (unmap_smart_range(vaddrBase, size - rem) != MDOS_SUCCESS) {
+			if (unmap_range(vaddrBase, size - rem) != MDOS_SUCCESS) {
 				PANIC("Failed to unmap memory range", MDOS_PANIC_MEMORY_ERROR);
 			}
 			return res;
@@ -375,7 +258,9 @@ Result MdOS::mem::virt::VirtualMemoryManagerPML4::map_smart_range(PhysicalAddres
 	return MDOS_SUCCESS;
 }
 
-Result MdOS::mem::virt::VirtualMemoryManagerPML4::unmap_smart_range(VirtualAddress vaddrBase, size_t size) {
+Result MdOS::mem::virt::VirtualMemoryManagerPML4::unmap_range(VirtualAddress vaddrBase, size_t size) {
+	MdOS::thread::LockGuard<MdOS::thread::Spinlock> lock(&m_lock);
+
 	if (m_pml4 == nullptr) {
 		Result res = init();
 		if (res != MDOS_SUCCESS) { return res; }
@@ -457,6 +342,8 @@ Result MdOS::mem::virt::VirtualMemoryManagerPML4::unmap_smart_range(VirtualAddre
 }
 
 PhysicalAddress MdOS::mem::virt::VirtualMemoryManagerPML4::query_paddr(VirtualAddress vaddr) {
+	MdOS::thread::LockGuard<MdOS::thread::Spinlock> lock(&m_lock);
+
 	if (m_pml4 == nullptr) { return 0; }
 
 	Entry pml4e = m_pml4[pml4_index(vaddr)];
@@ -486,25 +373,24 @@ Result MdOS::mem::virt::map_kernel(SectionInfo *sections, size_t sectionInfoCoun
 	for (size_t i = 0; i < memMap->size / memMap->descriptorSize; i++) {
 		EFI_MEMORY_DESCRIPTOR *entry =
 				(EFI_MEMORY_DESCRIPTOR *) ((uintptr_t) memMap->map + (i * memMap->descriptorSize));
-		res = vmm->map_smart_range(entry->paddr, MDOS_PHYS_TO_VIRT(entry->paddr), entry->pageCount * pageSize4KiB,
-								   ReadWrite);
+		res = vmm->map_range(entry->paddr, MDOS_PHYS_TO_VIRT(entry->paddr), entry->pageCount * pageSize4KiB, ReadWrite);
 		if (res != MDOS_SUCCESS) { return res; }
 	}
 
 	// map the boot heap
-	res = vmm->map_smart_range(PhysicalAddress(bootHeap.basePaddr), VirtualAddress(bootHeap.baseAddr), bootHeap.size,
-							   ReadWrite);
+	res = vmm->map_range(PhysicalAddress(bootHeap.basePaddr), VirtualAddress(bootHeap.baseAddr), bootHeap.size,
+						 ReadWrite);
 	if (res != MDOS_SUCCESS) { return res; }
 
 	// map the GOP framebuffer
-	res = vmm->map_smart_range(PhysicalAddress(framebuffer->bufferBase), VirtualAddress(framebuffer->bufferBase),
-							   framebuffer->bufferSize, ReadWrite);
+	res = vmm->map_range(PhysicalAddress(framebuffer->bufferBase), VirtualAddress(framebuffer->bufferBase),
+						 framebuffer->bufferSize, ReadWrite);
 	if (res != MDOS_SUCCESS) { return res; }
 
 	// mape the kernel sections
 	for (size_t i = 0; i < sectionInfoCount; i++) {
 		SectionInfo *section = (SectionInfo *) (uintptr_t(sections) + i * sizeof(SectionInfo));
-		res = vmm->map_smart_range(section->paddr, section->vaddr, section->pageCount * pageSize4KiB, ReadWrite);
+		res = vmm->map_range(section->paddr, section->vaddr, section->pageCount * pageSize4KiB, ReadWrite);
 		if (res != MDOS_SUCCESS) { return res; }
 	}
 
@@ -525,6 +411,7 @@ void MdOS::mem::virt::VirtualMemoryManagerPML4::print_entry(Entry entry) {
 }
 
 void MdOS::mem::virt::VirtualMemoryManagerPML4::dump_pml4(bool presentOnly) {
+	MdOS::thread::LockGuard<MdOS::thread::Spinlock> lock(&m_lock);
 	if (m_pml4 == nullptr) {
 		Result res = init();
 		if (res != MDOS_SUCCESS) { return; }
@@ -547,6 +434,7 @@ void MdOS::mem::virt::VirtualMemoryManagerPML4::dump_pml4(bool presentOnly) {
 }
 
 void MdOS::mem::virt::VirtualMemoryManagerPML4::dump_translation_hierarchy(VirtualAddress vaddr) {
+	MdOS::thread::LockGuard<MdOS::thread::Spinlock> lock(&m_lock);
 	if (m_pml4 == nullptr) {
 		Result res = init();
 		if (res != MDOS_SUCCESS) { return; }

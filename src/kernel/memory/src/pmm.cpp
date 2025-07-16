@@ -210,6 +210,7 @@ Result phys::init(MemMap *memMap, SectionInfo *krnlSections, size_t sectionInfoC
 		m_memMap->set_range(section->paddr, section->pageCount, KERNEL_RESERVED_MEMORY);
 	}
 
+	spinlock_release(&m_lock);
 	return MDOS_SUCCESS;
 }
 

@@ -27,7 +27,7 @@
 // 		MdOS::mem::phys::set_page_bucket_size((allocation.base + i) * 0x1000, order);
 // 	}
 
-// 	MdOS::mem::virt::VirtualMemoryManagerPML4::get_bound_vmm()->map_smart_range(
+// 	MdOS::mem::virt::g_defaultVMM->map_range(
 // 			allocation.base, heapVaddrTop, INITIAL_HEAP_SIZE, MdOS::mem::virt::ReadWrite);
 
 // 	for (size_t i = 0; i < INITIAL_HEAP_SIZE; i += bucketSize) {
