@@ -14,7 +14,8 @@ typedef enum {
 	MDOS_OUT_OF_MEMORY,
 	MDOS_OUT_OF_SPACE,
 	MDOS_PAGE_NOT_PRESENT,
-	MDOS_OVERFLOW
+	MDOS_OVERFLOW,
+	MDOS_TIMEOUT
 } Result;
 
 #ifdef __cplusplus

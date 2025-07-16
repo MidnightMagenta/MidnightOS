@@ -7,13 +7,16 @@
 #include <memory/new.hpp>
 #include <memory/physical_mem_map.hpp>
 #include <memory/pmm.hpp>
+#include <thread/spinlock.hpp>
 
 using namespace MdOS::mem;
 
 bool m_initialized = false;
+bool m_regionMapAvail = false;
 phys::Page *m_pfm = nullptr;
 phys::PhysicalMemoryMap *m_memMap = nullptr;
-bool m_regionMapAvail = false;
+
+mdos_spinlock m_lock;
 
 size_t m_lastFreePage = 0;
 
@@ -211,6 +214,8 @@ Result phys::init(MemMap *memMap, SectionInfo *krnlSections, size_t sectionInfoC
 }
 
 Result phys::alloc_pages_pfm(size_t numPages, uint8_t type, phys::PhysicalMemoryAllocation *alloc) {
+	uint64_t flags;
+	if (!spinlock_acquire_irqsave(&m_lock, SPINLOCK_MAX_TIMEOUT, &flags)) { return MDOS_TIMEOUT; }
 	if (numPages <= 0) { return MDOS_INVALID_PARAMETER; }
 	if (!m_initialized) { return MDOS_NOT_INITIALIZED; }
 	if (m_freePageCount < numPages) { return MDOS_OUT_OF_MEMORY; }
@@ -245,10 +250,13 @@ Result phys::alloc_pages_pfm(size_t numPages, uint8_t type, phys::PhysicalMemory
 	}
 
 	ALLOC_LOG("Allocated %lu pages at address 0x%lx", alloc->numPages, alloc->base);
+	spinlock_release_irqrestore(&m_lock, flags);
 	return allocSuccess ? MDOS_SUCCESS : MDOS_OUT_OF_MEMORY;
 }
 
 Result phys::alloc_pages(size_t numPages, uint8_t type, phys::PhysicalMemoryAllocation *alloc) {
+	uint64_t flags;
+	if (!spinlock_acquire_irqsave(&m_lock, SPINLOCK_MAX_TIMEOUT, &flags)) { return MDOS_TIMEOUT; }
 	if (!m_regionMapAvail || !m_memMap->initialized()) { return alloc_pages_pfm(numPages, type, alloc); }
 	if (numPages <= 0) { return MDOS_INVALID_PARAMETER; }
 	if (!m_initialized) { return MDOS_NOT_INITIALIZED; }
@@ -278,6 +286,7 @@ Result phys::alloc_pages(size_t numPages, uint8_t type, phys::PhysicalMemoryAllo
 	alloc->numPages = numPages;
 
 	ALLOC_LOG("Allocated %lu pages at address 0x%lx", alloc->numPages, alloc->base);
+	spinlock_release_irqrestore(&m_lock, flags);
 	return MDOS_SUCCESS;
 }
 
@@ -301,6 +310,8 @@ uintptr_t phys::alloc_page() {
 }
 
 Result phys::free_pages(const phys::PhysicalMemoryAllocation &alloc) {
+	uint64_t flags;
+	if (!spinlock_acquire_irqsave(&m_lock, SPINLOCK_MAX_TIMEOUT, &flags)) { return MDOS_TIMEOUT; }
 	if (!m_initialized) { return MDOS_NOT_INITIALIZED; }
 	if ((alloc.base % 0x1000) != 0) { return MDOS_INVALID_PARAMETER; }
 	size_t baseIndex = pfm_addr_to_index(alloc.base);
@@ -321,6 +332,7 @@ Result phys::free_pages(const phys::PhysicalMemoryAllocation &alloc) {
 	if (baseIndex < m_lastFreePage) { m_lastFreePage = baseIndex; }
 
 	ALLOC_LOG("Freed %lu pages at address 0x%lx", freedPages, alloc.base);
+	spinlock_release_irqrestore(&m_lock, flags);
 	return MDOS_SUCCESS;
 }
 
@@ -332,6 +344,8 @@ void phys::free_page(uintptr_t page) {
 }
 
 Result phys::reserve_pages(PhysicalAddress addr, size_t numPages, uint8_t type) {
+	uint64_t flags;
+	if (!spinlock_acquire_irqsave(&m_lock, SPINLOCK_MAX_TIMEOUT, &flags)) { return MDOS_TIMEOUT; }
 	if (!m_initialized) { return MDOS_NOT_INITIALIZED; }
 	if ((addr % 0x1000) != 0) { return MDOS_INVALID_PARAMETER; }
 	if (numPages > m_freePageCount) { return MDOS_OUT_OF_MEMORY; }
@@ -344,6 +358,7 @@ Result phys::reserve_pages(PhysicalAddress addr, size_t numPages, uint8_t type) 
 	if (m_memMap->initialized() && m_regionMapAvail) { m_memMap->set_range(addr, numPages, type); }
 
 	ALLOC_LOG("Reserved %u pages at address 0x%lx", numPages, addr);
+	spinlock_release_irqrestore(&m_lock, flags);
 	return MDOS_SUCCESS;
 }
 
@@ -352,6 +367,8 @@ Result phys::reserve_pages(PhysicalAddress addr, size_t numPages) {
 }
 
 Result phys::unreserve_pages(PhysicalAddress addr, size_t numPages) {
+	uint64_t flags;
+	if (!spinlock_acquire_irqsave(&m_lock, SPINLOCK_MAX_TIMEOUT, &flags)) { return MDOS_TIMEOUT; }
 	if (!m_initialized) { return MDOS_NOT_INITIALIZED; }
 	if ((addr % 0x1000) != 0) { return MDOS_INVALID_PARAMETER; }
 	size_t baseIndex = pfm_addr_to_index(addr);
@@ -372,6 +389,7 @@ Result phys::unreserve_pages(PhysicalAddress addr, size_t numPages) {
 	if (baseIndex < m_lastFreePage) { m_lastFreePage = baseIndex; }
 
 	ALLOC_LOG("Unreserved %lu pages at address 0x%lx", freedPages, addr);
+	spinlock_release_irqrestore(&m_lock, flags);
 	return MDOS_SUCCESS;
 }
 
@@ -382,16 +400,29 @@ phys::Page *phys::get_page(uintptr_t addr) {
 	return &m_pfm[index];
 }
 
-phys::Page phys::get_page_descriptor(uintptr_t addr) { return *get_page(addr); }
+phys::Page phys::get_page_descriptor(uintptr_t addr) {
+	uint64_t flags;
+	if (!spinlock_acquire_irqsave(&m_lock, SPINLOCK_MAX_TIMEOUT, &flags)) { return Page(); }
+	return *get_page(addr);
+	spinlock_release_irqrestore(&m_lock, flags);
+}
 
-void phys::set_page_descriptor(uintptr_t addr, const Page &metadata) { *get_page(addr) = metadata; }
+void phys::set_page_descriptor(uintptr_t addr, const Page &metadata) {
+	uint64_t flags;
+	if (!spinlock_acquire_irqsave(&m_lock, SPINLOCK_MAX_TIMEOUT, &flags)) { return; }
+	*get_page(addr) = metadata;
+	spinlock_release_irqrestore(&m_lock, flags);
+}
 
 uint8_t phys::get_page_bucket_size(uintptr_t addr) { return get_page_descriptor(addr).flags & 0xF; }
 
 void phys::set_page_bucket_size(uintptr_t addr, uint8_t order) {
+	uint64_t flags;
+	if (!spinlock_acquire_irqsave(&m_lock, SPINLOCK_MAX_TIMEOUT, &flags)) { return; }
 	Page *page = get_page(addr);
 	page->flags &= static_cast<uint16_t>(~0xFU);
 	page->flags |= static_cast<uint16_t>(order & uint8_t(0xF));
+	spinlock_release_irqrestore(&m_lock, flags);
 }
 
 void phys::print_mem_map() { m_memMap->print_map(); }

@@ -39,8 +39,9 @@ INCLUDE_DIRS = \
 	-Iboot/include \
 	-Ik_utils/include \
 	-Ierror/include \
-	-Imain/include
-
+	-Imain/include \
+	-Ithread/include
+	
 # Default flags
 CFLAGS = -g -ffreestanding -fshort-wchar -mno-red-zone -m64 -Wall -nostdlib -nostdinc \
 		-fno-builtin -fno-stack-protector -nostartfiles -nodefaultlibs
