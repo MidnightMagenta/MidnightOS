@@ -1,5 +1,6 @@
 #include <IO/debug_print.h>
 #include <boot/efi_structs.hpp>
+#include <boot/kernel_status.h>
 #include <error/panic.h>
 #include <k_utils/bitmap.hpp>
 #include <k_utils/utils.hpp>
@@ -211,6 +212,7 @@ Result phys::init(MemMap *memMap, SectionInfo *krnlSections, size_t sectionInfoC
 	}
 
 	spinlock_release(&m_lock);
+	mdos_set_status_flag(MDOS_STATUS_FLAG_PMM_AVAIL, true);
 	return MDOS_SUCCESS;
 }
 

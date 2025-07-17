@@ -1,4 +1,5 @@
 #include <IO/debug_print.h>
+#include <boot/kernel_status.h>
 #include <k_utils/stack.hpp>
 #include <libk/stdlib.h>
 #include <memory/allocators/bucket_allocator.hpp>
@@ -50,16 +51,16 @@ Result MdOS::mem::bucket_heap_init() {
 		};
 	}
 
-	_internal_set_bucket_alloc_avail();
+	mdos_set_status_flag(MDOS_STATUS_FLAG_PMM_AVAIL, true);
 
 	LOG_FUNC_EXIT;
 	return MDOS_SUCCESS;
 }
 
 void *MdOS::mem::_internal_alloc(size_t size) {
-	ALLOC_LOG("Allocating %u bytes", size);
 	uint8_t order = (uint8_t) fast_u64_ceil_log2(size);
 	order = order < MIN_HEAP_ORDER ? order : MIN_HEAP_ORDER;
+	ALLOC_LOG("Allocating %u bytes. Bucket order %u", size, order);
 	return order <= MAX_HEAP_ORDER ? (void *) get_free_list(order)->pop() : nullptr;
 }
 

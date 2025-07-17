@@ -18,9 +18,6 @@ void MdOS::init_krnl(BootInfo *bootInfo) {
 	init_debug_IO(&bootInfo->bootExtra);
 	init_memory(bootInfo);
 
-	MdOS_krnlStatus_kernelReady = true;
-	MdOS_krnlStatus_globalObjectsReady = true;
-
 	DEBUG_LOG_VB1("EOF: init_krnl\n");
 
 	LOG_FUNC_EXIT;
@@ -71,6 +68,7 @@ void MdOS::init_memory(BootInfo *bootInfo) {
 	if (MdOS::mem::virt::g_krnlVMM->init() != MDOS_SUCCESS) {
 		PANIC("Failed to initialize virtual memory", MDOS_PANIC_INIT_FAIL);
 	}
+	mdos_set_status_flag(MDOS_STATUS_FLAG_PMM_AVAIL, true);
 
 	DEBUG_LOG_VB3("VMM initialized\n");
 
@@ -86,6 +84,7 @@ void MdOS::init_memory(BootInfo *bootInfo) {
 
 	DEBUG_LOG_VB3("Initializing heap\n");
 	if (MdOS::mem::bucket_heap_init() != MDOS_SUCCESS) { PANIC("Heap unavailable", MDOS_PANIC_MEMORY_ERROR); }
+	// at this stage, malloc is not fully ready. It can be only used for allocations smaller than 2048 bytes
 	DEBUG_LOG_VB2("Heap ready\n");
 
 	LOG_FUNC_EXIT;
