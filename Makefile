@@ -50,9 +50,11 @@ ACFLAGS = -f elf64
 
 LDFLAGS = -static -Bsymbolic -nostdlib
 
-partial: build update-img
+rebuild: clean partial
 
-rebuild-partial: clean build update-img
+rebuild-all: clean-all all
+
+partial: build update-img
 
 all: init-img build-gnu-efi partial
 

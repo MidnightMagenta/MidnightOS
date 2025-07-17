@@ -1,21 +1,33 @@
 #include <libk/stdlib.h>
+#include <memory/allocators/bucket_allocator.hpp>
 #include <memory/allocators/bump_allocator.hpp>
 
-bool mallocReady = false;
+bool bucketAllocatorAvail = false;
+bool vmallocAvail = false;
+
+void MdOS::mem::_internal_set_bucket_alloc_avail() { bucketAllocatorAvail = true; }
 
 extern "C" void *malloc(size_t size) {
-	// TODO: implement proper allocator usage
-	if (!mallocReady) { return MdOS::mem::g_bumpAlloc->alloc(size); }
-	return nullptr;
+	if (bucketAllocatorAvail && MdOS::mem::fast_u64_ceil_log2(size) <= MAX_HEAP_ORDER) {
+		return MdOS::mem::_internal_alloc(size);
+	} else if (vmallocAvail) {
+		/*void*/
+	}
+
+	return MdOS::mem::g_bumpAlloc->alloc(size);
 }
 
 void *malloca(size_t size, size_t alignment) {
-	// TODO: implement proper allocator usage
-	if (!mallocReady) { return MdOS::mem::g_bumpAlloc->alloc_aligned(size, alignment); }
-	return nullptr;
+	if (bucketAllocatorAvail && MdOS::mem::fast_u64_ceil_log2(size) <= MAX_HEAP_ORDER) {
+		return MdOS::mem::_internal_alloc(size);
+	} else if (vmallocAvail) {
+		/*void*/
+	}
+
+	return MdOS::mem::g_bumpAlloc->alloc_aligned(size, alignment);
 }
 
 void free(void *addr) {
-	// TODO: implement proper allocator usage
-	if (!mallocReady) { MdOS::mem::g_bumpAlloc->free(addr); }
+	if (bucketAllocatorAvail && MdOS::mem::_internal_free(addr)) { return; }
+	if (vmallocAvail) { return; }
 }

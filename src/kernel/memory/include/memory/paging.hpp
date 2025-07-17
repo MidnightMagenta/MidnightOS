@@ -88,7 +88,12 @@ public:
 	PhysicalAddress query_paddr(VirtualAddress vaddr);
 
 	inline Entry *get_pml4() { return m_pml4; }
-	inline void activate() { set_cr3(MDOS_VIRT_TO_PHYS(uint64_t(m_pml4))); }
+	inline void activate() {
+		m_boundVMM = this;
+		set_cr3(MDOS_VIRT_TO_PHYS(uint64_t(m_pml4)));
+	}
+
+	static VirtualMemoryManagerPML4 *get_active() { return m_boundVMM; }
 
 #ifdef _DEBUG
 	static void print_entry(Entry entry);
@@ -107,6 +112,7 @@ private:
 
 	MdOS::thread::Spinlock *get_lock() { return &m_lock; }
 
+	static VirtualMemoryManagerPML4 *m_boundVMM;
 	Entry *m_pml4 = nullptr;
 	MdOS::thread::Spinlock m_lock;
 };

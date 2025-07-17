@@ -10,6 +10,8 @@
 #define OFFSET_MASK_2MiB 0x1FFFFF
 #define OFFSET_MASK_4KiB 0xFFF
 
+MdOS::mem::virt::VirtualMemoryManagerPML4 *MdOS::mem::virt::VirtualMemoryManagerPML4::m_boundVMM = nullptr;
+
 Result MdOS::mem::virt::VirtualMemoryManagerPML4::init() {
 	LOG_FUNC_ENTRY;
 	MdOS::thread::LockGuard<MdOS::thread::Spinlock> lock(&m_lock);
@@ -171,6 +173,8 @@ Result MdOS::mem::virt::VirtualMemoryManagerPML4::swap_attributes(VirtualAddress
 	LOG_FUNC_ENTRY;
 	MdOS::thread::LockGuard<MdOS::thread::Spinlock> lock(&m_lock);
 
+	ALLOC_LOG("Swapping attributes for vaddr 0x%lx to 0x%x", vaddr, newFlags);
+
 	if (m_pml4 == nullptr) {
 		Result res = init();
 		if (res != MDOS_SUCCESS) { return res; }
@@ -229,6 +233,8 @@ Result MdOS::mem::virt::VirtualMemoryManagerPML4::swap_attributes(VirtualAddress
 Result MdOS::mem::virt::VirtualMemoryManagerPML4::map_range(PhysicalAddress paddrBase, VirtualAddress vaddrBase,
 															size_t size, EntryFlagBits flags) {
 	LOG_FUNC_ENTRY;
+	ALLOC_LOG("Mapping memory range 0x%lx - 0x%lx to vaddr 0x%lx with flags 0x%x", paddrBase, paddrBase + size,
+			  vaddrBase, flags);
 	MdOS::thread::LockGuard<MdOS::thread::Spinlock> lock(&m_lock);
 
 	if (m_pml4 == nullptr) {
@@ -283,6 +289,8 @@ Result MdOS::mem::virt::VirtualMemoryManagerPML4::map_range(PhysicalAddress padd
 Result MdOS::mem::virt::VirtualMemoryManagerPML4::unmap_range(VirtualAddress vaddrBase, size_t size) {
 	LOG_FUNC_ENTRY;
 	MdOS::thread::LockGuard<MdOS::thread::Spinlock> lock(&m_lock);
+
+	ALLOC_LOG("Unmapping virtual address range 0x%lx - 0x%lx", vaddrBase, vaddrBase + size);
 
 	if (m_pml4 == nullptr) {
 		Result res = init();

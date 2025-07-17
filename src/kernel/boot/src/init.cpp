@@ -5,6 +5,7 @@
 #include <boot/kernel_status.h>
 #include <error/panic.h>
 #include <libk/stdlib.h>
+#include <memory/allocators/bucket_allocator.hpp>
 #include <memory/allocators/bump_allocator.hpp>
 #include <memory/gdt.h>
 #include <memory/new.hpp>
@@ -20,7 +21,6 @@ void MdOS::init_krnl(BootInfo *bootInfo) {
 	MdOS_krnlStatus_kernelReady = true;
 	MdOS_krnlStatus_globalObjectsReady = true;
 
-	DEBUG_LOG_VB1("Log verbosity: %d\n", _LOG_VERBOSITY);
 	DEBUG_LOG_VB1("EOF: init_krnl\n");
 
 	LOG_FUNC_EXIT;
@@ -33,6 +33,7 @@ void MdOS::init_debug_IO(BootExtra *bootExtra) {
 	MdOS::teletype::init(&g_renderer, bootExtra->basicFont);
 	MdOS::CharSink::register_char_sink(MdOS::IO::BasicSerial::write_serial);
 	DEBUG_LOG_VB2("Debug IO available\n");
+	DEBUG_LOG_VB1("Log verbosity: %d\n", _LOG_VERBOSITY);
 }
 
 void MdOS::init_memory(BootInfo *bootInfo) {
@@ -82,6 +83,10 @@ void MdOS::init_memory(BootInfo *bootInfo) {
 
 	MdOS::mem::virt::g_krnlVMM->activate();
 	DEBUG_LOG_VB2("Virtual memory ready\n");
+
+	DEBUG_LOG_VB3("Initializing heap\n");
+	if (MdOS::mem::bucket_heap_init() != MDOS_SUCCESS) { PANIC("Heap unavailable", MDOS_PANIC_MEMORY_ERROR); }
+	DEBUG_LOG_VB2("Heap ready\n");
 
 	LOG_FUNC_EXIT;
 }
