@@ -1,7 +1,7 @@
 #include <boot/kernel_status.h>
 #include <thread/spinlock.h>
 
-inline KernelStatus _internal_krnlStatus = {false, false, false, false};
+inline KernelStatus _internal_krnlStatus = {{false}, {false}, {false}, {false}};
 
 extern "C" void mdos_set_status_flag(KernelStatusFlag flag, bool value) {
 	switch (flag) {

@@ -15,7 +15,7 @@ struct PhysicalMemoryAllocation {
 struct Page {
 	uint16_t flags;
 	uint8_t type;
-} MDOS_PACKED;
+} __attribute__((packed));
 
 struct PageMetadataCreateInfo {
 	uint8_t bucketSize;

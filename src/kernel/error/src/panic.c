@@ -2,7 +2,7 @@
 #include <error/panic.h>
 #include <memory/memory_limits.h>
 
-void print_stack_trace() {
+void print_stack_trace(void) {
 	uint64_t *rbp;
 	__asm__ volatile("mov %%rbp, %0" : "=r"(rbp));
 	for (int i = 0; i < 64 && rbp != NULL; i++) {

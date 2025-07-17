@@ -32,9 +32,7 @@ const char *MdOS::string::to_string(uint64_t num) {
 char toH64StrBuffer[128];
 const char *MdOS::string::to_hstring(uint64_t num) {
 	static const char hexDigits[] = "0123456789ABCDEF";
-	for (int i = 0; i < 16; ++i) {
-		toH64StrBuffer[15 - i] = hexDigits[(num >> (i * 4)) & 0xF];
-	}
+	for (int i = 0; i < 16; ++i) { toH64StrBuffer[15 - i] = hexDigits[(num >> (i * 4)) & 0xF]; }
 	toH64StrBuffer[16] = '\0';
 	return toH64StrBuffer;
 }
@@ -42,9 +40,7 @@ const char *MdOS::string::to_hstring(uint64_t num) {
 char toH32StrBuffer[128];
 const char *MdOS::string::to_hstring(uint32_t num) {
 	static const char hexDigits[] = "0123456789ABCDEF";
-	for (int i = 0; i < 8; ++i) {
-		toH32StrBuffer[7 - i] = hexDigits[(num >> (i * 4)) & 0xF];
-	}
+	for (int i = 0; i < 8; ++i) { toH32StrBuffer[7 - i] = hexDigits[(num >> (i * 4)) & 0xF]; }
 	toH32StrBuffer[8] = '\0';
 	return toH32StrBuffer;
 }
@@ -52,9 +48,7 @@ const char *MdOS::string::to_hstring(uint32_t num) {
 char toH16StrBuffer[128];
 const char *MdOS::string::to_hstring(uint16_t num) {
 	static const char hexDigits[] = "0123456789ABCDEF";
-	for (int i = 0; i < 4; ++i) {
-		toH16StrBuffer[3 - i] = hexDigits[(num >> (i * 4)) & 0xF];
-	}
+	for (int i = 0; i < 4; ++i) { toH16StrBuffer[3 - i] = hexDigits[(num >> (i * 4)) & 0xF]; }
 	toH16StrBuffer[4] = '\0';
 	return toH16StrBuffer;
 }
@@ -62,9 +56,7 @@ const char *MdOS::string::to_hstring(uint16_t num) {
 char toH8StrBuffer[128];
 const char *MdOS::string::to_hstring(uint8_t num) {
 	static const char hexDigits[] = "0123456789ABCDEF";
-	for (int i = 0; i < 2; ++i) {
-		toH8StrBuffer[1 - i] = hexDigits[(num >> (i * 4)) & 0xF];
-	}
+	for (int i = 0; i < 2; ++i) { toH8StrBuffer[1 - i] = hexDigits[(num >> (i * 4)) & 0xF]; }
 	toH8StrBuffer[2] = '\0';
 	return toH8StrBuffer;
 }
@@ -141,11 +133,11 @@ const char *MdOS::string::to_string(float num, unsigned int decimal_places) {
 	*floatPtr = '.';
 	floatPtr++;
 
-	float newNum = num - int(num);
+	float newNum = num - float(int(num));
 	for (uint8_t i = 0; i < decimal_places; i++) {
 		newNum *= 10;
 		*floatPtr = char(int(newNum)) + '0';
-		newNum -= int(newNum);
+		newNum -= float(int(newNum));
 		floatPtr++;
 	}
 	*floatPtr = '\0';

@@ -10,7 +10,7 @@ typedef struct{
     void* placeholer;
 } ThreadControlBlock;
 
-ThreadControlBlock tcb[MAX_THREAD_COUNT];
+inline ThreadControlBlock tcb[MAX_THREAD_COUNT];
 
 #ifdef __cplusplus
 }

@@ -62,7 +62,7 @@ extern void get_gp_regs(GeneralPurposeRegisters *registers);
 extern void get_cr_regs(ControlRegisters *registers);
 extern void get_segment_regs(SegmentRegisters *registers);
 void print_stack_trace();
-void MDOS_NORETURN MSOD_NOOPTIMIZE panic_handler(const char *msg, PanicParams *params);
+void MDOS_NORETURN MDOS_NOOPTIMIZE panic_handler(const char *msg, PanicParams *params);
 
 #ifdef __cplusplus
 }
