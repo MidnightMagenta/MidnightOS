@@ -428,13 +428,13 @@ void phys::set_page_bucket_size(uintptr_t addr, uint8_t order) {
 
 void phys::print_mem_map() { m_memMap->print_map(); }
 void phys::print_mem_stats() {
-	DEBUG_LOG("Lowest discovered address: 0x%lx\n", min_page_addr());
-	DEBUG_LOG("Highest discovered address: 0x%lx\n", max_page_addr());
-	DEBUG_LOG("Maximum available memory: %lu MiB\n", max_mem_size() / 1048576);
-	DEBUG_LOG("Usable memory: %lu MiB\n", usable_mem_size() / 1048576);
-	DEBUG_LOG("Unusable memory: %lu MiB\n", unusable_mem_size() / 1048576);
-	DEBUG_LOG("Free memory: %lu MiB\n", free_mem_size() / 1048576);
-	DEBUG_LOG("Reserved memory: %lu MiB\n", reserved_mem_size() / 1048576);
+	DEBUG_LOG_VB1("Lowest discovered address: 0x%lx\n", min_page_addr());
+	DEBUG_LOG_VB1("Highest discovered address: 0x%lx\n", max_page_addr());
+	DEBUG_LOG_VB1("Maximum available memory: %lu MiB\n", max_mem_size() / 1048576);
+	DEBUG_LOG_VB1("Usable memory: %lu MiB\n", usable_mem_size() / 1048576);
+	DEBUG_LOG_VB1("Unusable memory: %lu MiB\n", unusable_mem_size() / 1048576);
+	DEBUG_LOG_VB1("Free memory: %lu MiB\n", free_mem_size() / 1048576);
+	DEBUG_LOG_VB1("Reserved memory: %lu MiB\n", reserved_mem_size() / 1048576);
 }
 
 size_t phys::max_page_count() { return m_maxAvailPages; }

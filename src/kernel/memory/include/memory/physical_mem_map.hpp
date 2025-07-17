@@ -5,6 +5,7 @@
 #include <memory/allocators/mem_map_slab_allocator.hpp>
 #include <k_utils/compiler_options.h>
 #include <memory/memory_types.hpp>
+#include <thread/spinlock.hpp>
 
 namespace MdOS::mem::phys {
 
@@ -53,6 +54,7 @@ private:
 
 	uintptr_t m_mapBase;
 	size_t m_mapSize;
+	MdOS::thread::Spinlock m_lock;
 	bool m_initialized = false;
 };
 }// namespace MdOS::mem::phys

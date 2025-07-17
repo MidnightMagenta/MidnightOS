@@ -15,8 +15,7 @@ CC = x86_64-elf-gcc
 AC = nasm
 LD = x86_64-elf-ld
 
-DBG_BUILD = true
-VERBOSE_LOG = false
+LOG_VERBOSITY = 2
 
 EMU_BASE_FLAGS = -drive file=$(BUILD_DIR)/$(OS_NAME).img,format=raw \
 				-m 2G \
@@ -35,26 +34,15 @@ DBG_FLAGS = -ex "target remote localhost:1234" \
 			-ex "set step-mode on"
 
 
-C_DBG_DEFS = -D_DEBUG
-
-ifeq ($(VERBOSE_LOG),true)
-	C_DBG_DEFS += -D_LOG_ALLOCATIONS
-endif
+C_COMPILE_DEFS = -D_LOG_VERBOSITY=$(LOG_VERBOSITY) -D_DEBUG
+C_OP_LVL = -O0
 
 C_F_FLAGS = -ffreestanding -fshort-wchar -fno-omit-frame-pointer -fno-builtin -fno-stack-protector \
 			-fno-exceptions -fno-tree-vectorize -fno-builtin-memcpy -fno-builtin-memset
-
 C_W_FLALGS = -Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion -Wundef \
 			 -Wcast-align -Wshift-overflow -Wdouble-promotion -Werror
 
-C_OP_LVL = -O0
-
-CFLAGS = -g -mno-red-zone -m64 -mcmodel=kernel -nostartfiles -nodefaultlibs -nostdlib $(C_W_FLALGS) $(C_F_FLAGS)
-
-ifeq ($(DBG_BUILD),true)
-	CFLAGS += $(C_DBG_DEFS)
-endif
-
+CFLAGS = -g -mno-red-zone -m64 -mcmodel=kernel -nostartfiles -nodefaultlibs -nostdlib $(C_W_FLALGS) $(C_F_FLAGS) $(C_COMPILE_DEFS)
 CPPFLAGS = $(CFLAGS) -fno-rtti -fno-use-cxa-atexit -std=c++20
 
 
@@ -63,6 +51,8 @@ ACFLAGS = -f elf64
 LDFLAGS = -static -Bsymbolic -nostdlib
 
 partial: build update-img
+
+rebuild-partial: clean build update-img
 
 all: init-img build-gnu-efi partial
 

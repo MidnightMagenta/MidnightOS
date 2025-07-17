@@ -3,6 +3,7 @@
 #include <memory/phys_virt_conversion.h>
 #include <memory/physical_mem_map.hpp>
 #include <memory/pmm.hpp>
+#include <thread/lock_guard.hpp>
 
 MdOS::mem::phys::PhysicalMemoryMap::PhysicalMemoryMap() {
 	m_initialized = false;
@@ -32,6 +33,8 @@ MdOS::mem::phys::PhysicalMemoryMap::~PhysicalMemoryMap() {
 }
 
 void MdOS::mem::phys::PhysicalMemoryMap::set_range(uintptr_t addr, size_t numPages, uint8_t type) {
+	MdOS::thread::LockGuard<MdOS::thread::Spinlock> lock(&m_lock);
+
 	if (!m_initialized) { return; }
 	uintptr_t endAddr = addr + numPages * 0x1000;
 
@@ -106,15 +109,17 @@ void MdOS::mem::phys::PhysicalMemoryMap::set_range(uintptr_t addr, size_t numPag
 }
 
 void MdOS::mem::phys::PhysicalMemoryMap::print_map() {
+	MdOS::thread::LockGuard<MdOS::thread::Spinlock> lock(&m_lock);
 	PhysicalMapEntry *entry = m_map;
 	while (entry != nullptr) {
-		DEBUG_LOG("Base: 0x%lx | Size: %lu KiB | Type: %u\n", entry->physicalBase, (entry->numPages * 0x1000) / 1024,
+		DEBUG_LOG_VB1("Base: 0x%lx | Size: %lu KiB | Type: %u\n", entry->physicalBase, (entry->numPages * 0x1000) / 1024,
 				  entry->type);
 		entry = entry->next;
 	}
 }
 
 MdOS::mem::phys::PhysicalMemoryDescriptor MdOS::mem::phys::PhysicalMemoryMap::get_first_range(uint8_t type) {
+	MdOS::thread::LockGuard<MdOS::thread::Spinlock> lock(&m_lock);
 	PhysicalMapEntry *entry = m_map;
 	PhysicalMemoryDescriptor res{0, 0, INVALID_TYPE};
 
@@ -132,6 +137,7 @@ MdOS::mem::phys::PhysicalMemoryDescriptor MdOS::mem::phys::PhysicalMemoryMap::ge
 
 MdOS::mem::phys::PhysicalMemoryDescriptor MdOS::mem::phys::PhysicalMemoryMap::get_next_range(uintptr_t addr,
 																							 uint8_t type) {
+	MdOS::thread::LockGuard<MdOS::thread::Spinlock> lock(&m_lock);
 	PhysicalMapEntry *entry = m_map;
 	PhysicalMemoryDescriptor res{0, 0, INVALID_TYPE};
 
@@ -149,6 +155,7 @@ MdOS::mem::phys::PhysicalMemoryDescriptor MdOS::mem::phys::PhysicalMemoryMap::ge
 
 MdOS::mem::phys::PhysicalMemoryDescriptor MdOS::mem::phys::PhysicalMemoryMap::get_first_fit_range(size_t numPages,
 																								  uint8_t type) {
+	MdOS::thread::LockGuard<MdOS::thread::Spinlock> lock(&m_lock);
 	PhysicalMapEntry *entry = m_map;
 	PhysicalMemoryDescriptor res{0, 0, INVALID_TYPE};
 
@@ -165,6 +172,7 @@ MdOS::mem::phys::PhysicalMemoryDescriptor MdOS::mem::phys::PhysicalMemoryMap::ge
 }
 
 uint8_t MdOS::mem::phys::PhysicalMemoryMap::get_type_at_addr(uintptr_t addr) {
+	MdOS::thread::LockGuard<MdOS::thread::Spinlock> lock(&m_lock);
 	PhysicalMapEntry *entry = m_map;
 	while (entry != nullptr) {
 		uintptr_t entryBase = entry->physicalBase;

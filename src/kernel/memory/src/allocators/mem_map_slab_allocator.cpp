@@ -78,7 +78,7 @@ void MdOS::mem::MemMapSlabAllocator::free_slab(void *addr) {
 	current = m_freeList;
 	while (current != nullptr) {
 		if (current->addr == uintptr_t(addr)) {
-			DEBUG_LOG("Attempted to deallocate a free address\n");
+			DEBUG_LOG_VB1("Attempted to deallocate a free address\n");
 			return;
 		}
 		current = current->next;
