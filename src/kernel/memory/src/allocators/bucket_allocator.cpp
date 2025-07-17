@@ -7,7 +7,7 @@
 #include <memory/paging.hpp>
 #include <memory/pmm.hpp>
 
-#define INITIAL_HEAP_SIZE 524288
+#define INITIAL_HEAP_SIZE 49152
 
 utils::Stack<uintptr_t> *freeLists[(MAX_HEAP_ORDER - MIN_HEAP_ORDER) + 1];
 

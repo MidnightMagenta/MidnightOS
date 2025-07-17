@@ -5,6 +5,7 @@ extern "C" {
 #endif
 
 #include <stdbool.h>
+#include <thread/atomic.h>
 
 typedef enum {
 	MDOS_STATUS_FLAG_PMM_AVAIL,
@@ -14,10 +15,10 @@ typedef enum {
 } KernelStatusFlag;
 
 typedef struct {
-	bool PMM_Avail;
-	bool VMM_Avail;
-	bool vmallocAvail;
-	bool bucketAllocatorAvail;
+	mdos_atomic_flag PMM_Avail;
+	mdos_atomic_flag VMM_Avail;
+	mdos_atomic_flag vmallocAvail;
+	mdos_atomic_flag bucketAllocatorAvail;
 } KernelStatus;
 
 void mdos_set_status_flag(KernelStatusFlag flag, bool value);
