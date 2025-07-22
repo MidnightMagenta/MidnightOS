@@ -7,6 +7,7 @@ LDS = kernel_linker.ld
 BUILD_DIR = .
 SOURCE_DIR = .
 FILES_DIR = .
+LIB_DIR = .
 IMAGE_DIR = $(FILES_DIR)/KRNL
 
 ELF_TARGET = kernel.elf
@@ -33,6 +34,7 @@ ASM_OBJS = $(patsubst $(SOURCE_DIR)%.asm, $(BUILD_DIR)%_asm.o, $(ASM_SRCS))
 OBJS = $(CRTI_OBJ) $(CRTBEGIN_OBJ) $(C_OBJS) $(CPP_OBJS) $(ASM_OBJS) $(CRTEND_OBJ) $(CRTN_OBJ)
 
 INCLUDE_DIRS = \
+	-I../monocypher \
 	-Ilibk/include \
 	-IIO/include \
 	-Imemory/include \
@@ -41,7 +43,10 @@ INCLUDE_DIRS = \
 	-Ierror/include \
 	-Imain/include \
 	-Ithread/include
-	
+
+LINKED_LIBS = \
+	-lmonocypher
+
 # Default flags
 CFLAGS = -g -ffreestanding -fshort-wchar -mno-red-zone -m64 -Wall -nostdlib -nostdinc \
 		-fno-builtin -fno-stack-protector -nostartfiles -nodefaultlibs
@@ -53,7 +58,7 @@ all: $(OBJS) link copy_build_files
 
 link:
 	@echo "\e[1;32m\n_____LINKING_____\e[0m"
-	$(LD) -T $(LDS) $(LDFLAGS) -o $(BUILD_DIR)/$(ELF_TARGET) $(OBJS)
+	$(LD) -T $(LDS) $(LDFLAGS) $(OBJS) $(LINKED_LIBS) -o $(BUILD_DIR)/$(ELF_TARGET)
 
 copy_build_files:
 	@echo "\e[1;32m\n_____COPYING_FILES_____\e[0m"

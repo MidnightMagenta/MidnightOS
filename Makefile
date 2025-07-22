@@ -5,6 +5,7 @@ OS_NAME = MidnightOS
 BUILD_DIR = $(abspath build)
 SOURCE_DIR = $(abspath src)
 DATA_DIR = $(abspath files)
+LIB_DIR = $(BUILD_DIR)/lib
 
 OVMF_BINARIES_DIR = ovmf-bins
 GNU_EFI_DIR = gnu-efi
@@ -42,13 +43,13 @@ C_F_FLAGS = -ffreestanding -fshort-wchar -fno-omit-frame-pointer -fno-builtin -f
 C_W_FLALGS = -Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion -Wundef \
 			 -Wcast-align -Wshift-overflow -Wdouble-promotion -Werror
 
-CFLAGS = -g -mno-red-zone -m64 -mcmodel=kernel -nostartfiles -nodefaultlibs -nostdlib $(C_W_FLALGS) $(C_F_FLAGS) $(C_COMPILE_DEFS)
+CFLAGS = -g -mno-red-zone -m64 -mcmodel=kernel -nostartfiles -nodefaultlibs -nostdlib $(C_F_FLAGS) $(C_COMPILE_DEFS)
 CPPFLAGS = $(CFLAGS) -fno-rtti -fno-use-cxa-atexit -std=c++20
 
 
 ACFLAGS = -f elf64
 
-LDFLAGS = -static -Bsymbolic -nostdlib
+LDFLAGS = -static -Bsymbolic -nostdlib -L$(LIB_DIR)
 
 rebuild: clean partial
 
@@ -71,8 +72,10 @@ build-bootloader:
 build-executables:
 	@echo "\e[1;32m\n_____BUILDING_EXECUTABLES_____\e[0m"
 	@mkdir -p $(BUILD_DIR)
+	@mkdir -p $(LIB_DIR)
 	$(MAKE) -C $(SOURCE_DIR) BUILD_DIR="$(BUILD_DIR)" \
 							FILES_DIR="$(DATA_DIR)" \
+							LIB_DIR="$(LIB_DIR)" \
 							CC="$(CC)" \
 							LD="$(LD)" \
 							AC="$(AC)" \
@@ -112,6 +115,7 @@ clean:
 	find $(SOURCE_DIR) -name "*.o" -type f -delete
 	find $(SOURCE_DIR) -name "*.so" -type f -delete
 	find $(BUILD_DIR) -name "*.o" -type f -delete
+	find $(BUILD_DIR) -name "*.a" -type f -delete
 	find $(BUILD_DIR) -name "*.so" -type f -delete
 	find $(BUILD_DIR) -name "*.efi" -type f -delete
 	find $(BUILD_DIR) -name "*.efi.debug" -type f -delete
