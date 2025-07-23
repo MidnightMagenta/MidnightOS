@@ -1,22 +1,8 @@
-export PATH := $(abspath tools/x86_64-elf-cross/bin):$(PATH)
+export TOPLEVEL_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+export MAKE_VARS := $(abspath vars.mk)
+include $(MAKE_VARS)
 
 OS_NAME = MidnightOS
-
-BUILD_DIR = $(abspath build)
-SOURCE_DIR = $(abspath src)
-DATA_DIR = $(abspath files)
-LIB_DIR = $(BUILD_DIR)/lib
-
-OVMF_BINARIES_DIR = ovmf-bins
-GNU_EFI_DIR = gnu-efi
-
-EMU = qemu-system-x86_64
-DBG = gdb
-CC = x86_64-elf-gcc
-AC = nasm
-LD = x86_64-elf-ld
-
-LOG_VERBOSITY = 2
 
 EMU_BASE_FLAGS = -drive file=$(BUILD_DIR)/$(OS_NAME).img,format=raw \
 				-m 2G \
@@ -33,23 +19,6 @@ DBG_FLAGS = -ex "target remote localhost:1234" \
 			-ex "symbol-file $(BUILD_DIR)/kernel/kernel.elf" \
 			-ex "set disassemble-next-line on" \
 			-ex "set step-mode on"
-
-
-C_COMPILE_DEFS = -D_LOG_VERBOSITY=$(LOG_VERBOSITY) -D_DEBUG
-C_OP_LVL = -O0
-
-C_F_FLAGS = -ffreestanding -fshort-wchar -fno-omit-frame-pointer -fno-builtin -fno-stack-protector \
-			-fno-exceptions -fno-tree-vectorize -fno-builtin-memcpy -fno-builtin-memset
-C_W_FLALGS = -Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion -Wundef \
-			 -Wcast-align -Wshift-overflow -Wdouble-promotion -Werror
-
-CFLAGS = -g -mno-red-zone -m64 -mcmodel=kernel -nostartfiles -nodefaultlibs -nostdlib $(C_F_FLAGS) $(C_COMPILE_DEFS)
-CPPFLAGS = $(CFLAGS) -fno-rtti -fno-use-cxa-atexit -std=c++20
-
-
-ACFLAGS = -f elf64
-
-LDFLAGS = -static -Bsymbolic -nostdlib -L$(LIB_DIR)
 
 rebuild: clean partial
 
@@ -73,17 +42,7 @@ build-executables:
 	@echo "\e[1;32m\n_____BUILDING_EXECUTABLES_____\e[0m"
 	@mkdir -p $(BUILD_DIR)
 	@mkdir -p $(LIB_DIR)
-	$(MAKE) -C $(SOURCE_DIR) BUILD_DIR="$(BUILD_DIR)" \
-							FILES_DIR="$(DATA_DIR)" \
-							LIB_DIR="$(LIB_DIR)" \
-							CC="$(CC)" \
-							LD="$(LD)" \
-							AC="$(AC)" \
-							CFLAGS="$(CFLAGS)" \
-							CPPFLAGS="$(CPPFLAGS)" \
-							LDFLAGS="$(LDFLAGS)" \
-							ACFLAGS="$(ACFLAGS)" \
-							all
+	$(MAKE) -C $(SOURCE_DIR) all
 
 update-img:
 	@echo "\e[1;32m\n_____BUILDING_IMAGE_____\e[0m"
@@ -91,11 +50,13 @@ update-img:
 	mmd -i $(BUILD_DIR)/$(OS_NAME).img ::/EFI
 	mmd -i $(BUILD_DIR)/$(OS_NAME).img ::/EFI/BOOT
 	mcopy -i $(BUILD_DIR)/$(OS_NAME).img $(BUILD_DIR)/bootloader/bootx64.efi ::/EFI/BOOT
-	mcopy -si $(BUILD_DIR)/$(OS_NAME).img $(DATA_DIR)/* ::
+	mcopy -si $(BUILD_DIR)/$(OS_NAME).img $(FILES_DIR)/* ::
 
 init-img:
 	@mkdir -p $(BUILD_DIR)
 	dd if=/dev/zero of=$(BUILD_DIR)/$(OS_NAME).img bs=512 count=93750
+
+gen-keys: $(KEY_HDR)
 
 run:
 	$(EMU) $(EMU_BASE_FLAGS)
@@ -120,3 +81,26 @@ clean:
 	find $(BUILD_DIR) -name "*.efi" -type f -delete
 	find $(BUILD_DIR) -name "*.efi.debug" -type f -delete
 	find $(BUILD_DIR) -name "*.elf" -type f -delete
+
+$(PUB_KEY) $(SEC_KEY):
+	@echo "Generating keypair"
+	mkdir -p $(KEYS_DIR)
+	md-keygen -pk $(PUB_KEY) -sk $(SEC_KEY)
+
+$(KEY_HDR): $(PUB_KEY)
+	@echo "#ifndef PUBLIC_KEY_H" 	> $@
+	@echo "#define PUBLIC_KEY_H" 	>> $@
+	@echo "#ifdef __cplusplus" 		>> $@
+	@echo 'extern "C" {'			>> $@
+	@echo "#endif" 					>> $@
+	@echo ""						>> $@
+	@echo "#include <stdint.h>"		>> $@	
+	@echo ""						>> $@
+	md-keytoarr -in $< -out $@
+	@echo ""						>> $@
+	@echo "#ifdef __cplusplus" 		>> $@
+	@echo '}'						>> $@
+	@echo "#endif" 					>> $@
+	@echo "#endif" 					>> $@
+
+$(KEY_HDR): $(PUB_KEY)

@@ -11,7 +11,6 @@
 #include <memory/new.hpp>
 #include <memory/paging.hpp>
 #include <memory/pmm.hpp>
-#include <monocypher.h>
 #include <stdint.h>
 
 void MdOS::init_krnl(BootInfo *bootInfo) {

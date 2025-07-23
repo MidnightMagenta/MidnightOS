@@ -1,14 +1,7 @@
-CC = .
-
-BUILD_DIR = .
+include $(MAKE_VARS)
 
 LIB_TARGET = libmonocypher.a
-
 OBJS = monocypher.o
-
-# Default flags
-CFLAGS ?= -g -ffreestanding -fshort-wchar -mno-red-zone -m64 -Wall -nostdlib -nostdinc \
-		-fno-builtin -fno-stack-protector -nostartfiles -nodefaultlibs
 
 all: $(OBJS) link
 

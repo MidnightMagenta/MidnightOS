@@ -42,7 +42,7 @@ VPATH = $(SRCDIR)
 
 GNU_EFI = $(abspath ../../gnu-efi)
 
-C_SRCS = $(shell find $(SOURCE_DIR) -name '*.c') $(shell find $(LIBC_DIR) -name '*.c')
+C_SRCS = $(shell find $(SRCDIR) -name '*.c') $(shell find $(LIBC_DIR) -name '*.c')
 OBJS = $(patsubst %.c, %.o, $(C_SRCS))
 
 include $(GNU_EFI)/Make.defaults
