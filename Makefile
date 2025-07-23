@@ -96,7 +96,7 @@ $(KEY_HDR): $(PUB_KEY)
 	@echo ""						>> $@
 	@echo "#include <stdint.h>"		>> $@	
 	@echo ""						>> $@
-	md-keytoarr -in $< -out $@
+	md-keytoarr -in $< -out $@ --var public_key
 	@echo ""						>> $@
 	@echo "#ifdef __cplusplus" 		>> $@
 	@echo '}'						>> $@
