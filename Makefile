@@ -24,13 +24,15 @@ DBG_FLAGS = -ex "target remote localhost:1234" \
 		build-executables update-img init-img gen-keys run run-extra-info debug \
 		clean clean-all
 
+.NOTPARALLEL: all rebuild rebuild-all
+
+partial: update-img
+
+all: init-img build-gnu-efi partial
+
 rebuild: clean partial
 
 rebuild-all: clean-all all
-
-partial: build update-img
-
-all: init-img build-gnu-efi partial
 
 build: build-bootloader build-executables
 
@@ -48,7 +50,7 @@ build-executables:
 	@mkdir -p $(LIB_DIR)
 	$(MAKE) -C $(SOURCE_DIR) all
 
-update-img:
+update-img: build
 	@echo "\e[1;32m\n_____BUILDING_IMAGE_____\e[0m"
 	mformat -i $(BUILD_DIR)/$(OS_NAME).img -F ::
 	mmd -i $(BUILD_DIR)/$(OS_NAME).img ::/EFI

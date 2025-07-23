@@ -45,13 +45,13 @@ LINKED_LIBS = \
 
 .PHONY: all link copy_build_files
 
-all: $(OBJS) link copy_build_files
+all: copy_build_files
 
-link:
+link: $(OBJS)
 	@echo "\e[1;32m\n_____LINKING_____\e[0m"
 	$(LD) -T $(LDS) $(LDFLAGS) $(OBJS) $(LINKED_LIBS) -o $(LOCAL_BUILD_DIR)/$(ELF_TARGET)
 
-copy_build_files:
+copy_build_files: link
 	@echo "\e[1;32m\n_____COPYING_FILES_____\e[0m"
 	mkdir -p $(IMAGE_DIR)
 	cp $(LOCAL_BUILD_DIR)/$(ELF_TARGET) $(IMAGE_DIR)/$(ELF_TARGET)

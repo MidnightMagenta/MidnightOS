@@ -1,6 +1,7 @@
 include $(MAKE_VARS)
 
 .PHONY: all build_monocypher build_kernel
+.NOTPARALLEL: all
 
 all: build_monocypher build_kernel
 
