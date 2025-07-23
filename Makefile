@@ -20,6 +20,10 @@ DBG_FLAGS = -ex "target remote localhost:1234" \
 			-ex "set disassemble-next-line on" \
 			-ex "set step-mode on"
 
+.PHONY: rebuild rebuild-all partial all build build-gnu-efi build-bootloader \
+		build-executables update-img init-img gen-keys run run-extra-info debug \
+		clean clean-all
+
 rebuild: clean partial
 
 rebuild-all: clean-all all

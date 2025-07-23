@@ -42,6 +42,8 @@ INCLUDE_DIRS = \
 LINKED_LIBS = \
 	-lmonocypher
 
+.PHONY: all link copy_build_files
+
 all: $(OBJS) link copy_build_files
 
 link:

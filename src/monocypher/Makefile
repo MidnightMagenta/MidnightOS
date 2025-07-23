@@ -3,6 +3,8 @@ include $(MAKE_VARS)
 LIB_TARGET = libmonocypher.a
 OBJS = monocypher.o
 
+.PHONY: all link
+
 all: $(OBJS) link
 
 link:
