@@ -2,9 +2,9 @@ export TOPLEVEL_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 export MAKE_VARS := $(abspath vars.mk)
 include $(MAKE_VARS)
 
-OS_NAME = MidnightOS
+GNU_EFI_NOTE := $(BUILD_DIR)/.gnu-efi-note
 
-EMU_BASE_FLAGS = -drive file=$(BUILD_DIR)/$(OS_NAME).img,format=raw \
+EMU_BASE_FLAGS = -drive file=$(IMAGE),format=raw \
 				-m 2G \
 				-cpu qemu64 \
 				-vga std \
@@ -20,26 +20,18 @@ DBG_FLAGS = -ex "target remote localhost:1234" \
 			-ex "set disassemble-next-line on" \
 			-ex "set step-mode on"
 
-.PHONY: rebuild rebuild-all partial all build build-gnu-efi build-bootloader \
-		build-executables update-img init-img gen-keys run run-extra-info debug \
-		clean clean-all
+.PHONY: rebuild all build build-bootloader clean clean-all \
+		build-executables update-img gen-keys run run-extra-info debug \
 
-.NOTPARALLEL: all rebuild rebuild-all
+.NOTPARALLEL: rebuild
 
-partial: update-img
+all: update-img
 
-all: init-img build-gnu-efi partial
-
-rebuild: clean partial
-
-rebuild-all: clean-all all
+rebuild: clean all
 
 build: build-bootloader build-executables
 
-build-gnu-efi:
-	$(MAKE) -C $(GNU_EFI_DIR) all
-
-build-bootloader:
+build-bootloader: $(GNU_EFI_NOTE)
 	@echo "\e[1;32m\n_____BUILDING_BOOTLOADER_____\e[0m"
 	@mkdir -p $(BUILD_DIR)
 	$(MAKE) -C $(SOURCE_DIR)/bootloader BUILD_DIR="$(BUILD_DIR)/bootloader" all
@@ -50,17 +42,13 @@ build-executables:
 	@mkdir -p $(LIB_DIR)
 	$(MAKE) -C $(SOURCE_DIR) all
 
-update-img: build
+update-img: $(IMAGE) build
 	@echo "\e[1;32m\n_____BUILDING_IMAGE_____\e[0m"
-	mformat -i $(BUILD_DIR)/$(OS_NAME).img -F ::
-	mmd -i $(BUILD_DIR)/$(OS_NAME).img ::/EFI
-	mmd -i $(BUILD_DIR)/$(OS_NAME).img ::/EFI/BOOT
-	mcopy -i $(BUILD_DIR)/$(OS_NAME).img $(BUILD_DIR)/bootloader/bootx64.efi ::/EFI/BOOT
-	mcopy -si $(BUILD_DIR)/$(OS_NAME).img $(FILES_DIR)/* ::
-
-init-img:
-	@mkdir -p $(BUILD_DIR)
-	dd if=/dev/zero of=$(BUILD_DIR)/$(OS_NAME).img bs=512 count=93750
+	mformat -i $(IMAGE) -F ::
+	mmd -i $(IMAGE) ::/EFI
+	mmd -i $(IMAGE) ::/EFI/BOOT
+	mcopy -i $(IMAGE) $(BUILD_DIR)/bootloader/bootx64.efi ::/EFI/BOOT
+	mcopy -si $(IMAGE) $(FILES_DIR)/* ::
 
 gen-keys: $(KEY_HDR)
 
@@ -76,6 +64,7 @@ debug:
 
 clean-all: clean
 	$(MAKE) -C gnu-efi clean
+	rm -rf $(GNU_EFI_NOTE)
 	rm -rf $(BUILD_DIR)
 
 clean:
@@ -87,6 +76,14 @@ clean:
 	find $(BUILD_DIR) -name "*.efi" -type f -delete
 	find $(BUILD_DIR) -name "*.efi.debug" -type f -delete
 	find $(BUILD_DIR) -name "*.elf" -type f -delete
+
+$(GNU_EFI_NOTE):
+	$(MAKE) -C $(GNU_EFI_DIR) all
+	@touch $@
+
+$(IMAGE):
+	@mkdir -p $(BUILD_DIR)
+	dd if=/dev/zero of=$(IMAGE) bs=512 count=93750
 
 $(PUB_KEY) $(SEC_KEY):
 	@echo "Generating keypair"

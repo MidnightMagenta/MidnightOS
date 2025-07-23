@@ -10,6 +10,7 @@ SIGN := md-sign --objcopy $(OBJCPY)
 
 BUILD_DIR := $(abspath $(TOPLEVEL_DIR)/build)
 LIB_DIR := $(BUILD_DIR)/lib
+IMAGE = $(BUILD_DIR)/disk.img
 SOURCE_DIR := $(abspath $(TOPLEVEL_DIR)/src)
 FILES_DIR := $(abspath $(TOPLEVEL_DIR)/files)
 KEYS_DIR := $(abspath $(TOPLEVEL_DIR)/keys)
