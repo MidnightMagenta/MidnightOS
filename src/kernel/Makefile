@@ -7,6 +7,7 @@ LDS = kernel_linker.ld
 IMAGE_DIR = $(FILES_DIR)/KRNL
 
 ELF_TARGET = kernel.elf
+BUILD_TARGET = $(LOCAL_BUILD_DIR)/kernel.elf
 
 CRTI_SRC = $(shell find $(LOCAL_SOURCE_DIR) -name 'crti.S')
 CRTN_SRC = $(shell find $(LOCAL_SOURCE_DIR) -name 'crtn.S')
@@ -43,18 +44,19 @@ INCLUDE_DIRS = \
 LINKED_LIBS = \
 	-lmonocypher
 
-.PHONY: all link copy_build_files
+.PHONY: all copy_build_files
 
 all: copy_build_files
 
-link: $(OBJS)
-	@echo "\e[1;32m\n_____LINKING_____\e[0m"
-	$(LD) -T $(LDS) $(LDFLAGS) $(OBJS) $(LINKED_LIBS) -o $(LOCAL_BUILD_DIR)/$(ELF_TARGET)
-
-copy_build_files: link
+copy_build_files: $(BUILD_TARGET)
 	@echo "\e[1;32m\n_____COPYING_FILES_____\e[0m"
 	mkdir -p $(IMAGE_DIR)
-	cp $(LOCAL_BUILD_DIR)/$(ELF_TARGET) $(IMAGE_DIR)/$(ELF_TARGET)
+	cp $(BUILD_TARGET) $(IMAGE_DIR)/$(ELF_TARGET)
+
+$(BUILD_TARGET): $(OBJS) $(SEC_KEY)
+	@echo "\e[1;32m\n_____LINKING_____\e[0m"
+	$(LD) -T $(LDS) $(LDFLAGS) $(OBJS) $(LINKED_LIBS) -o $(BUILD_TARGET)
+	$(SIGN) -k $(SEC_KEY) -f $(BUILD_TARGET)
 
 $(LOCAL_BUILD_DIR)/%.o: $(LOCAL_SOURCE_DIR)/%.c $(C_HDRS)
 	@mkdir -p $(dir $@)

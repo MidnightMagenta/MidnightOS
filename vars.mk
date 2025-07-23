@@ -6,7 +6,7 @@ CC := $(PREFIX)-gcc
 AC := nasm
 LD := $(PREFIX)-ld
 OBJCPY := $(PREFIX)-objcopy
-SIGN := md-sign --objcopy $(OBJCPY)
+SIGN := md-sign --objcpy $(OBJCPY)
 
 BUILD_DIR := $(abspath $(TOPLEVEL_DIR)/build)
 LIB_DIR := $(BUILD_DIR)/lib

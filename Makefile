@@ -2,7 +2,7 @@ export TOPLEVEL_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 export MAKE_VARS := $(abspath vars.mk)
 include $(MAKE_VARS)
 
-GNU_EFI_NOTE := $(BUILD_DIR)/.gnu-efi-note
+GNU_EFI_BUILT_NOTE := $(BUILD_DIR)/.gnu-efi-note
 
 EMU_BASE_FLAGS = -drive file=$(IMAGE),format=raw \
 				-m 2G \
@@ -31,7 +31,7 @@ rebuild: clean all
 
 build: build-bootloader build-executables
 
-build-bootloader: $(GNU_EFI_NOTE)
+build-bootloader: $(GNU_EFI_BUILT_NOTE)
 	@echo "\e[1;32m\n_____BUILDING_BOOTLOADER_____\e[0m"
 	@mkdir -p $(BUILD_DIR)
 	$(MAKE) -C $(SOURCE_DIR)/bootloader BUILD_DIR="$(BUILD_DIR)/bootloader" all
@@ -64,7 +64,7 @@ debug:
 
 clean-all: clean
 	$(MAKE) -C gnu-efi clean
-	rm -rf $(GNU_EFI_NOTE)
+	rm -rf $(GNU_EFI_BUILT_NOTE)
 	rm -rf $(BUILD_DIR)
 
 clean:
@@ -77,7 +77,7 @@ clean:
 	find $(BUILD_DIR) -name "*.efi.debug" -type f -delete
 	find $(BUILD_DIR) -name "*.elf" -type f -delete
 
-$(GNU_EFI_NOTE):
+$(GNU_EFI_BUILT_NOTE):
 	$(MAKE) -C $(GNU_EFI_DIR) all
 	@touch $@
 
