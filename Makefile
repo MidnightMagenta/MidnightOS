@@ -34,6 +34,7 @@ build: build-bootloader build-executables
 build-bootloader: $(GNU_EFI_BUILT_NOTE)
 	@echo "\e[1;32m\n_____BUILDING_BOOTLOADER_____\e[0m"
 	@mkdir -p $(BUILD_DIR)
+	$(MAKE) -C $(SOURCE_DIR)/bootx64 BUILD_DIR="$(BUILD_DIR)/bootx64" all
 	$(MAKE) -C $(SOURCE_DIR)/bootloader BUILD_DIR="$(BUILD_DIR)/bootloader" all
 
 build-executables:
@@ -47,7 +48,9 @@ update-img: $(IMAGE) build
 	mformat -i $(IMAGE) -F ::
 	mmd -i $(IMAGE) ::/EFI
 	mmd -i $(IMAGE) ::/EFI/BOOT
-	mcopy -i $(IMAGE) $(BUILD_DIR)/bootloader/bootx64.efi ::/EFI/BOOT
+	mmd -i $(IMAGE) ::/BOOT
+	mcopy -i $(IMAGE) $(BUILD_DIR)/bootx64/BOOTX64.EFI ::/EFI/BOOT
+	mcopy -i $(IMAGE) $(BUILD_DIR)/bootloader/MDOSBOOT.EFI ::/BOOT
 	mcopy -si $(IMAGE) $(FILES_DIR)/* ::
 
 gen-keys: $(KEY_HDR)
