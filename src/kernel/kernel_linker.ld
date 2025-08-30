@@ -7,36 +7,28 @@ SECTIONS
     . = 0xFFFFFFFF80000000;
     __kernel_start = .;
 
-    .text : ALIGN(0x1000)
-    {
+    .text : ALIGN(0x1000) {
         __text_start = .;
-        *(.init*)
-        *(.text)
-        *(.fini*)
+        *(.text*)
         __text_end = .;
     }
 
-    .rodata : ALIGN(0x1000)
-    {
+    .rodata : ALIGN(0x1000) {
         __rodata_start = .;
-        *(.rodata)
+        *(.rodata*)
         __rodata_end = .;
     }
 
-    .data : ALIGN(0x1000)
-    {
+    .data : ALIGN(0x1000) {
         __data_start = .;
-        *(.data)
-        *(.ctor*)
-        *(.dtor*)
+        *(.data*)
         __data_end = .;
     }
 
-    .bss (NOLOAD) : ALIGN(0x1000)
-    {
+    .bss (NOLOAD) : ALIGN(0x1000) {
         __bss_start = .;
         *(COMMON)
-        *(.bss)
+        *(.bss*)
         __bss_end = .;
         __bss_boot_stack_start = .;
         . = ALIGN(0x1000);

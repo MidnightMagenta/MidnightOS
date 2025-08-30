@@ -1,13 +1,10 @@
 include $(MAKE_VARS)
 
-.PHONY: all build_monocypher build_kernel
+.PHONY: all build_kernel
 
 all: build_kernel
 
-build_monocypher:
-	@echo "\e[1;32m\n_____BUILDING_MONOCYPHER_____\e[0m"
-	$(MAKE) -C $(SOURCE_DIR)/monocypher all
-
-build_kernel: build_monocypher
-	@echo "\e[1;32m\n_____BUILDING_KERNEL_____\e[0m"
-	$(MAKE) -C $(SOURCE_DIR)/kernel	all
+build_kernel:
+	@$(MAKE) -C $(SOURCE_DIR)/bootx64 BUILD_DIR="$(BUILD_DIR)/bootx64" all
+	@$(MAKE) -C $(SOURCE_DIR)/bootloader BUILD_DIR="$(BUILD_DIR)/bootloader" all
+	@$(MAKE) -C $(SOURCE_DIR)/kernel all
