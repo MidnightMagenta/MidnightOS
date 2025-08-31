@@ -12,10 +12,11 @@ BUILD_DIR := $(abspath $(TOPLEVEL_DIR)/build)
 LIB_DIR := $(BUILD_DIR)/lib
 SOURCE_DIR := $(abspath $(TOPLEVEL_DIR)/src)
 FILES_DIR := $(abspath $(TOPLEVEL_DIR)/files)
-KEYS_DIR := $(abspath $(TOPLEVEL_DIR)/keys)
+SHELL_DIR := $(abspath $(TOPLEVEL_DIR)/shell)
 OVMF_BINARIES_DIR := $(abspath $(TOPLEVEL_DIR)ovmf-bins)
 GNU_EFI_DIR := $(abspath $(TOPLEVEL_DIR)gnu-efi)
 
+UPDATEIMG_SH := $(SHELL_DIR)/updateimg.sh
 IMAGE = $(BUILD_DIR)/disk.img
 
 C_COMPILE_DEFS = -D_DEBUG

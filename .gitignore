@@ -1,6 +1,7 @@
 *.o
 *.so
 *.efi
+*.EFI
 *.a
 *.lib
 *.img

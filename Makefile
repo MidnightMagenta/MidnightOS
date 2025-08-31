@@ -14,13 +14,15 @@ EMU_BASE_FLAGS = -drive file=$(IMAGE),format=raw 																		\
 				-machine q35
 EMU_DBG_FLAGS = -s -S -d guest_errors,cpu_reset,int -no-reboot -no-shutdown
 
-DBG_FLAGS = -ex "target remote localhost:1234" 																			\
-			-ex "symbol-file $(BUILD_DIR)/kernel/kernel.elf" 															\
+DBG_FLAGS = -ex "symbol-file $(BUILD_DIR)/kernel/kernel.elf" 															\
+			-ex "target remote localhost:1234" 																			\
 			-ex "set disassemble-next-line on" 																			\
 			-ex "set step-mode on"
 
-.PHONY: rebuild all build clean clean-all 																				\
-		build-executables update-img gen-keys run run-extra-info debug 													\
+DISK_GUID = f953b4de-e77f-4f0b-a14e-2b29080599cf
+ESP_GUID = 0cc13370-53ec-4cdb-8c3d-4185950e2581
+
+.PHONY: rebuild all build clean clean-all update-img run run-extra debug
 
 .NOTPARALLEL: rebuild
 
@@ -28,36 +30,29 @@ all: update-img
 
 rebuild: clean all
 
-build: build-executables
-
 build: $(GNU_EFI_BUILT_NOTE)
 	@mkdir -p $(BUILD_DIR)
 	@mkdir -p $(LIB_DIR)
+	@mkdir -p $(FILES_DIR)/EFI/BOOT $(FILES_DIR)/BOOT
 	@$(MAKE) -C $(SOURCE_DIR) all
+	@cp $(BUILD_DIR)/bootloader/bootx64/BOOTX64.EFI $(FILES_DIR)/EFI/BOOT
+	@cp $(BUILD_DIR)/bootloader/mdosboot/MDOSBOOT.EFI $(FILES_DIR)/BOOT
 
 update-img: $(IMAGE) build
-	@mformat -i $(IMAGE) -F ::
-	@mmd -i $(IMAGE) ::/EFI
-	@mmd -i $(IMAGE) ::/EFI/BOOT
-	@mmd -i $(IMAGE) ::/BOOT
-	@mcopy -i $(IMAGE) $(BUILD_DIR)/bootx64/BOOTX64.EFI ::/EFI/BOOT
-	@mcopy -i $(IMAGE) $(BUILD_DIR)/bootloader/MDOSBOOT.EFI ::/BOOT
-	@mcopy -si $(IMAGE) $(FILES_DIR)/* ::
-
-gen-keys: $(KEY_HDR)
+	sudo sh $(UPDATEIMG_SH) "$(IMAGE)" "$(FILES_DIR)"
 
 run:
-	$(EMU) $(EMU_BASE_FLAGS)
+	@$(EMU) $(EMU_BASE_FLAGS)
 
 run-extra:
-	$(EMU) $(EMU_BASE_FLAGS) $(EMU_DBG_FLAGS)
+	@$(EMU) $(EMU_BASE_FLAGS) $(EMU_DBG_FLAGS)
 
 debug:
-	$(EMU) $(EMU_BASE_FLAGS) $(EMU_DBG_FLAGS) &
-	$(DBG) $(DBG_FLAGS)
+	@$(EMU) $(EMU_BASE_FLAGS) $(EMU_DBG_FLAGS) &
+	@$(DBG) $(DBG_FLAGS)
 
 clean-all: clean
-	$(MAKE) -C gnu-efi clean
+	$(MAKE) -C $(GNU_EFI_DIR) clean
 	rm -rf $(GNU_EFI_BUILT_NOTE)
 	rm -rf $(BUILD_DIR)
 
@@ -78,3 +73,5 @@ $(GNU_EFI_BUILT_NOTE):
 $(IMAGE):
 	@mkdir -p $(BUILD_DIR)
 	dd if=/dev/zero of=$(IMAGE) bs=512 count=93750
+	sgdisk -s $(IMAGE) --disk-guid=$(DISK_GUID)
+	sgdisk -s $(IMAGE) --largest-new=1 --typecode=1:ef00 --partition-guid=1:$(ESP_GUID)

@@ -40,9 +40,9 @@ EFI_TARGET = BOOTX64.EFI
 
 VPATH = $(SRCDIR)
 
-GNU_EFI = $(abspath ../../gnu-efi)
+GNU_EFI = $(abspath ../../../gnu-efi)
 
-C_SRCS = $(shell find $(SRCDIR) -name '*.c') $(shell find $(LIBC_DIR) -name '*.c')
+C_SRCS = $(shell find $(SRCDIR) -name '*.c')
 OBJS = $(patsubst %.c, %.o, $(C_SRCS))
 
 include $(GNU_EFI)/Make.defaults
@@ -65,7 +65,7 @@ LOADLIBES	+= -lefi -lgnuefi
 LOADLIBES	+= $(LIBGCC)
 LOADLIBES	+= -T $(LDSCRIPT)
 
-TARGET_APPS =$(EFI_TARGET)
+TARGET_APPS = $(EFI_TARGET)
 TARGET_BSDRIVERS =
 TARGET_RTDRIVERS =
 
@@ -101,12 +101,12 @@ clean:
 
 .PHONY: install
 
-$(EFI_TARGET): $(EFI_TARGET:.EFI=.so)
+$(TARGETS): $(TARGETS:.EFI=.so)
 	$(OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .rodata \
 		-j .rel -j .rela -j .rel.* -j .rela.* -j .rel* -j .rela* \
 		-j .areloc -j .reloc $(FORMAT) $< $@
 
-$(EFI_TARGET:.EFI=.so): $(OBJS)
+$(TARGETS:.EFI=.so): $(OBJS)
 	$(LD) $(LDFLAGS) -o $@ $^ $(LOADLIBES)
 
 include $(GNU_EFI)/Make.rules

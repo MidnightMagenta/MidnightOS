@@ -1,6 +1,8 @@
 #include <efi.h>
 #include <efilib.h>
 
+// load necessary drivers and call mdosboot.efi
+
 EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
 	EFI_STATUS status;
 	InitializeLib(imageHandle, systemTable);
