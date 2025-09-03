@@ -8,6 +8,7 @@
 *.elf
 
 build/
+docs/
 keys/
 .vscode/
 .cache/
