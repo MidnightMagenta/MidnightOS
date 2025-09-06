@@ -1,6 +1,8 @@
 export TOPLEVEL_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 export MAKE_VARS := $(abspath vars.mk)
+export MAKE_TARGETS := $(abspath targets.mk)
 include $(MAKE_VARS)
+include $(MAKE_TARGETS)
 
 GNU_EFI_BUILT_NOTE := $(BUILD_DIR)/.gnu-efi-note
 
@@ -22,23 +24,33 @@ DBG_FLAGS = -ex "symbol-file $(BUILD_DIR)/kernel/kernel.elf" 															\
 DISK_GUID = f953b4de-e77f-4f0b-a14e-2b29080599cf
 ESP_GUID = 0cc13370-53ec-4cdb-8c3d-4185950e2581
 
-.PHONY: rebuild all build clean clean-all update-img run run-extra debug
+.PHONY: rebuild all build clean clean-all image run run-extra debug bootlaoder kernel
 
 .NOTPARALLEL: rebuild
 
-all: update-img
+all: image
 
 rebuild: clean all
 
 build: $(GNU_EFI_BUILT_NOTE)
 	@mkdir -p $(BUILD_DIR)
 	@mkdir -p $(LIB_DIR)
-	@mkdir -p $(FILES_DIR)/EFI/BOOT $(FILES_DIR)/BOOT
 	@$(MAKE) -C $(SOURCE_DIR) all
-	@cp $(BUILD_DIR)/bootloader/bootx64/BOOTX64.EFI $(FILES_DIR)/EFI/BOOT
-	@cp $(BUILD_DIR)/bootloader/mdosboot/MDOSBOOT.EFI $(FILES_DIR)/BOOT
 
-update-img: $(IMAGE) build
+bootlaoder: $(GNU_EFI_BUILT_NOTE)
+	@mkdir -p $(BUILD_DIR)
+	@$(MAKE) -C $(SOURCE_DIR) bootlaoder
+
+kernel:
+	@mkdir -p $(BUILD_DIR)
+	@mkdir -p $(LIB_DIR)
+	@$(MAKE) -C $(SOURCE_DIR) kernel
+
+image: $(IMAGE) build
+	@mkdir -p $(FILES_DIR)/EFI/BOOT $(FILES_DIR)/BOOT $(FILES_DIR)/MdOS/bin 
+	@cp $(KERNEL_BUILD_TARGET) $(FILES_DIR)/MdOS/bin
+	@cp $(BOOTX64_BUILD_TARGET) $(FILES_DIR)/EFI/BOOT
+	@cp $(MDOSBOOT_BUILD_TAGET) $(FILES_DIR)/BOOT
 	sudo sh $(UPDATEIMG_SH) "$(IMAGE)" "$(FILES_DIR)"
 
 run:

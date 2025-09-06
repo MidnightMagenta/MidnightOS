@@ -10,7 +10,7 @@ EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
 	EFI_HANDLE *handles;
 	UINTN handleCount;
 
-	status = BS->LocateHandleBuffer(ByProtocol, &gEfiSimpleFileSystemProtocolGuid, NULL, &handleCount, &handles);
+	status = gBS->LocateHandleBuffer(ByProtocol, &gEfiSimpleFileSystemProtocolGuid, NULL, &handleCount, &handles);
 	if (EFI_ERROR(status)) { return status; }
 
 	for (UINTN i = 0; i < handleCount; i++) {
@@ -18,7 +18,7 @@ EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
 		EFI_FILE_PROTOCOL *root;
 		EFI_FILE_PROTOCOL *file;
 
-		status = BS->HandleProtocol(handles[i], &gEfiSimpleFileSystemProtocolGuid, (void **) &fs);
+		status = gBS->HandleProtocol(handles[i], &gEfiSimpleFileSystemProtocolGuid, (void **) &fs);
 		if (EFI_ERROR(status)) { continue; }
 
 		status = fs->OpenVolume(fs, &root);
@@ -30,14 +30,17 @@ EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
 		EFI_HANDLE newImageHandle;
 		EFI_DEVICE_PATH_PROTOCOL *path = FileDevicePath(handles[i], L"\\BOOT\\MDOSBOOT.EFI");
 
-		status = BS->LoadImage(FALSE, imageHandle, path, NULL, 0, &newImageHandle);
+		status = gBS->LoadImage(FALSE, imageHandle, path, NULL, 0, &newImageHandle);
+		if (EFI_ERROR(status)) { 
+			Print(L"%lx\n\r", status);
+			return status; 
+		}
+
+		status = gBS->StartImage(newImageHandle, NULL, NULL);
 		if (EFI_ERROR(status)) { return status; }
 
-		status = BS->StartImage(newImageHandle, NULL, NULL);
-		if (EFI_ERROR(status)) { return status; }
-
-		BS->UnloadImage(newImageHandle);
-		BS->FreePool(handles);
+		gBS->UnloadImage(newImageHandle);
+		gBS->FreePool(handles);
 		return EFI_SUCCESS;
 	}
 

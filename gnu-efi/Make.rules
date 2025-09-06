@@ -48,19 +48,25 @@
 		$(FORMAT) $*.so $@
 
 %.so: %.o
-	$(LD) $(LDFLAGS) $^ -o $@ $(LOADLIBES)
+	@echo "Compiling: $<"
+	@$(LD) $(LDFLAGS) $^ -o $@ $(LOADLIBES)
 
 %.o: %.c
-	$(CC) $(INCDIR) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
+	@echo "Compiling: $<"
+	@$(CC) $(INCDIR) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
 
 %.s: %.c
-	$(CC) $(INCDIR) $(CFLAGS) $(CPPFLAGS) -S $< -o $@
+	@echo "Compiling: $<"
+	@$(CC) $(INCDIR) $(CFLAGS) $(CPPFLAGS) -S $< -o $@
 
 %.i: %.c
-	$(CC) $(INCDIR) $(CFLAGS) $(CPPFLAGS) -E $< -o $@
+	@echo "Compiling: $<"
+	@$(CC) $(INCDIR) $(CFLAGS) $(CPPFLAGS) -E $< -o $@
 
 %.o: %.S
-	$(CC) $(INCDIR) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
+	@echo "Compiling: $<"
+	@$(CC) $(INCDIR) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
 
 %.s: %.S
-	$(CC) $(INCDIR) $(CFLAGS) $(CPPFLAGS) -E $< -o $@
+	@echo "Compiling: $<"
+	@$(CC) $(INCDIR) $(CFLAGS) $(CPPFLAGS) -E $< -o $@

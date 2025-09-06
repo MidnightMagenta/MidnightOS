@@ -1,9 +1,13 @@
 include $(MAKE_VARS)
 
-.PHONY: all build_kernel
+.PHONY: all bootloader kernel
 
-all: build_kernel
+all: bootloader kernel
 
-build_kernel:
+bootloader:
 	@$(MAKE) -C bootloader all
+	
+kernel:
 	@$(MAKE) -C kernel all
+	
+	
