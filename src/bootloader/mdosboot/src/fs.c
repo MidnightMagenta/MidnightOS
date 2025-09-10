@@ -1,6 +1,7 @@
 #include "../include/fs.h"
+#include "../include/debug.h"
 
-static BOOLEAN EFIAPI match_node_guid(EFI_DEVICE_PATH_PROTOCOL *dp, EFI_GUID *guid) {
+static BOOLEAN match_node_guid(EFI_DEVICE_PATH_PROTOCOL *dp, EFI_GUID *guid) {
 	for (EFI_DEVICE_PATH_PROTOCOL *node = dp; !IsDevicePathEnd(node); node = NextDevicePathNode(node)) {
 		if (DevicePathType(node) == MEDIA_DEVICE_PATH && DevicePathSubType(node) == MEDIA_HARDDRIVE_DP) {
 			HARDDRIVE_DEVICE_PATH *hdp = (HARDDRIVE_DEVICE_PATH *) node;
@@ -14,7 +15,7 @@ static BOOLEAN EFIAPI match_node_guid(EFI_DEVICE_PATH_PROTOCOL *dp, EFI_GUID *gu
 	return FALSE;
 }
 
-EFI_STATUS EFIAPI find_filesystem_for_guid(IN EFI_GUID *guid,
+EFI_STATUS find_filesystem_for_guid(IN EFI_GUID *guid,
 									OUT EFI_HANDLE *handle,
 									OUT EFI_SIMPLE_FILE_SYSTEM_PROTOCOL **filesystem) {
 	if (guid == NULL || CompareGuid(guid, &NullGuid) || handle == NULL || filesystem == NULL) {
@@ -49,7 +50,7 @@ EFI_STATUS EFIAPI find_filesystem_for_guid(IN EFI_GUID *guid,
 	return EFI_NOT_FOUND;
 }
 
-EFI_STATUS EFIAPI find_filesystem_with_file(IN CHAR16 *path,
+EFI_STATUS find_filesystem_with_file(IN CHAR16 *path,
 									 OUT EFI_HANDLE *handle,
 									 OUT EFI_SIMPLE_FILE_SYSTEM_PROTOCOL **filesystem) {
 	if (path == NULL || handle == NULL || filesystem == NULL) { return EFI_INVALID_PARAMETER; }
@@ -93,7 +94,7 @@ EFI_STATUS EFIAPI find_filesystem_with_file(IN CHAR16 *path,
 	return EFI_NOT_FOUND;
 }
 
-EFI_STATUS EFIAPI open_file(IN OPTIONAL EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *filesystem,
+EFI_STATUS open_file(IN OPTIONAL EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *filesystem,
 					 IN OPTIONAL EFI_FILE *root,
 					 IN CHAR16 *path,
 					 IN UINT64 openMode,
@@ -105,4 +106,30 @@ EFI_STATUS EFIAPI open_file(IN OPTIONAL EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *filesys
 	}
 
 	return root->Open(root, file, path, openMode, attributes);
+}
+
+EFI_STATUS get_file_size(IN EFI_FILE *file, OUT UINTN *fileSize) {
+	if (file == NULL || fileSize == NULL) { return EFI_INVALID_PARAMETER; }
+	EFI_STATUS res;
+
+	UINTN fileInfoBufferSize = SIZE_OF_EFI_FILE_INFO + 200;
+	EFI_FILE_INFO *fileInfo = NULL;
+	res = gBS->AllocatePool(EfiLoaderData, fileInfoBufferSize, (void **) &fileInfo);
+	if (EFI_ERROR(res)) {
+		DBG_MSG("[%a %d] Failed to get file info with: %lx\n\r", __func__, __LINE__, res);
+		file->Close(file);
+		return res;
+	}
+
+	res = file->GetInfo(file, &gEfiFileInfoGuid, &fileInfoBufferSize, fileInfo);
+	if (EFI_ERROR(res)) {
+		DBG_MSG("[%a %d] Failed to get file info with: %lx\n\r", __func__, __LINE__, res);
+		gBS->FreePool(fileInfo);
+		file->Close(file);
+		return res;
+	}
+
+	*fileSize = fileInfo->FileSize;
+	gBS->FreePool(fileInfo);
+	return EFI_SUCCESS;
 }

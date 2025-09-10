@@ -2,7 +2,6 @@ include $(MAKE_VARS)
 include $(MAKE_TARGETS)
 
 LOCAL_SOURCE_DIR := .
-LOCAL_BUILD_DIR := $(KERNEL_BUILD_DIR)
 
 LDS = kernel_linker.ld
 

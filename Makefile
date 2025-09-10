@@ -51,7 +51,7 @@ image: $(IMAGE) build
 	@cp $(KERNEL_BUILD_TARGET) $(FILES_DIR)/MdOS/bin
 	@cp $(BOOTX64_BUILD_TARGET) $(FILES_DIR)/EFI/BOOT
 	@cp $(MDOSBOOT_BUILD_TAGET) $(FILES_DIR)/BOOT
-	sudo sh $(UPDATEIMG_SH) "$(IMAGE)" "$(FILES_DIR)"
+	@sudo sh $(UPDATEIMG_SH) "$(IMAGE)" "$(FILES_DIR)"
 
 run:
 	@$(EMU) $(EMU_BASE_FLAGS)
@@ -64,26 +64,26 @@ debug:
 	@$(DBG) $(DBG_FLAGS)
 
 clean-all: clean
-	$(MAKE) -C $(GNU_EFI_DIR) clean
-	rm -rf $(GNU_EFI_BUILT_NOTE)
-	rm -rf $(BUILD_DIR)
+	@$(MAKE) -C $(GNU_EFI_DIR) clean
+	@rm -rf $(GNU_EFI_BUILT_NOTE)
+	@rm -rf $(BUILD_DIR)
 
 clean:
-	find $(SOURCE_DIR) -name "*.o" -type f -delete
-	find $(SOURCE_DIR) -name "*.so" -type f -delete
-	find $(BUILD_DIR) -name "*.o" -type f -delete
-	find $(BUILD_DIR) -name "*.a" -type f -delete
-	find $(BUILD_DIR) -name "*.so" -type f -delete
-	find $(BUILD_DIR) -name "*.efi" -type f -delete
-	find $(BUILD_DIR) -name "*.efi.debug" -type f -delete
-	find $(BUILD_DIR) -name "*.elf" -type f -delete
+	@find $(SOURCE_DIR) -name "*.o" -type f -delete
+	@find $(SOURCE_DIR) -name "*.so" -type f -delete
+	@find $(BUILD_DIR) -name "*.o" -type f -delete
+	@find $(BUILD_DIR) -name "*.a" -type f -delete
+	@find $(BUILD_DIR) -name "*.so" -type f -delete
+	@find $(BUILD_DIR) -name "*.efi" -type f -delete
+	@find $(BUILD_DIR) -name "*.efi.debug" -type f -delete
+	@find $(BUILD_DIR) -name "*.elf" -type f -delete
 
 $(GNU_EFI_BUILT_NOTE):
-	$(MAKE) -C $(GNU_EFI_DIR) all
+	@$(MAKE) -C $(GNU_EFI_DIR) all
 	@touch $@
 
 $(IMAGE):
 	@mkdir -p $(BUILD_DIR)
-	dd if=/dev/zero of=$(IMAGE) bs=512 count=93750
-	sgdisk -s $(IMAGE) --disk-guid=$(DISK_GUID)
-	sgdisk -s $(IMAGE) --largest-new=1 --typecode=1:ef00 --partition-guid=1:$(ESP_GUID)
+	@dd if=/dev/zero of=$(IMAGE) bs=512 count=93750
+	@sgdisk -s $(IMAGE) --disk-guid=$(DISK_GUID)
+	@sgdisk -s $(IMAGE) --largest-new=1 --typecode=1:ef00 --partition-guid=1:$(ESP_GUID)

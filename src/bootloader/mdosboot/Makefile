@@ -100,7 +100,7 @@ clean:
 .PHONY: install
 
 $(TARGETS): $(TARGETS:.EFI=.so)
-	@echo "\e[1;32mCopying:\e[0m $@"
+	@echo "\e[1;32mBuilding PE:\e[0m $@"
 	@$(OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .rodata \
 		-j .rel -j .rela -j .rel.* -j .rela.* -j .rel* -j .rela* \
 		-j .areloc -j .reloc $(FORMAT) $< $@
