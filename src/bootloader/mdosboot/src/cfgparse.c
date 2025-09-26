@@ -2,18 +2,6 @@
 #include "../include/debug.h"
 #include "../include/fs.h"
 
-typedef enum {
-	KEY,
-	DATA,
-	ASSIGN,
-	END,
-} TokenType;
-
-typedef struct {
-	TokenType type;
-	CHAR16 *value;
-} Token;
-
 static EFI_STATUS open_config_file(EFI_FILE **cfg, EFI_HANDLE imageHandle) {
 	EFI_STATUS res;
 
@@ -57,25 +45,29 @@ static EFI_STATUS open_config_file(EFI_FILE **cfg, EFI_HANDLE imageHandle) {
 
 EFI_STATUS parse_config(IN EFI_HANDLE imageHandle, OUT ConfigInfo *cfg) {
 	if (imageHandle == NULL || cfg == NULL) { return EFI_INVALID_PARAMETER; }
-	EFI_STATUS res;
+	EFI_STATUS res = EFI_SUCCESS;
 
 	EFI_FILE *cfgFile = NULL;
+	CHAR16 *cfgBuffer = NULL;
+
 	res = open_config_file(&cfgFile, imageHandle);
-	if (EFI_ERROR(res) || cfgFile == NULL) { return res; }
+	if (cfgFile == NULL) { goto cleanup; }
+	if (EFI_ERROR(res)) { goto cleanup; }
 
 	UINTN fileSize = 0;
 	res = get_file_size(cfgFile, &fileSize);
-	if (EFI_ERROR(res) || fileSize == 0) { return res; }
-	DBG_MSG("Config file size: %d\n\r", fileSize);
+	if (EFI_ERROR(res) || fileSize == 0) { goto cleanup; }
+	// DBG_MSG("Config file size: %d\n\r", fileSize);
 
-	CHAR16 *cfgBuffer = NULL;
 	res = gBS->AllocatePool(EfiLoaderData, fileSize, (void **) &cfgBuffer);
-	if (EFI_ERROR(res)) { return res; }
+	if (EFI_ERROR(res)) { goto cleanup; }
 	ZeroMem(cfgBuffer, fileSize);
 
-	cfgFile->Read(cfgFile, &fileSize, cfgBuffer);
+	res = cfgFile->Read(cfgFile, &fileSize, cfgBuffer);
+	if (EFI_ERROR(res)) { goto cleanup; }
 
-	gBS->FreePool(cfgBuffer);
-	cfgFile->Close(cfgFile);
-	return EFI_SUCCESS;
+cleanup:
+	if (cfgBuffer != NULL) { gBS->FreePool(cfgBuffer); }
+	if (cfgFile != NULL) { cfgFile->Close(cfgFile); }
+	return res;
 }

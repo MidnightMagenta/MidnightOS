@@ -9,11 +9,12 @@ GNU_EFI_BUILT_NOTE := $(BUILD_DIR)/.gnu-efi-note
 EMU_BASE_FLAGS = -drive file=$(IMAGE),format=raw 																		\
 				-m 2G 																									\
 				-cpu qemu64 																							\
-				-vga std 																								\
+				-vga std																								\
 				-drive if=pflash,format=raw,unit=0,file="$(OVMF_BINARIES_DIR)/OVMF_CODE-pure-efi.fd",readonly=on 		\
 				-drive if=pflash,format=raw,unit=1,file="$(OVMF_BINARIES_DIR)/OVMF_VARS-pure-efi.fd" 					\
 				-net none 																								\
 				-machine q35
+
 EMU_DBG_FLAGS = -s -S -d guest_errors,cpu_reset,int -no-reboot -no-shutdown
 
 DBG_FLAGS = -ex "symbol-file $(BUILD_DIR)/kernel/kernel.elf" 															\

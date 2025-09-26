@@ -1,6 +1,5 @@
 #include <efi.h>
 #include <efilib.h>
-#include "../include/debug.h"
 #include "../include/cfgparse.h"
 
 #ifndef HAVE_USE_MS_ABI
@@ -14,5 +13,5 @@ EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
 	Print(L"Hello bootloader\n\r");
 	ConfigInfo info;
 	parse_config(imageHandle, &info);
-	return EFI_SUCCESS;
+	return res;
 }
