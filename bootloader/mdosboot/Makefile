@@ -39,7 +39,7 @@ EFI_TARGET = MDOSBOOT.EFI
 
 VPATH = $(SRCDIR)
 
-GNU_EFI = $(abspath ../../../gnu-efi)
+GNU_EFI = $(abspath ../../gnu-efi)
 
 C_SRCS = $(shell find $(SRCDIR) -name '*.c')
 OBJS = $(patsubst %.c, %.o, $(C_SRCS))
