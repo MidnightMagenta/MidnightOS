@@ -13,7 +13,8 @@ OPTIMIZE := -O0
 
 CFLAGS := -mno-red-zone -m64 -mcmodel=kernel -nostartfiles -nodefaultlibs -nostdlib \
 		$(OPTIMIZE) -ffreestanding -fshort-wchar -fno-omit-frame-pointer -fno-builtin \
-		-fno-stack-protector -fno-exceptions -fno-builtin-memcpy -fno-builtin-memset
+		-fno-stack-protector -fno-exceptions -fno-builtin-memcpy -fno-builtin-memset -I./
+CFLAGS += -MMD -MP
 LDFLAGS := -static -Bsymbolic -nostdlib
 ACFLAGS :=
 
@@ -38,17 +39,22 @@ GNU_EFI_NOTE := $(BUILD_DIR)/.gnu_efi_built
 
 KERNEL_TARGET := mdoskrnl.elf
 
-obj-y := 
+obj-y :=
 
 # include source directories
 -include arch/$(ARCH)/config.mk
 
 # build rules
 KERNEL_OBJS := $(patsubst %.o,$(BUILD_DIR)/%.o,$(obj-y))
+DEP_OBJS := $(KERNEL_OBJS:.o=.d)
 
-.PHONY: all bootloader clean clean-all image run run-info run-debug
+.PHONY: all rebuild rebuild-all bootloader clean clean-all image run run-info run-debug
+.NOTPARALLEL: rebuild rebuild-all
 
 all: bootloader $(BUILD_DIR)/$(KERNEL_TARGET)
+
+rebuild: clean all
+rebuild-all: clean-all all
 
 bootloader: $(GNU_EFI_NOTE)
 	@$(MAKE) -C bootloader BUILD_DIR="$(abspath $(BUILD_DIR)/bootloader)" all
@@ -72,11 +78,13 @@ $(BUILD_DIR)/%.o: %.asm
 	@mkdir -p $(@D)
 	$(AC) $(ACFLAGS) -o $@ $<
 
+-include $(DEP_OBJS)
+
 # TODO: add kernel module build rules
 
 clean-all: clean
 	@$(MAKE) -C $(GNU_EFI_DIR) clean
-	@rm -rf $(GNU_EFI_BUILT_NOTE)
+	@rm -rf $(GNU_EFI_NOTE)
 	@rm -rf $(BUILD_DIR)
 
 clean:
@@ -98,22 +106,25 @@ DISK_GUID = f953b4de-e77f-4f0b-a14e-2b29080599cf
 ESP_GUID = 0cc13370-53ec-4cdb-8c3d-4185950e2581
 
 image: $(IMAGE)
-	@sgdisk -s $(IMAGE) --disk-guid=$(DISK_GUID)
-	@sgdisk -s $(IMAGE) --largest-new=1 --typecode=1:ef00 --partition-guid=1:$(ESP_GUID)
-	@sudo sh ./shell/updateimg.sh $(IMAGE) $(BUILD_DIR) $(FILES_DIR)
+	@mkdir -p $(FILES_DIR)/BOOT
+	@sh ./shell/genbootcfg.sh "$(FILES_DIR)/BOOT/BOOT.CFG" "$(ESP_GUID)" "MdOS/bin/$(KERNEL_TARGET)"
+	@sudo sh ./shell/updateimg.sh "$(IMAGE)" "$(BUILD_DIR)" "$(FILES_DIR)"
 
 $(IMAGE):
 	@echo -e "\e[1;32mCreating empty image\e[0m"
 	@mkdir -p $(@D)
 	@dd if=/dev/zero of=$@ bs=512 count=93750
+	@sgdisk -s $(IMAGE) --disk-guid=$(DISK_GUID)
+	@sgdisk -s $(IMAGE) --largest-new=1 --typecode=1:ef00 --partition-guid=1:$(ESP_GUID)
 
 # debug emulator run rules
+
 EMU := 
 DBG := 
 
 ifeq ($(ARCH),x86_64)
   EMU := qemu-system-x86_64
-  DGB := gdb
+  DBG := gdb
 else
   $(error Unsuported architecture $(ARCH))
   # TODO: implement other arches
@@ -132,7 +143,7 @@ EMU_BASE_FLAGS = -drive file=$(IMAGE),format=raw 																		\
 
 EMU_DBG_FLAGS = -s -S -d guest_errors,cpu_reset,int -no-reboot -no-shutdown
 
-DBG_FLAGS = -ex "symbol-file $(BUILD_DIR)/kernel/kernel.elf" 															\
+DBG_FLAGS = -ex "symbol-file $(BUILD_DIR)/$(KERNEL_TARGET)" 															\
 			-ex "target remote localhost:1234" 																			\
 			-ex "set disassemble-next-line on" 																			\
 			-ex "set step-mode on"

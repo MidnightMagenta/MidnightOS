@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-set -eu
+set -euo pipefail
 
 IMAGE=${1:?Usage: $0 disk.img build_dir}
-BUILD_DIR=${2:?}
-FILES_DIR=${3:?}
+BUILD_DIR=${2:?Usage: $0 disk.img build_dir}
+FILES_DIR=${3:?Usage: $0 disk.img build_dir}
 
 LOOPDEV=$(sudo losetup -Pf --show "$IMAGE")
 PART=${LOOPDEV}p1

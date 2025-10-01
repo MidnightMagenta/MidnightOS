@@ -6,6 +6,8 @@
 *.lib
 *.img
 *.elf
+*.cfg
+*.CFG
 
 build/
 docs/

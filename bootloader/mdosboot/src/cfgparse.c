@@ -27,7 +27,7 @@ static EFI_STATUS open_config_file(EFI_FILE **cfg, EFI_HANDLE imageHandle) {
 		return res;
 	}
 
-	res = root->Open(root, cfg, L"BOOT\\MDOSBOOT.CFG", EFI_FILE_READ_ONLY, 0);
+	res = root->Open(root, cfg, L"BOOT\\BOOT.CFG", EFI_FILE_READ_ONLY, 0);
 	if (EFI_ERROR(res) || *cfg == NULL) {
 		DBG_MSG("[%a %d] Failed to open configuration file with: %lx\n\r", __func__, __LINE__, res);
 		root->Close(root);
@@ -57,7 +57,7 @@ EFI_STATUS parse_config(IN EFI_HANDLE imageHandle, OUT ConfigInfo *cfg) {
 	UINTN fileSize = 0;
 	res = get_file_size(cfgFile, &fileSize);
 	if (EFI_ERROR(res) || fileSize == 0) { goto cleanup; }
-	// DBG_MSG("Config file size: %d\n\r", fileSize);
+	DBG_MSG("Config file size: %d\n\r", fileSize);
 
 	res = gBS->AllocatePool(EfiLoaderData, fileSize, (void **) &cfgBuffer);
 	if (EFI_ERROR(res)) { goto cleanup; }
