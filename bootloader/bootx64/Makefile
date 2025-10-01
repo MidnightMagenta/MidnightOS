@@ -102,13 +102,13 @@ clean:
 .PHONY: install
 
 $(TARGETS): $(TARGETS:.EFI=.so)
-	@echo "\e[1;32mBuilding PE:\e[0m $@"
+	@echo -e "\e[1;32mBuilding PE:\e[0m $@"
 	@$(OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .rodata \
 		-j .rel -j .rela -j .rel.* -j .rela.* -j .rel* -j .rela* \
 		-j .areloc -j .reloc $(FORMAT) $< $@
 
 $(TARGETS:.EFI=.so): $(OBJS)
-	@echo "\e[1;32mLinking:\e[0m $@"
+	@echo -e "\e[1;32mLinking:\e[0m $@"
 	@$(LD) $(LDFLAGS) -o $@ $^ $(LOADLIBES)
 
 

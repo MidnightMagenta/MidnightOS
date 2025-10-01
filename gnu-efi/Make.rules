@@ -37,38 +37,38 @@
 .SECONDARY:
 
 %.efi: %.so
-	@echo "\e[1;32mBuilding PE:\e[0m $@"
+	@echo -e "\e[1;32mBuilding PE:\e[0m $@"
 	@$(OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .rodata -j .rel \
 		    -j .rela -j .rel.* -j .rela.* -j .rel* -j .rela* \
 		    -j .areloc -j .reloc $(FORMAT) $*.so $@
 
 %.efi.debug: %.so
-	@echo "\e[1;32mBuilding PE:\e[0m $@"
+	@echo -e "\e[1;32mBuilding PE:\e[0m $@"
 	@$(OBJCOPY) -j .debug_info -j .debug_abbrev -j .debug_aranges \
 		-j .debug_line -j .debug_str -j .debug_ranges \
 		-j .note.gnu.build-id \
 		$(FORMAT) $*.so $@
 
 %.so: %.o
-	@echo "Compiling: $<"
+	@echo -e "Compiling: $<"
 	@$(LD) $(LDFLAGS) $^ -o $@ $(LOADLIBES)
 
 %.o: %.c
-	@echo "Compiling: $<"
+	@echo -e "Compiling: $<"
 	@$(CC) $(INCDIR) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
 
 %.s: %.c
-	@echo "Compiling: $<"
+	@echo -e "Compiling: $<"
 	@$(CC) $(INCDIR) $(CFLAGS) $(CPPFLAGS) -S $< -o $@
 
 %.i: %.c
-	@echo "Compiling: $<"
+	@echo -e "Compiling: $<"
 	@$(CC) $(INCDIR) $(CFLAGS) $(CPPFLAGS) -E $< -o $@
 
 %.o: %.S
-	@echo "Compiling: $<"
+	@echo -e "Compiling: $<"
 	@$(CC) $(INCDIR) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
 
 %.s: %.S
-	@echo "Compiling: $<"
+	@echo -e "Compiling: $<"
 	@$(CC) $(INCDIR) $(CFLAGS) $(CPPFLAGS) -E $< -o $@
