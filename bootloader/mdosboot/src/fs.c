@@ -8,7 +8,7 @@ static BOOLEAN match_node_guid(EFI_DEVICE_PATH_PROTOCOL *dp, EFI_GUID *guid) {
 			if (hdp->SignatureType != SIGNATURE_TYPE_GUID) { continue; }
 
 			EFI_GUID *sig = (EFI_GUID *) hdp->Signature;
-			if (CompareGuid(sig, guid)) { return TRUE; }
+			if (CompareGuid(sig, guid) == 0) { return TRUE; }
 		}
 	}
 
@@ -18,9 +18,11 @@ static BOOLEAN match_node_guid(EFI_DEVICE_PATH_PROTOCOL *dp, EFI_GUID *guid) {
 EFI_STATUS find_filesystem_for_guid(IN EFI_GUID *guid,
 									OUT EFI_HANDLE *handle,
 									OUT EFI_SIMPLE_FILE_SYSTEM_PROTOCOL **filesystem) {
-	if (guid == NULL || CompareGuid(guid, &NullGuid) || handle == NULL || filesystem == NULL) {
-		return EFI_INVALID_PARAMETER;
-	}
+	if (guid == NULL) { return EFI_INVALID_PARAMETER; }
+	if (CompareGuid(guid, &NullGuid) == 0) { return EFI_INVALID_PARAMETER; }
+	if (handle == NULL) { return EFI_INVALID_PARAMETER; }
+	if (filesystem == NULL) { return EFI_INVALID_PARAMETER; }
+
 	EFI_HANDLE *handles = NULL;
 	UINTN handleCount = 0;
 	EFI_STATUS res;

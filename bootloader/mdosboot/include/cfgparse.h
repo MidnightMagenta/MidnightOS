@@ -19,7 +19,7 @@
 typedef struct {
 	EFI_GUID bootPartUUID;
 	CHAR16 *bootBinPath;
-} ConfigInfo;
+} configinfo_t;
 
 static const uint8_t MDBC_Magic[4] = {'M', 'B', 'C', 'F'};
 
@@ -29,7 +29,7 @@ typedef struct {
 	uint8_t version;
 	uint8_t pad[7];
 	uint64_t dataOffset;
-} __attribute__((packed)) MDBC_Header;
+} __attribute__((packed)) mdbc_header_t;
 
 /**
  * \brief Parses boot configuration file and returns boot config information
@@ -47,7 +47,13 @@ typedef struct {
  * \param imageHandle EFI_HANDLE to the loaded image
  * \param cfg The returned configuration info
  */
-EFI_STATUS parse_config(IN EFI_HANDLE imageHandle, OUT ConfigInfo *cfg);
+EFI_STATUS parse_config(IN EFI_HANDLE imageHandle, OUT configinfo_t *cfg);
+
+/**
+ * \brief Frees boot configuration info structure
+ * \param cfg The configuration info structure
+ */
+void free_config(IN configinfo_t *cfg);
 
 /** @} */
 

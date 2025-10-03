@@ -27,7 +27,7 @@ static EFI_STATUS open_config_file(EFI_FILE **cfg, EFI_HANDLE imageHandle) {
 		return res;
 	}
 
-	res = root->Open(root, cfg, L"BOOT\\BOOT.CFG", EFI_FILE_READ_ONLY, 0);
+	res = root->Open(root, cfg, L"BOOT\\BOOT.CFG", EFI_FILE_MODE_READ, 0);
 	if (EFI_ERROR(res) || *cfg == NULL) {
 		DBG_WARN("[%a %d] Failed to open configuration file with: %lx\n\r", __func__, __LINE__, res);
 		root->Close(root);
@@ -38,7 +38,7 @@ static EFI_STATUS open_config_file(EFI_FILE **cfg, EFI_HANDLE imageHandle) {
 	return EFI_SUCCESS;
 }
 
-static EFI_STATUS verify_header(const MDBC_Header *header, char *cfgBuffer, UINTN cfgSize) {
+static EFI_STATUS verify_header(const mdbc_header_t *header, char *cfgBuffer, UINTN cfgSize) {
 	if (CompareMem(header->magic, MDBC_Magic, 4) != 0) { return EFI_UNSUPPORTED; }
 	if (header->version != 1) { return EFI_INCOMPATIBLE_VERSION; }
 
@@ -48,11 +48,11 @@ static EFI_STATUS verify_header(const MDBC_Header *header, char *cfgBuffer, UINT
 	return EFI_SUCCESS;
 }
 
-static EFI_STATUS read_config(char *cfgBuffer, UINTN cfgSize, ConfigInfo *cfg) {
+static EFI_STATUS read_config(char *cfgBuffer, UINTN cfgSize, configinfo_t *cfg) {
 	EFI_STATUS res;
 
-	MDBC_Header header;
-	CopyMem((void *) &header, cfgBuffer, sizeof(MDBC_Header));
+	mdbc_header_t header;
+	CopyMem((void *) &header, cfgBuffer, sizeof(mdbc_header_t));
 
 	res = verify_header(&header, cfgBuffer, cfgSize);
 	if (EFI_ERROR(res)) {
@@ -64,6 +64,7 @@ static EFI_STATUS read_config(char *cfgBuffer, UINTN cfgSize, ConfigInfo *cfg) {
 	UINT8 *end = cfgBuffer + cfgSize;
 
 	while (ptr < end) {
+		// extract data
 		CHAR8 *name = (CHAR8 *) ptr;
 		UINTN nameLen = strlena(name);
 		ptr += nameLen + 1;
@@ -81,6 +82,7 @@ static EFI_STATUS read_config(char *cfgBuffer, UINTN cfgSize, ConfigInfo *cfg) {
 		if (ptr[0] != 0x00 || ptr[1] != 0x0A) { return EFI_COMPROMISED_DATA; }
 		ptr += 2;
 
+		// parse data
 		if (strcmpa(name, "BOOT_DISK") == 0) {
 			CopyMem(&cfg->bootPartUUID, data, sizeof(EFI_GUID));
 		} else if (strcmpa(name, "BOOT_PATH") == 0) {
@@ -95,7 +97,7 @@ static EFI_STATUS read_config(char *cfgBuffer, UINTN cfgSize, ConfigInfo *cfg) {
 	return EFI_SUCCESS;
 }
 
-EFI_STATUS parse_config(IN EFI_HANDLE imageHandle, OUT ConfigInfo *cfg) {
+EFI_STATUS parse_config(IN EFI_HANDLE imageHandle, OUT configinfo_t *cfg) {
 	if (imageHandle == NULL || cfg == NULL) { return EFI_INVALID_PARAMETER; }
 	EFI_STATUS res = EFI_SUCCESS;
 
@@ -111,7 +113,6 @@ EFI_STATUS parse_config(IN EFI_HANDLE imageHandle, OUT ConfigInfo *cfg) {
 		cfgFile->Close(cfgFile);
 		return res;
 	}
-	DBG_MSG("Config file size: %d\n\r", fileSize);
 
 	res = gBS->AllocatePool(EfiLoaderData, fileSize, (void **) &cfgBuffer);
 	if (EFI_ERROR(res)) {
@@ -137,4 +138,8 @@ EFI_STATUS parse_config(IN EFI_HANDLE imageHandle, OUT ConfigInfo *cfg) {
 	cfgFile->Close(cfgFile);
 	gBS->FreePool(cfgBuffer);
 	return EFI_SUCCESS;
+}
+
+void free_config(IN configinfo_t *cfg){
+	gBS->FreePool(cfg->bootBinPath);
 }
