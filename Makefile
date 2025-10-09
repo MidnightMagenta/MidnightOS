@@ -11,9 +11,9 @@ AC :=
 DEBUG := true
 OPTIMIZE := -O0
 
-CFLAGS := -mno-red-zone -m64 -mcmodel=kernel -nostartfiles -nodefaultlibs -nostdlib \
-		$(OPTIMIZE) -ffreestanding -fshort-wchar -fno-omit-frame-pointer -fno-builtin \
-		-fno-stack-protector -fno-exceptions -fno-builtin-memcpy -fno-builtin-memset -I./
+CFLAGS := -m64 -mcmodel=kernel -nostartfiles -nodefaultlibs -nostdlib -ffreestanding \
+		$(OPTIMIZE) -mno-red-zone -fshort-wchar -fno-omit-frame-pointer -I./include \
+		-fno-stack-protector -fno-builtin 
 CFLAGS += -MMD -MP
 LDFLAGS := -static -Bsymbolic -nostdlib
 ACFLAGS :=

@@ -26,7 +26,7 @@ static UINTN elf_get_section_size(const Elf64_Ehdr *ehdr, const Elf64_Phdr *phdr
 	UINTN pageCount = 0;
 	for (size_t i = 0; i < ehdr->e_phnum; i++) {
 		Elf64_Phdr *phdr = (Elf64_Phdr *) ((char *) phdrs + ehdr->e_phentsize * i);
-		if (phdr->p_type == PT_LOAD) { pageCount += ALIGN_UP(phdr->p_memsz, 0x1000, UINTN) / 0x1000;; }
+		if (phdr->p_type == PT_LOAD) { pageCount += ALIGN_UP(phdr->p_memsz, 0x1000, UINTN) / 0x1000; }
 	}
 	return pageCount;
 }
@@ -200,7 +200,7 @@ void elf_free_loadinfo(elf_loadinfo_t *info) {
 	info->entry = 0;
 }
 
-void elf_free_sections(elf_loadinfo_t *info){
+void elf_free_sections(elf_loadinfo_t *info) {
 	for (size_t i = 0; i < info->sectionCount; i++) {
 		elf_sectioninfo_t *section = (elf_sectioninfo_t *) ((char *) info->sections + i * sizeof(elf_sectioninfo_t));
 		gBS->FreePages(section->phys, section->pageCount);
