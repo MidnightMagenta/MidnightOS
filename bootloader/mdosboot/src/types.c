@@ -1,7 +1,6 @@
 #include "../include/types.h"
-#include "../include/debug.h"
 
-#define EFI_MAP_DESCRIPTOR_EXTRA 100 * sizeof(EFI_MEMORY_DESCRIPTOR)
+#define EFI_MAP_DESCRIPTOR_EXTRA 8192
 
 EFI_STATUS efi_get_memmap(efi_memmap_t *const map, size_t *bufferSize) {
 	EFI_STATUS res;
