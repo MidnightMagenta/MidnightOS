@@ -9,7 +9,10 @@
 *.cfg
 *.CFG
 
+.cache/
 build/
 docs/
 keys/
 **/tmp/
+
+compile_commands.json

@@ -9,6 +9,7 @@ LD := $(PREFIX)ld
 AC :=
 
 DEBUG := true
+VERBOSE := false
 OPTIMIZE := -O0
 
 CFLAGS := -m64 -mcmodel=kernel -nostartfiles -nodefaultlibs -nostdlib -ffreestanding \
@@ -27,9 +28,13 @@ else
 endif
 
 ifeq ($(DEBUG),true)
-  CFLAGS += -Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion -Wundef \
-			-Wcast-align -Wshift-overflow -Wdouble-promotion -Werror -g -D_DEBUG
+  CFLAGS += -Wall -Wextra -g -D_DEBUG
   ACFLAGS += -g
+endif
+
+ifeq ($(DEBUG),true)
+  CFLAGS += -Wconversion -Wsign-conversion -Wundef -Wcast-align -Wshift-overflow \
+	  -Wdouble-promotion -Wpedantic -Werror
 endif
 
 BUILD_DIR := build/$(ARCH)
@@ -57,7 +62,7 @@ rebuild: clean all
 rebuild-all: clean-all all
 
 bootloader: $(GNU_EFI_NOTE)
-	@$(MAKE) -C bootloader BUILD_DIR="$(abspath $(BUILD_DIR)/bootloader)" all
+	@$(MAKE) -C bootloader BUILD_DIR="$(abspath $(BUILD_DIR)/bootloader)" INCLUDE_DIR="$(abspath ./include)" all
 
 $(GNU_EFI_NOTE):
 	@mkdir -p $(BUILD_DIR)
@@ -157,3 +162,9 @@ run-info:
 run-debug:
 	@$(EMU) $(EMU_BASE_FLAGS) $(EMU_DBG_FLAGS) &
 	@$(DBG) $(DBG_FLAGS)
+
+# misc
+
+ccdb:
+	@echo "Updating compile_commands.json"
+	@compiledb make -Bn
