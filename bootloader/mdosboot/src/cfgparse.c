@@ -15,8 +15,7 @@ static EFI_STATUS open_config_file(EFI_FILE **cfg, EFI_HANDLE imageHandle) {
 	EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *espFS = NULL;
 	res = gBS->HandleProtocol(imageProtocol->DeviceHandle, &gEfiSimpleFileSystemProtocolGuid, (void **) &espFS);
 	if (EFI_ERROR(res) || espFS == NULL) {
-		DBG_WARN("[%a %d] Failed to obtain loaded image device filesystem protocol with: %lx\n\r", __func__, __LINE__,
-				 res);
+		DBG_WARN("[%a %d] Failed to obtain loaded image device filesystem protocol with: %lx\n\r", __func__, __LINE__, res);
 		return res;
 	}
 
@@ -140,6 +139,4 @@ EFI_STATUS parse_config(IN EFI_HANDLE imageHandle, OUT configinfo_t *cfg) {
 	return EFI_SUCCESS;
 }
 
-void free_config(IN configinfo_t *cfg){
-	gBS->FreePool(cfg->bootBinPath);
-}
+void free_config(IN configinfo_t *cfg) { gBS->FreePool(cfg->bootBinPath); }

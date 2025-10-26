@@ -35,6 +35,7 @@
 #
 
 SRCDIR = .
+INCLUDE_DIR = .
 EFI_TARGET = MDOSBOOT.EFI
 
 VPATH = $(SRCDIR)
@@ -87,7 +88,7 @@ endif
 
 TARGETS = $(TARGET_APPS) $(TARGET_BSDRIVERS) $(TARGET_RTDRIVERS)
 
-CFLAGS += -DEFI_DEBUG -g -Wno-error=unused-parameter -Wno-error=unused-variable
+CFLAGS += -DEFI_DEBUG -g -Wno-error=unused-parameter -Wno-error=unused-variable -I$(INCLUDE_DIR)
 CPPFLAGS += -I$(GNU_EFI)/inc
 
 all: $(TARGETS)

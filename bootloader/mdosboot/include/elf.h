@@ -20,28 +20,28 @@
  * \brief Loaded section information containing the physical address it was loaded to, it's requested virtual address, and size in memory.
  */
 typedef struct {
-	Elf64_Addr phys; /// The physical address into which the section was loaded
-	Elf64_Addr reqVirt; /// The virtual address specified in the program header
-	size_t pageCount; /// The number of 4 KiB pages the section uses
-	Elf32_Word flags; /// ELF program section flags
+	Elf64_Addr phys;	 /// The physical address into which the section was loaded
+	Elf64_Addr reqVirt;/// The virtual address specified in the program header
+	size_t pageCount;	 /// The number of 4 KiB pages the section uses
+	Elf32_Word flags;	 /// ELF program section flags
 } elf_sectioninfo_t;
 
 /**
  * \brief Post load information needed to map and execute the loaded binary.
  */
 typedef struct {
-	Elf64_Addr entry; /// The executable's entry point address
-	size_t sectionCount; /// The number of elf_sectioninfo_t structures in the sections buffer
-	elf_sectioninfo_t *sections; /// The buffer containing loaded section information
+	Elf64_Addr entry;						/// The executable's entry point address
+	size_t sectionCount;				/// The number of elf_sectioninfo_t structures in the sections buffer
+	elf_sectioninfo_t *sections;/// The buffer containing loaded section information
 } elf_loadinfo_t;
 
 /**
  * \brief ELF program sections load strategies.
  */
 typedef enum {
-	ELF_LOAD_AUTO, /// Attempts to load sections in a contigous fashion first. If failed, falls back to discontigous
-	ELF_LOAD_CONTIG, /// Loads program sections one after another in memory in the enumeration order of program headers, into a flat image.
-	ELF_LOAD_DISCONTIG, /// Loads program sections into any location in memory
+	ELF_LOAD_AUTO,/// Attempts to load sections in a contigous fashion first. If failed, falls back to discontigous
+	ELF_LOAD_CONTIG,/// Loads program sections one after another in memory in the enumeration order of program headers, into a flat image.
+	ELF_LOAD_DISCONTIG,/// Loads program sections into any location in memory
 } elf_loadtype_t;
 
 /**

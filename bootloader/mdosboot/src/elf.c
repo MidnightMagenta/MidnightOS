@@ -181,10 +181,11 @@ err_free_loadInfo:
 
 EFI_STATUS elf_load_file(EFI_FILE *file, elf_loadinfo_t *info, elf_loadtype_t loadType) {
 	switch (loadType) {
-		case ELF_LOAD_AUTO:
+		case ELF_LOAD_AUTO: {
 			EFI_STATUS res = elf_load_file_cont(file, info);
 			if (EFI_ERROR(res)) { return elf_load_file_discont(file, info); }
 			return res;
+		}
 		case ELF_LOAD_CONTIG:
 			return elf_load_file_cont(file, info);
 		case ELF_LOAD_DISCONTIG:
@@ -211,7 +212,7 @@ void elf_print_sections(const elf_loadinfo_t *info) {
 	for (size_t i = 0; i < info->sectionCount; i++) {
 		elf_sectioninfo_t *section = (elf_sectioninfo_t *) ((char *) info->sections + i * sizeof(elf_sectioninfo_t));
 		DBG_MSG("Elf section %d\n\r paddr: 0x%lx\n\r vaddr: 0x%lx\n\r page count: %d\n\r Flags: ", i, section->phys,
-				section->reqVirt, section->pageCount);
+						section->reqVirt, section->pageCount);
 		if (section->flags & PF_X) { DBG_MSG("X"); }
 		if (section->flags & PF_R) { DBG_MSG("R"); }
 		if (section->flags & PF_W) { DBG_MSG("W"); }

@@ -1,5 +1,4 @@
 #include "../include/memory.h"
-#include "../include/debug.h"
 
 EFI_STATUS mem_map_page(uint64_t *pml4, EFI_VIRTUAL_ADDRESS vaddr, EFI_PHYSICAL_ADDRESS paddr) {
 	if (pml4 == NULL) { return EFI_INVALID_PARAMETER; }

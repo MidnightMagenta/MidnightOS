@@ -1,8 +1,8 @@
 export TOPLEVEL_DIR := $(patsubst %/,%,$(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
 
 ARCH := x86_64
-BIN_FMT := elf
-PREFIX := $(ARCH)-$(BIN_FMT)-
+BIN_TARGET := elf
+PREFIX := $(ARCH)-$(BIN_TARGET)-
 
 CC := $(PREFIX)gcc
 LD := $(PREFIX)ld
@@ -12,16 +12,29 @@ DEBUG := true
 VERBOSE := false
 OPTIMIZE := -O0
 
-CFLAGS := -m64 -mcmodel=kernel -nostartfiles -nodefaultlibs -nostdlib -ffreestanding \
-		$(OPTIMIZE) -mno-red-zone -fshort-wchar -fno-omit-frame-pointer -I./include \
-		-fno-stack-protector -fno-builtin 
-CFLAGS += -MMD -MP
+CFLAGS := -nostartfiles \
+					-nodefaultlibs \
+					-nostdlib \
+					-ffreestanding \
+					-fshort-wchar \
+					-fno-omit-frame-pointer \
+					-fno-stack-protector \
+		 			-fno-builtin \
+					-fno-tree-vectorize \
+					-fno-pic -fno-pie \
+					-I./include \
+					-std=gnu17 \
+					-MMD -MP \
+					$(OPTIMIZE)
 LDFLAGS := -static -Bsymbolic -nostdlib
 ACFLAGS :=
 
 ifeq ($(ARCH),x86_64)
   AC := nasm
   ACFLAGS := -f elf64
+  CFLAGS += -m64 -m80387 -msse -msse2 -mmmx \
+						-mno-sse3 -mno-sse4 -mno-avx -mno-avx2 -mno-avx512f \
+						-mcmodel=kernel -mno-red-zone
 else
   $(error Unsuported architecture $(ARCH))
   # TODO: implement other arches
@@ -32,9 +45,9 @@ ifeq ($(DEBUG),true)
   ACFLAGS += -g
 endif
 
-ifeq ($(DEBUG),true)
+ifeq ($(VERBOSE),true)
   CFLAGS += -Wconversion -Wsign-conversion -Wundef -Wcast-align -Wshift-overflow \
-	  -Wdouble-promotion -Wpedantic -Werror
+	  				-Wdouble-promotion -Wpedantic -Werror
 endif
 
 BUILD_DIR := build/$(ARCH)
@@ -53,7 +66,7 @@ obj-y :=
 KERNEL_OBJS := $(patsubst %.o,$(BUILD_DIR)/%.o,$(obj-y))
 DEP_OBJS := $(KERNEL_OBJS:.o=.d)
 
-.PHONY: all rebuild rebuild-all bootloader clean clean-all image run run-info run-debug
+.PHONY: all rebuild rebuild-all bootloader clean clean-all image run run-info run-debug ccdb
 .NOTPARALLEL: rebuild rebuild-all
 
 all: bootloader $(BUILD_DIR)/$(KERNEL_TARGET)
@@ -71,7 +84,7 @@ $(GNU_EFI_NOTE):
 
 $(BUILD_DIR)/$(KERNEL_TARGET): $(KERNEL_OBJS)
 	@echo -e "\e[1;32mLinking:\e[0m $@"
-	@$(LD) $(LDFLAGS) -T link/kernel.ld -o $@ $^
+	@$(LD) $(LDFLAGS) -T link/$(ARCH)-link.ld -o $@ $^
 
 $(BUILD_DIR)/%.o: %.c
 	@echo -e "Compiling: $<"
@@ -103,7 +116,7 @@ clean:
 	@find $(BUILD_DIR) -name "*.efi.debug" -type f -delete
 	@find $(BUILD_DIR) -name "*.elf" -type f -delete
 
-# test image building rules
+# image building rules
 
 FILES_DIR := files
 IMAGE := $(BUILD_DIR)/mdos.img
@@ -144,9 +157,9 @@ EMU_BASE_FLAGS = -drive file=$(IMAGE),format=raw \
 				-drive if=pflash,format=raw,unit=0,file="$(OVMF_BINS)/OVMF_CODE-pure-efi.fd",readonly=on \
 				-drive if=pflash,format=raw,unit=1,file="$(OVMF_BINS)/OVMF_VARS-pure-efi.fd" \
 				-net none \
-				-machine q35
+				-machine q35 
 
-EMU_DBG_FLAGS = -s -S -d guest_errors,cpu_reset,int -no-reboot -no-shutdown
+EMU_DBG_FLAGS = -s -S -d int,guest_errors,cpu_reset -no-reboot -no-shutdown -D tmp/qemu.log
 
 DBG_FLAGS = -ex "symbol-file $(BUILD_DIR)/$(KERNEL_TARGET)" \
 			-ex "target remote localhost:1234" \
@@ -157,14 +170,15 @@ run:
 	$(EMU) $(EMU_BASE_FLAGS)
 
 run-info:
+	@mkdir -p ./tmp
 	$(EMU) $(EMU_BASE_FLAGS) $(EMU_DBG_FLAGS)
 
 run-debug:
+	@mkdir -p ./tmp
 	@$(EMU) $(EMU_BASE_FLAGS) $(EMU_DBG_FLAGS) &
 	@$(DBG) $(DBG_FLAGS)
 
 # misc
 
 ccdb:
-	@echo "Updating compile_commands.json"
 	@compiledb make -Bn

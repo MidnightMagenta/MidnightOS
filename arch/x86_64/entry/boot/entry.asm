@@ -5,7 +5,7 @@ extern s0_entry
 global _start
 
 section .bss.boot_stack
-	align 16
+	align 0x1000
 	_stack_bottom:				; kernel's bootstrap stack
 		resb 0x4000
 	_stack_top:
