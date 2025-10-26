@@ -61,6 +61,7 @@ obj-y :=
 
 # include source directories
 -include arch/$(ARCH)/config.mk
+-include debug/config.mk
 
 # build rules
 KERNEL_OBJS := $(patsubst %.o,$(BUILD_DIR)/%.o,$(obj-y))

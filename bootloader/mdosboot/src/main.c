@@ -68,8 +68,6 @@ EFI_STATUS map_memory(uint64_t *pml4, efi_memmap_t *const memMap, elf_loadinfo_t
 	return EFI_SUCCESS;
 }
 
-void load_cr3(uint64_t pml4) { __asm__ volatile("mov %0, %%rax; mov %%rax, %%cr3" ::"r"(pml4)); }
-
 EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
 	InitializeLib(imageHandle, systemTable);
 	EFI_STATUS res = EFI_SUCCESS;
@@ -127,10 +125,10 @@ EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
 
 	// pass control to the loaded binary
 	__asm__ volatile(
-		"cli\n\t"
-		"mov %0, %%cr3\n\t"
-		"mov %1, %%rdi\n\r"
-		"jmp %2\n\r"
+		"cli\n"
+		"mov %0, %%cr3\n"
+		"mov %1, %%rdi\n"
+		"jmp %2\n"
 		:
 		: "r"(pml4Addr), "r"(bootInfo), "r"(elfInfo.entry)
 		: "rdi", "memory"
