@@ -12,6 +12,8 @@ DEBUG := true
 VERBOSE := false
 OPTIMIZE := -O0
 
+BUILD_DIR := build/$(ARCH)
+
 CFLAGS := -nostartfiles \
 					-nodefaultlibs \
 					-nostdlib \
@@ -23,7 +25,7 @@ CFLAGS := -nostartfiles \
 					-fno-tree-vectorize \
 					-fno-pic -fno-pie \
 					-I./include \
-					-std=gnu17 \
+					-std=gnu23 \
 					-MMD -MP \
 					$(OPTIMIZE)
 LDFLAGS := -static -Bsymbolic -nostdlib
@@ -50,22 +52,14 @@ ifeq ($(VERBOSE),true)
 	  				-Wdouble-promotion -Wpedantic -Werror
 endif
 
-BUILD_DIR := build/$(ARCH)
-
 GNU_EFI_DIR := gnu-efi
 GNU_EFI_NOTE := $(BUILD_DIR)/.gnu_efi_built
 
 KERNEL_TARGET := mdoskrnl.elf
 
-obj-y :=
-
-# include source directories
--include arch/$(ARCH)/config.mk
--include debug/config.mk
+obj-y := arch/$(ARCH)/ debug/
 
 # build rules
-KERNEL_OBJS := $(patsubst %.o,$(BUILD_DIR)/%.o,$(obj-y))
-DEP_OBJS := $(KERNEL_OBJS:.o=.d)
 
 .PHONY: all rebuild rebuild-all bootloader clean clean-all image run run-info run-debug ccdb
 .NOTPARALLEL: rebuild rebuild-all
@@ -83,21 +77,7 @@ $(GNU_EFI_NOTE):
 	@$(MAKE) -C $(GNU_EFI_DIR) all
 	@touch $@
 
-$(BUILD_DIR)/$(KERNEL_TARGET): $(KERNEL_OBJS)
-	@echo -e "\e[1;32mLinking:\e[0m $@"
-	@$(LD) $(LDFLAGS) -T link/$(ARCH)-link.ld -o $@ $^
-
-$(BUILD_DIR)/%.o: %.c
-	@echo -e "Compiling: $<"
-	@mkdir -p $(@D)
-	@$(CC) $(CFLAGS) -c -o $@ $<
-
-$(BUILD_DIR)/%.o: %.asm
-	@echo -e "Assembling: $<"
-	@mkdir -p $(@D)
-	$(AC) $(ACFLAGS) -o $@ $<
-
--include $(DEP_OBJS)
+include scripts/build.mk
 
 # TODO: add kernel module build rules
 

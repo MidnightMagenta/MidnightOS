@@ -1,5 +1,4 @@
-#include "dbg_serial.h"
-#include <stdbool.h>
+#include <debug/dbg_serial.h>
 #include <stdint.h>
 
 #define COM1_PORT 0x3F8

@@ -5,7 +5,7 @@
 
 #define BI_ASSERT_ABI_CONSISTENT(s) _Static_assert(_Alignof(s) == 8, #s " alignment is not 8 bytes.")
 
-#define BI_MAGIC 0x4D444249ULL
+#define BI_MAGIC 0x4D444249UL
 
 typedef uint64_t bi_physaddress_t;
 typedef uint64_t bi_virtaddress_t;
