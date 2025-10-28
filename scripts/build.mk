@@ -8,15 +8,16 @@ endef
 
 # include recursively all subdirectories in a list of objects
 define include-tree
-  $(foreach d,$(filter %/,$(1)),\
-    $(if $(filter $(d),$(2)),,\
-      $(eval $(call include-dir,$(d)))\
-      $(call include-tree,$(obj-y),$(2) $(d))\
-    )\
+  $(foreach d,$(filter %/,$(1)), \
+    $(if $(filter $(d),$(visited-dirs)),, \
+      $(eval visited-dirs += $(d)) \
+      $(eval $(call include-dir,$(d))) \
+      $(call include-tree,$(filter %/,$(obj-y))) \
+    ) \
   )
 endef
 
-$(eval $(call include-tree,$(obj-y),))
+$(eval $(call include-tree,$(filter %/,$(obj-y))))
 obj-y := $(filter-out %/,$(obj-y))
 
 KERNEL_OBJS := $(patsubst %.o,$(BUILD_DIR)/%.o,$(obj-y))

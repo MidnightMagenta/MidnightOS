@@ -128,7 +128,7 @@ EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
 		"cli\n"
 		"mov %0, %%cr3\n"
 		"mov %1, %%rdi\n"
-		"jmp %2\n"
+		"jmp *%2\n"
 		:
 		: "r"(pml4Addr), "r"(bootInfo), "r"(elfInfo.entry)
 		: "rdi", "memory"

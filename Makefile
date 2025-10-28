@@ -61,7 +61,7 @@ obj-y := arch/$(ARCH)/ debug/
 
 # build rules
 
-.PHONY: all rebuild rebuild-all bootloader clean clean-all image run run-info run-debug ccdb
+.PHONY: all rebuild rebuild-all bootloader clean clean-all image ccdb
 .NOTPARALLEL: rebuild rebuild-all
 
 all: bootloader $(BUILD_DIR)/$(KERNEL_TARGET)
@@ -116,48 +116,7 @@ $(IMAGE):
 	@sgdisk -s $(IMAGE) --disk-guid=$(DISK_GUID)
 	@sgdisk -s $(IMAGE) --largest-new=1 --typecode=1:ef00 --partition-guid=1:$(ESP_GUID)
 
-# debug emulator run rules
-
-EMU := 
-DBG := 
-
-ifeq ($(ARCH),x86_64)
-  EMU := qemu-system-x86_64
-  DBG := gdb
-else
-  $(error Unsuported architecture $(ARCH))
-  # TODO: implement other arches
-endif
-
-OVMF_BINS := ovmf-bins/$(ARCH)
-
-EMU_BASE_FLAGS = -drive file=$(IMAGE),format=raw \
-				-m 2G \
-				-cpu qemu64 \
-				-vga std \
-				-drive if=pflash,format=raw,unit=0,file="$(OVMF_BINS)/OVMF_CODE-pure-efi.fd",readonly=on \
-				-drive if=pflash,format=raw,unit=1,file="$(OVMF_BINS)/OVMF_VARS-pure-efi.fd" \
-				-net none \
-				-machine q35 
-
-EMU_DBG_FLAGS = -s -S -d int,guest_errors,cpu_reset -no-reboot -no-shutdown -D tmp/qemu.log
-
-DBG_FLAGS = -ex "symbol-file $(BUILD_DIR)/$(KERNEL_TARGET)" \
-			-ex "target remote localhost:1234" \
-			-ex "set disassemble-next-line on" \
-			-ex "set step-mode on"
-
-run:
-	$(EMU) $(EMU_BASE_FLAGS)
-
-run-info:
-	@mkdir -p ./tmp
-	$(EMU) $(EMU_BASE_FLAGS) $(EMU_DBG_FLAGS)
-
-run-debug:
-	@mkdir -p ./tmp
-	@$(EMU) $(EMU_BASE_FLAGS) $(EMU_DBG_FLAGS) &
-	@$(DBG) $(DBG_FLAGS)
+include scripts/run.mk
 
 # misc
 
