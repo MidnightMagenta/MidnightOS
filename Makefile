@@ -106,8 +106,8 @@ ESP_GUID = 0cc13370-53ec-4cdb-8c3d-4185950e2581
 
 image: $(IMAGE)
 	@mkdir -p $(FILES_DIR)/BOOT
-	@sh ./shell/genbootcfg.sh "$(FILES_DIR)/BOOT/BOOT.CFG" "$(ESP_GUID)" "MdOS\bin\$(KERNEL_TARGET)"
-	@sudo sh ./shell/updateimg.sh "$(IMAGE)" "$(BUILD_DIR)" "$(FILES_DIR)"
+	@sh ./scripts/genbootcfg.sh "$(FILES_DIR)/BOOT/BOOT.CFG" "$(ESP_GUID)" "MdOS\bin\$(KERNEL_TARGET)"
+	@sudo sh ./scripts/updateimg.sh "$(IMAGE)" "$(BUILD_DIR)" "$(FILES_DIR)"
 
 $(IMAGE):
 	@echo -e "\e[1;32mCreating empty image\e[0m"

@@ -62,7 +62,7 @@ SpacesInContainerLiterals: false
 SpacesInParentheses: false
 SpacesInSquareBrackets: false
 TabWidth: 2
-UseTab: Always
+UseTab: Never
 
 BinPackParameters: false
 PackConstructorInitializers: Never
