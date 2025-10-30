@@ -17,6 +17,7 @@ BUILD_DIR := build/$(ARCH)
 CFLAGS := -nostartfiles \
 					-nodefaultlibs \
 					-nostdlib \
+					-nostdinc \
 					-ffreestanding \
 					-fshort-wchar \
 					-fno-omit-frame-pointer \
@@ -25,6 +26,7 @@ CFLAGS := -nostartfiles \
 					-fno-tree-vectorize \
 					-fno-pic -fno-pie \
 					-I./include \
+					-I./arch/$(ARCH)/include \
 					-std=gnu23 \
 					-MMD -MP \
 					$(OPTIMIZE)
@@ -70,7 +72,7 @@ rebuild: clean all
 rebuild-all: clean-all all
 
 bootloader: $(GNU_EFI_NOTE)
-	@$(MAKE) -C bootloader BUILD_DIR="$(abspath $(BUILD_DIR)/bootloader)" INCLUDE_DIR="$(abspath ./include)" all
+	@$(MAKE) -C bootloader BUILD_DIR="$(abspath $(BUILD_DIR)/bootloader)" BOOT_TYPE="uefi" ARCH="$(ARCH)" all
 
 $(GNU_EFI_NOTE):
 	@mkdir -p $(BUILD_DIR)

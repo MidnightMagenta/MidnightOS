@@ -1,8 +1,9 @@
 BUILD_DIR := .
-INCLUDE_DIR := .
+BOOT_TYPE := uefi
+ARCH := x86_64
 
 .PHONY: all
 
 all:
-	@$(MAKE) -C bootx64 BUILD_DIR="$(BUILD_DIR)" all
-	@$(MAKE) -C mdosboot BUILD_DIR="$(BUILD_DIR)" INCLUDE_DIR="$(INCLUDE_DIR)" all
+	@$(MAKE) -C $(BOOT_TYPE)-$(ARCH)/bootx64 BUILD_DIR="$(BUILD_DIR)" all
+	@$(MAKE) -C $(BOOT_TYPE)-$(ARCH)/mdosboot BUILD_DIR="$(BUILD_DIR)" all

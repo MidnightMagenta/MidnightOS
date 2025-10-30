@@ -1,7 +1,7 @@
 #ifndef MDOS_RESULT_H
 #define MDOS_RESULT_H
 
-#include <stdint.h>
+#include <mdos/types.h>
 
 typedef enum mdos_result {
   MDOS_RES_SUCCESS,
@@ -10,6 +10,6 @@ typedef enum mdos_result {
   MDOS_RES_OUT_OF_RESOURCES,
 } mdos_result_t;
 
-#define MDOS_ERROR(v) (((int32_t) v) < 0)
+#define MDOS_ERROR(v) (((__s32) v) < 0)
 
 #endif

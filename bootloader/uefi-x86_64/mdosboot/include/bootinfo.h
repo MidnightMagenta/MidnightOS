@@ -1,14 +1,17 @@
-#ifndef MDOS_BOOT_INFO_H
-#define MDOS_BOOT_INFO_H
+#ifndef MDOSBOOT_BOOTINFO_H
+#define MDOSBOOT_BOOTINFO_H
 
-#include <mdos/types.h>
+#include "../include/elf.h"
+#include "../include/types.h"
+#include <efi.h>
+#include <efilib.h>
 
 #define BI_ASSERT_ABI_CONSISTENT(s) _Static_assert(_Alignof(s) == 8, #s " alignment is not 8 bytes.")
 
 #define BI_MAGIC 0x4D444249UL
 
-typedef __u64 bi_physaddress_t;
-typedef __u64 bi_virtaddress_t;
+typedef UINT64 bi_physaddress_t;
+typedef UINT64 bi_virtaddress_t;
 
 typedef enum {
   BI_STRUCTURE_TYPE_BOOT_INFO,
@@ -48,18 +51,18 @@ typedef enum {
 
 typedef struct bi_memdesc {
   bi_physaddress_t base;/// base physical address of the region
-  __u64 pageCount;      /// number of 4 KiB pages occupied by the region
-  __u32 type;           /// bi_memtype of the memory region
-  __u32 flags;          /// bi_memflags of the memory region
+  UINT64 pageCount;     /// number of 4 KiB pages occupied by the region
+  UINT32 type;          /// bi_memtype of the memory region
+  UINT32 flags;         /// bi_memflags of the memory region
 } bi_memdesc_t;
 BI_ASSERT_ABI_CONSISTENT(bi_memdesc_t);
 
 typedef struct bi_memmap {
-  __u32 version;                /// version of this structure
-  __u32 _pad0;                  /// padding
-  __u64 bufferSize;             /// size of the pDescriptors buffer in bytes
-  __u64 descriptorSize;         /// size of one descriptor in the descriptor array in bytes
-  __u64 descriptorCount;        /// number of descriptors in the descriptor array
+  UINT32 version;               /// version of this structure
+  UINT32 _pad0;                 /// padding
+  UINT64 bufferSize;            /// size of the pDescriptors buffer in bytes
+  UINT64 descriptorSize;        /// size of one descriptor in the descriptor array in bytes
+  UINT64 descriptorCount;       /// number of descriptors in the descriptor array
   bi_physaddress_t pDescriptors;/// physical address of a bi_memdesc_t array
 } bi_memmap_t;
 BI_ASSERT_ABI_CONSISTENT(bi_memmap_t);
@@ -67,31 +70,38 @@ BI_ASSERT_ABI_CONSISTENT(bi_memmap_t);
 typedef struct bi_kernelmapdesc {
   bi_physaddress_t paddr;/// physical address the kernel section was loaded into
   bi_virtaddress_t vaddr;/// virtual address the kernel section is mapped to
-  __u64 pageCount;       /// number of 4 KiB pages the kernel section occupies
-  __u32 flags;           /// bi_memflags of the kernel section
-  __u32 _pad0;           ///padding
+  UINT64 pageCount;      /// number of 4 KiB pages the kernel section occupies
+  UINT32 flags;          /// bi_memflags of the kernel section
+  UINT32 _pad0;          ///padding
 } bi_kernelmapdesc_t;
 BI_ASSERT_ABI_CONSISTENT(bi_kernelmapdesc_t);
 
 typedef struct bi_kernelmap {
-  __u32 version;                /// version of this structure
-  __u32 _pad0;                  /// padding
-  __u64 descriptorSize;         /// size of one descriptor in the descriptor array in bytes
-  __u64 descriptorCount;        /// number of kernel section descriptors in the descriptor array
+  UINT32 version;               /// version of this structure
+  UINT32 _pad0;                 /// padding
+  UINT64 descriptorSize;        /// size of one descriptor in the descriptor array in bytes
+  UINT64 descriptorCount;       /// number of kernel section descriptors in the descriptor array
   bi_physaddress_t pDescriptors;/// physical address of a bi_kernelmapdesc_t array
 } bi_kernelmap_t;
 BI_ASSERT_ABI_CONSISTENT(bi_kernelmap_t);
 
 typedef struct bi_bootinfo {
-  __u32 magic;                /// must be BI_MAGIC (0x4D444249ULL)
-  __u32 structureType;        /// must be BI_STRUCTURE_TYPE_BOOT_INFO
-  __u32 version;              /// version of this structure. Does not apply to following strucures
-  __u32 flags;                /// additional boot information flags
-  __u64 selfSize;             /// size of this structure
+  UINT32 magic;               /// must be BI_MAGIC (0x4D444249ULL)
+  UINT32 structureType;       /// must be BI_STRUCTURE_TYPE_BOOT_INFO
+  UINT32 version;             /// version of this structure. Does not apply to following strucures
+  UINT32 flags;               /// additional boot information flags
+  UINT64 selfSize;            /// size of this structure
   bi_physaddress_t pMemMap;   /// physical address of bi_memmap_t
   bi_physaddress_t pKernelMap;/// physical address of bi_kernelmap_t
   bi_physaddress_t pNext;     /// physical address of the next boot info structure
 } bi_bootinfo_t;
 BI_ASSERT_ABI_CONSISTENT(bi_bootinfo_t);
 
-#endif// !MDOS_BOOT_INFO_H
+typedef struct {
+  elf_loadinfo_t *elfSections;
+} bi_bootinfo_createinfo;
+
+EFI_STATUS bi_build_bootinfo(bi_bootinfo_createinfo *createInfo, bi_bootinfo_t **bootInfo);
+EFI_STATUS bi_update_memmap(const efi_memmap_t *const efiMap, bi_memmap_t *memmap);
+
+#endif
