@@ -6,7 +6,7 @@ PREFIX := $(ARCH)-$(BIN_TARGET)-
 
 CC := $(PREFIX)gcc
 LD := $(PREFIX)ld
-AC :=
+AC := $(PREFIX)as
 
 DEBUG := true
 VERBOSE := false
@@ -31,11 +31,9 @@ CFLAGS := -nostartfiles \
 					-MMD -MP \
 					$(OPTIMIZE)
 LDFLAGS := -static -Bsymbolic -nostdlib
-ACFLAGS :=
+ACFLAGS := -c
 
 ifeq ($(ARCH),x86_64)
-  AC := nasm
-  ACFLAGS := -f elf64
   CFLAGS += -m64 -m80387 -msse -msse2 -mmmx \
 						-mno-sse3 -mno-sse4 -mno-avx -mno-avx2 -mno-avx512f \
 						-mcmodel=kernel -mno-red-zone

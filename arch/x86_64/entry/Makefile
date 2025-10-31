@@ -1,1 +1,0 @@
-obj-y += $(subdir)entry.o $(subdir)start.o

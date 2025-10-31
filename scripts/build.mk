@@ -32,7 +32,7 @@ $(BUILD_DIR)/%.o: %.c
 	@mkdir -p $(@D)
 	@$(CC) $(CFLAGS) -c -o $@ $<
 
-$(BUILD_DIR)/%.o: %.asm
+$(BUILD_DIR)/%.o: %.s
 	@echo -e "Assembling: $<"
 	@mkdir -p $(@D)
 	$(AC) $(ACFLAGS) -o $@ $<
