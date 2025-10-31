@@ -38,23 +38,22 @@ setup_gdt:
   Load the IDT with the ignore_int procedure
 */
 setup_idt:
-  lea ignore_int(%rip), %rax
-  mov %ax, idt_entry(%rip)
-  shr $16, %rax
-  mov %ax, idt_entry+6(%rip)
-  shr $16, %rax
-  mov %eax, idt_entry+8(%rip)
+  lea ignore_int(%rip), %rdx
+  mov $0x00080000, %eax
+  mov %dx, %ax
+  mov $0x8E00, %dx
+  mov %edx, %edi
+  shl $32, %rdi
+  or %rdi, %rax
+  shr $32, %rdx
 
-  mov (idt_entry), %rax
-  mov (idt_entry + 8), %rdx
   lea _idt(%rip), %rdi
   mov $256, %rcx
 rp_sidt:
   mov %rax, (%rdi)
   mov %rdx, 8(%rdi)
   add $16, %rdi
-  dec %rcx
-  jnz rp_sidt
+  loop rp_sidt
   lidt idt_desc
   ret
 
@@ -62,16 +61,6 @@ ignore_int:
   iretq
 
 .section .data
-.align 16
-idt_entry:
-  .2byte 0
-  .2byte 0x0008
-  .byte  0
-  .byte  0x8E
-  .2byte 0
-  .4byte 0
-  .4byte 0
-
 .align 8
 gdt_desc:
   .2byte 256 * 8 - 1
