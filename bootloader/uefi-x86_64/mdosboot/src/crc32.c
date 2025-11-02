@@ -32,10 +32,10 @@ const uint32_t crc32_table[256] = {
         0xB40BBE37, 0xC30C8EA1, 0x5A05DF1B, 0x2D02EF8D};
 
 crc32_t crc32(const void *data, size_t length, crc32_t init) {
-  const uint8_t *bytes = (const uint8_t *) (data);
-  uint32_t crc = init;
+    const uint8_t *bytes = (const uint8_t *) (data);
+    uint32_t crc = init;
 
-  for (size_t i = 0; i < length; ++i) { crc = (crc >> 8) ^ crc32_table[(crc ^ bytes[i]) & 0xFF]; }
+    for (size_t i = 0; i < length; ++i) { crc = (crc >> 8) ^ crc32_table[(crc ^ bytes[i]) & 0xFF]; }
 
-  return ~crc;
+    return ~crc;
 }

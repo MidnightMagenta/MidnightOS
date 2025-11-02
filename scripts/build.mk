@@ -1,4 +1,4 @@
-# Includes a diroectory and defines a subdir variable with the path to that directory
+# Includes a directory and defines a subdir variable with the path to that directory
 # relative to the root directory of the project
 define include-dir
   subdir := $(1)
@@ -30,11 +30,11 @@ $(BUILD_DIR)/$(KERNEL_TARGET): $(KERNEL_OBJS)
 $(BUILD_DIR)/%.o: %.c
 	@echo -e "Compiling: $<"
 	@mkdir -p $(@D)
-	@$(CC) $(CFLAGS) -c -o $@ $<
+	@$(CC) $(CFLAGS) $($*-cflags) -c -o $@ $<
 
 $(BUILD_DIR)/%.o: %.s
 	@echo -e "Assembling: $<"
 	@mkdir -p $(@D)
-	$(AC) $(ACFLAGS) -o $@ $<
+	$(AC) $(ACFLAGS) $($*-acflags) -o $@ $<
 
 -include $(DEP_OBJS)

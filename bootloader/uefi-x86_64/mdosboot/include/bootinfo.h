@@ -6,8 +6,7 @@
 #include <efi.h>
 #include <efilib.h>
 
-#define BI_ASSERT_ABI_CONSISTENT(s) _Static_assert(_Alignof(s) == 8, #s " alignment is not 8 bytes.")
-
+#define BI_ABI __attribute__((aligned(8)))
 #define BI_MAGIC 0x4D444249UL
 
 typedef UINT64 bi_physaddress_t;
@@ -54,8 +53,7 @@ typedef struct bi_memdesc {
   UINT64 pageCount;     /// number of 4 KiB pages occupied by the region
   UINT32 type;          /// bi_memtype of the memory region
   UINT32 flags;         /// bi_memflags of the memory region
-} bi_memdesc_t;
-BI_ASSERT_ABI_CONSISTENT(bi_memdesc_t);
+} BI_ABI bi_memdesc_t;
 
 typedef struct bi_memmap {
   UINT32 version;               /// version of this structure
@@ -64,8 +62,7 @@ typedef struct bi_memmap {
   UINT64 descriptorSize;        /// size of one descriptor in the descriptor array in bytes
   UINT64 descriptorCount;       /// number of descriptors in the descriptor array
   bi_physaddress_t pDescriptors;/// physical address of a bi_memdesc_t array
-} bi_memmap_t;
-BI_ASSERT_ABI_CONSISTENT(bi_memmap_t);
+} BI_ABI bi_memmap_t;
 
 typedef struct bi_kernelmapdesc {
   bi_physaddress_t paddr;/// physical address the kernel section was loaded into
@@ -73,8 +70,7 @@ typedef struct bi_kernelmapdesc {
   UINT64 pageCount;      /// number of 4 KiB pages the kernel section occupies
   UINT32 flags;          /// bi_memflags of the kernel section
   UINT32 _pad0;          ///padding
-} bi_kernelmapdesc_t;
-BI_ASSERT_ABI_CONSISTENT(bi_kernelmapdesc_t);
+} BI_ABI bi_kernelmapdesc_t;
 
 typedef struct bi_kernelmap {
   UINT32 version;               /// version of this structure
@@ -82,8 +78,7 @@ typedef struct bi_kernelmap {
   UINT64 descriptorSize;        /// size of one descriptor in the descriptor array in bytes
   UINT64 descriptorCount;       /// number of kernel section descriptors in the descriptor array
   bi_physaddress_t pDescriptors;/// physical address of a bi_kernelmapdesc_t array
-} bi_kernelmap_t;
-BI_ASSERT_ABI_CONSISTENT(bi_kernelmap_t);
+} BI_ABI bi_kernelmap_t;
 
 typedef struct bi_bootinfo {
   UINT32 magic;               /// must be BI_MAGIC (0x4D444249ULL)
@@ -94,8 +89,7 @@ typedef struct bi_bootinfo {
   bi_physaddress_t pMemMap;   /// physical address of bi_memmap_t
   bi_physaddress_t pKernelMap;/// physical address of bi_kernelmap_t
   bi_physaddress_t pNext;     /// physical address of the next boot info structure
-} bi_bootinfo_t;
-BI_ASSERT_ABI_CONSISTENT(bi_bootinfo_t);
+} BI_ABI bi_bootinfo_t;
 
 typedef struct {
   elf_loadinfo_t *elfSections;

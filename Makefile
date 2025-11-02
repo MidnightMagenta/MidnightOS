@@ -29,6 +29,7 @@ CFLAGS := -nostartfiles \
 					-I./arch/$(ARCH)/include \
 					-std=gnu23 \
 					-MMD -MP \
+					-D_MDOS_ \
 					$(OPTIMIZE)
 LDFLAGS := -static -Bsymbolic -nostdlib
 ACFLAGS := -c
@@ -52,7 +53,7 @@ ifeq ($(VERBOSE),true)
 	  				-Wdouble-promotion -Wpedantic -Werror
 endif
 
-GNU_EFI_DIR := gnu-efi
+GNU_EFI_DIR := bootloader/gnu-efi
 GNU_EFI_NOTE := $(BUILD_DIR)/.gnu_efi_built
 
 KERNEL_TARGET := mdoskrnl.elf
@@ -64,13 +65,13 @@ obj-y := arch/$(ARCH)/ debug/
 .PHONY: all rebuild rebuild-all bootloader clean clean-all image ccdb
 .NOTPARALLEL: rebuild rebuild-all
 
-all: bootloader $(BUILD_DIR)/$(KERNEL_TARGET)
+all: $(BUILD_DIR)/$(KERNEL_TARGET)
 
 rebuild: clean all
 rebuild-all: clean-all all
 
 bootloader: $(GNU_EFI_NOTE)
-	@$(MAKE) -C bootloader BUILD_DIR="$(abspath $(BUILD_DIR)/bootloader)" BOOT_TYPE="uefi" ARCH="$(ARCH)" all
+	@$(MAKE) -C bootloader BUILD_DIR="$(abspath $(BUILD_DIR)/bootloader)" INCLUDE_DIR="$(abspath ./include/)" BOOT_TYPE="uefi" ARCH="$(ARCH)" all
 
 $(GNU_EFI_NOTE):
 	@mkdir -p $(BUILD_DIR)
@@ -121,4 +122,5 @@ include scripts/run.mk
 # misc
 
 ccdb:
-	@compiledb make -Bn
+	@compiledb make -Bn all
+	@compiledb make -Bn bootloader

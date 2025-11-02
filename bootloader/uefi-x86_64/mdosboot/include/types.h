@@ -5,11 +5,11 @@
 #include <efilib.h>
 
 typedef struct {
-  EFI_MEMORY_DESCRIPTOR *descs;
-  UINTN size;
-  UINTN key;
-  UINTN descSize;
-  UINT32 descVersion;
+    EFI_MEMORY_DESCRIPTOR *descs;
+    UINTN size;
+    UINTN key;
+    UINTN descSize;
+    UINT32 descVersion;
 } efi_memmap_t;
 
 EFI_STATUS efi_get_memmap(efi_memmap_t *const map, size_t *bufferSize);

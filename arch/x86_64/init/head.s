@@ -5,87 +5,88 @@
 
 .section .text
 _start:
-  cli
-  mov %rdi, %r15
-  xor %rbp, %rbp
-  mov $_stack_top, %rsp
-  push %rbp
-  mov %rsp, %rbp
-  call setup_gdt
-  call setup_idt
-  mov %r15, %rdi
-  call main
-  cli
-1:hlt
-  jmp 1b
+    cli
+    mov %rdi, %r15
+    xor %rbp, %rbp
+    mov $_stack_top, %rsp
+    push %rbp
+    mov %rsp, %rbp
+    call setup_gdt
+    call setup_idt
+    mov %r15, %rdi
+    call main
+    cli
+1:  hlt
+    jmp 1b
 
 setup_gdt:
-  lgdt gdt_desc
-  xor %rax, %rax
-  mov $0x10, %rax
-  mov %ax, %ds
-  mov %ax, %es
-  mov %ax, %fs
-  mov %ax, %gs
-  mov %ax, %ss
-  pop %rdi
-  mov $0x08, %rax
-  push %rax
-  push %rdi
-  retfq
+    lgdt gdt_desc
+    xor %rax, %rax
+    mov $0x10, %rax
+    mov %ax, %ds
+    mov %ax, %es
+    mov %ax, %fs
+    mov %ax, %gs
+    mov %ax, %ss
+    pop %rdx
+    mov $0x08, %rax
+    push %rax
+    push %rdx
+    retfq
 
 /* 
   Load the IDT with the ignore_int procedure
 */
 setup_idt:
-  lea ignore_int(%rip), %rdx
-  mov $0x00080000, %eax
-  mov %dx, %ax
-  mov $0x8E00, %dx
-  mov %edx, %edi
-  shl $32, %rdi
-  or %rdi, %rax
-  shr $32, %rdx
+    lea ignore_int(%rip), %rdx
+    mov $0x00080000, %eax
+    mov %dx, %ax
+    mov $0x8E00, %dx
+    mov %edx, %edi
+    shl $32, %rdi
+    or %rdi, %rax
+    shr $32, %rdx
 
-  lea _idt(%rip), %rdi
-  mov $256, %rcx
+    lea _idt(%rip), %rdi
+    mov $256, %rcx
 rp_sidt:
-  mov %rax, (%rdi)
-  mov %rdx, 8(%rdi)
-  add $16, %rdi
-  loop rp_sidt
-  lidt idt_desc
-  ret
+    mov %rax, (%rdi)
+    mov %rdx, 8(%rdi)
+    add $16, %rdi
+    loop rp_sidt
+    lidt idt_desc
+    ret
 
 ignore_int:
-  iretq
+    iretq
 
 .section .data
 .align 8
 gdt_desc:
-  .2byte 256 * 8 - 1
-  .8byte _gdt
+    .2byte 256 * 8 - 1
+    .8byte _gdt
 
 .align 8
 idt_desc:
-  .2byte 256 * 8 - 1
-  .8byte _idt
+    .2byte 256 * 16 - 1
+    .8byte _idt
 
 .align 0x1000
 _idt:
-  .fill 512, 8, 0
+    .skip 256 * 16
 
 .align 0x1000
 _gdt:
-  .8byte 0x0000000000000000
-  .8byte 0x00af9a000000ffff
-  .8byte 0x00af92000000ffff
-  .8byte 0x0000000000000000
-  .8byte 0x00aff8000000ffff
-  .8byte 0x00aff2000000ffff
-  .fill 250, 8, 0
+    .8byte 0x0000000000000000
+    .8byte 0x00af9a000000ffff
+    .8byte 0x00af92000000ffff
+    .8byte 0x0000000000000000
+    .8byte 0x00aff8000000ffff
+    .8byte 0x00aff2000000ffff
+    .skip 250 * 8
 
+.section .bss
 .align 0x1000
 _stack_bottom:
-  .skip 0x4000
+    .skip 0x2000
 _stack_top:
