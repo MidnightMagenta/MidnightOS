@@ -1,13 +1,18 @@
 *.o
 *.so
 *.efi
+*.EFI
 *.a
 *.lib
 *.img
 *.elf
+*.cfg
+*.CFG
 
-build/
-keys/
-.vscode/
 .cache/
+build/
+docs/
+keys/
 **/tmp/
+
+compile_commands.json

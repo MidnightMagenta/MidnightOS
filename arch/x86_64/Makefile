@@ -1,0 +1,1 @@
+obj-y += $(subdir)debug/ $(subdir)init/ $(subdir)kernel/

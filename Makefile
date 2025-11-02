@@ -1,112 +1,128 @@
-export TOPLEVEL_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
-export MAKE_VARS := $(abspath vars.mk)
-include $(MAKE_VARS)
+export TOPLEVEL_DIR := $(patsubst %/,%,$(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
 
-GNU_EFI_BUILT_NOTE := $(BUILD_DIR)/.gnu-efi-note
+ARCH := x86_64
+BIN_TARGET := elf
+PREFIX := $(ARCH)-$(BIN_TARGET)-
 
-EMU_BASE_FLAGS = -drive file=$(IMAGE),format=raw \
-				-m 2G \
-				-cpu qemu64 \
-				-vga std \
-				-drive if=pflash,format=raw,unit=0,file="$(OVMF_BINARIES_DIR)/OVMF_CODE-pure-efi.fd",readonly=on \
-				-drive if=pflash,format=raw,unit=1,file="$(OVMF_BINARIES_DIR)/OVMF_VARS-pure-efi.fd" \
-				-net none \
-				-machine q35
+CC := $(PREFIX)gcc
+LD := $(PREFIX)ld
+AC := $(PREFIX)as
 
-EMU_DBG_FLAGS = -s -S -d guest_errors,cpu_reset,int -no-reboot -no-shutdown
+DEBUG := true
+VERBOSE := false
+OPTIMIZE := -O0
 
-DBG_FLAGS = -ex "target remote localhost:1234" \
-			-ex "symbol-file $(BUILD_DIR)/kernel/kernel.elf" \
-			-ex "set disassemble-next-line on" \
-			-ex "set step-mode on"
+BUILD_DIR := build/$(ARCH)
 
-.PHONY: rebuild all build build-bootloader clean clean-all \
-		build-executables update-img gen-keys run run-extra-info debug \
+CFLAGS := -nostartfiles \
+					-nodefaultlibs \
+					-nostdlib \
+					-nostdinc \
+					-ffreestanding \
+					-fshort-wchar \
+					-fno-omit-frame-pointer \
+					-fno-stack-protector \
+		 			-fno-builtin \
+					-fno-tree-vectorize \
+					-fno-pic -fno-pie \
+					-I./include \
+					-I./arch/$(ARCH)/include \
+					-std=gnu23 \
+					-MMD -MP \
+					-D_MDOS_ \
+					$(OPTIMIZE)
+LDFLAGS := -static -Bsymbolic -nostdlib
+ACFLAGS := -c
 
-.NOTPARALLEL: rebuild
+ifeq ($(ARCH),x86_64)
+  CFLAGS += -m64 -m80387 -msse -msse2 -mmmx \
+						-mno-sse3 -mno-sse4 -mno-avx -mno-avx2 -mno-avx512f \
+						-mcmodel=kernel -mno-red-zone
+else
+  $(error Unsuported architecture $(ARCH))
+  # TODO: implement other arches
+endif
 
-all: update-img
+ifeq ($(DEBUG),true)
+  CFLAGS += -Wall -Wextra -g -D_DEBUG
+  ACFLAGS += -g
+endif
+
+ifeq ($(VERBOSE),true)
+  CFLAGS += -Wconversion -Wsign-conversion -Wundef -Wcast-align -Wshift-overflow \
+	  				-Wdouble-promotion -Wpedantic -Werror
+endif
+
+GNU_EFI_DIR := bootloader/gnu-efi
+GNU_EFI_NOTE := $(BUILD_DIR)/.gnu_efi_built
+
+KERNEL_TARGET := mdoskrnl.elf
+
+obj-y := arch/$(ARCH)/ debug/
+
+# build rules
+
+.PHONY: all rebuild rebuild-all bootloader clean clean-all image ccdb
+.NOTPARALLEL: rebuild rebuild-all
+
+all: $(BUILD_DIR)/$(KERNEL_TARGET)
 
 rebuild: clean all
+rebuild-all: clean-all all
 
-build: build-bootloader build-executables
+BOOT_TYPE := uefi
 
-build-bootloader: $(GNU_EFI_BUILT_NOTE)
-	@echo "\e[1;32m\n_____BUILDING_BOOTLOADER_____\e[0m"
+bootloader: $(GNU_EFI_NOTE)
+	@$(MAKE) -C bootloader BUILD_DIR="$(abspath $(BUILD_DIR)/bootloader)" INCLUDE_DIR="$(abspath ./include/)" BOOT_TYPE="$(BOOT_TYPE)" ARCH="$(ARCH)" all
+
+$(GNU_EFI_NOTE):
 	@mkdir -p $(BUILD_DIR)
-	$(MAKE) -C $(SOURCE_DIR)/bootx64 BUILD_DIR="$(BUILD_DIR)/bootx64" all
-	$(MAKE) -C $(SOURCE_DIR)/bootloader BUILD_DIR="$(BUILD_DIR)/bootloader" all
-
-build-executables:
-	@echo "\e[1;32m\n_____BUILDING_EXECUTABLES_____\e[0m"
-	@mkdir -p $(BUILD_DIR)
-	@mkdir -p $(LIB_DIR)
-	$(MAKE) -C $(SOURCE_DIR) all
-
-update-img: $(IMAGE) build
-	@echo "\e[1;32m\n_____BUILDING_IMAGE_____\e[0m"
-	mformat -i $(IMAGE) -F ::
-	mmd -i $(IMAGE) ::/EFI
-	mmd -i $(IMAGE) ::/EFI/BOOT
-	mmd -i $(IMAGE) ::/BOOT
-	mcopy -i $(IMAGE) $(BUILD_DIR)/bootx64/BOOTX64.EFI ::/EFI/BOOT
-	mcopy -i $(IMAGE) $(BUILD_DIR)/bootloader/MDOSBOOT.EFI ::/BOOT
-	mcopy -si $(IMAGE) $(FILES_DIR)/* ::
-
-gen-keys: $(KEY_HDR)
-
-run:
-	$(EMU) $(EMU_BASE_FLAGS)
-
-run-extra-info:
-	$(EMU) $(EMU_BASE_FLAGS) $(EMU_DBG_FLAGS)
-
-debug:
-	$(EMU) $(EMU_BASE_FLAGS) $(EMU_DBG_FLAGS) &
-	$(DBG) $(DBG_FLAGS)
-
-clean-all: clean
-	$(MAKE) -C gnu-efi clean
-	rm -rf $(GNU_EFI_BUILT_NOTE)
-	rm -rf $(BUILD_DIR)
-
-clean:
-	find $(SOURCE_DIR) -name "*.o" -type f -delete
-	find $(SOURCE_DIR) -name "*.so" -type f -delete
-	find $(BUILD_DIR) -name "*.o" -type f -delete
-	find $(BUILD_DIR) -name "*.a" -type f -delete
-	find $(BUILD_DIR) -name "*.so" -type f -delete
-	find $(BUILD_DIR) -name "*.efi" -type f -delete
-	find $(BUILD_DIR) -name "*.efi.debug" -type f -delete
-	find $(BUILD_DIR) -name "*.elf" -type f -delete
-
-$(GNU_EFI_BUILT_NOTE):
-	$(MAKE) -C $(GNU_EFI_DIR) all
+	@$(MAKE) -C $(GNU_EFI_DIR) all
 	@touch $@
 
+include scripts/build.mk
+
+# TODO: add kernel module build rules
+
+clean-all: clean
+	@$(MAKE) -C $(GNU_EFI_DIR) clean
+	@rm -rf $(GNU_EFI_NOTE)
+	@rm -rf $(BUILD_DIR)
+
+clean:
+	@make -C bootloader BUILD_DIR="$(abspath $(BUILD_DIR)/bootloader)" \
+	INCLUDE_DIR="$(abspath ./include/)" BOOT_TYPE="uefi" ARCH="$(ARCH)" clean
+	@find $(BUILD_DIR) -name "*.o" -type f -delete
+	@find $(BUILD_DIR) -name "*.a" -type f -delete
+	@find $(BUILD_DIR) -name "*.so" -type f -delete
+	@find $(BUILD_DIR) -name "*.efi" -type f -delete
+	@find $(BUILD_DIR) -name "*.EFI" -type f -delete
+	@find $(BUILD_DIR) -name "*.efi.debug" -type f -delete
+	@find $(BUILD_DIR) -name "*.elf" -type f -delete
+
+# image building rules
+
+FILES_DIR := files
+IMAGE := $(BUILD_DIR)/mdos.img
+DISK_GUID = f953b4de-e77f-4f0b-a14e-2b29080599cf
+ESP_GUID = 0cc13370-53ec-4cdb-8c3d-4185950e2581
+
+image: $(IMAGE)
+	@mkdir -p $(FILES_DIR)/BOOT
+	@sh ./scripts/genbootcfg.sh "$(FILES_DIR)/BOOT/BOOT.CFG" "$(ESP_GUID)" "$(KERNEL_TARGET)"
+	@sudo sh ./scripts/updateimg.sh "$(IMAGE)" "$(BUILD_DIR)" "$(FILES_DIR)"
+
 $(IMAGE):
-	@mkdir -p $(BUILD_DIR)
-	dd if=/dev/zero of=$(IMAGE) bs=512 count=93750
+	@echo -e "\e[1;32mCreating empty image\e[0m"
+	@mkdir -p $(@D)
+	@dd if=/dev/zero of=$@ bs=512 count=93750
+	@sgdisk -s $(IMAGE) --disk-guid=$(DISK_GUID)
+	@sgdisk -s $(IMAGE) --largest-new=1 --typecode=1:ef00 --partition-guid=1:$(ESP_GUID)
 
-$(PUB_KEY) $(SEC_KEY):
-	@echo "Generating keypair"
-	mkdir -p $(KEYS_DIR)
-	md-keygen -pk $(PUB_KEY) -sk $(SEC_KEY)
+include scripts/run.mk
 
-$(KEY_HDR): $(PUB_KEY)
-	@echo "#ifndef PUBLIC_KEY_H" 	> $@
-	@echo "#define PUBLIC_KEY_H" 	>> $@
-	@echo "#ifdef __cplusplus" 		>> $@
-	@echo 'extern "C" {'			>> $@
-	@echo "#endif" 					>> $@
-	@echo ""						>> $@
-	@echo "#include <stdint.h>"		>> $@	
-	@echo ""						>> $@
-	md-keytoarr -in $< -out $@ --var public_key
-	@echo ""						>> $@
-	@echo "#ifdef __cplusplus" 		>> $@
-	@echo '}'						>> $@
-	@echo "#endif" 					>> $@
-	@echo "#endif" 					>> $@
+# misc
 
-$(KEY_HDR): $(PUB_KEY)
+ccdb:
+	@compiledb make -Bn all
+	@compiledb make -Bn bootloader

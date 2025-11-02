@@ -1,5 +1,5 @@
 @echo -off
-mode 80 25
+mode 160 37
 
 cls
 if exist .\efi\boot\bootx64.efi then

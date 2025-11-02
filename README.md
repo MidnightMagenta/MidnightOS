@@ -1,8 +1,13 @@
 # MidnightOS
-## Warning
-This code runs in R0 (supervisor mode). It has not been extensively tested on real hardware. It may inadevertantly cause irreversible damage to the computer. Building and running this software on real hardware shall be done only at your own risk.
+
+> [!CAUTION]
+> This code runs in supervisor mode, and has access to all system resources. It has not been extensively tested on real hardware. It may inadvertently cause irreversible damage to the computer. Building and running this software on real hardware shall be done only at your own risk.
 
 ### Build instructions
+
+> [!NOTE]
+> These instructions are temporary, and may not work with future versions of the software
+
  - clone, build, and install the [signing tools](https://github.com/MidnightMagenta/MidnightSign.git)
  - build GCC with the following flags: `--target=x86_64-elf --disable-nls --enable-languages=c,c++ --without-headers --prefix=$(path_to_install_gcc)`
  - build binutils with the following flags: `--target=x86_64-elf --with-sysroot --disable-nls --disable-werror --prefix=$(path_to_install_binutils)`

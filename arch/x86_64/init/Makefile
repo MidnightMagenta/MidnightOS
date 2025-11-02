@@ -1,0 +1,1 @@
+obj-y += $(subdir)head.o $(subdir)main.o
