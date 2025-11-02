@@ -1,9 +1,9 @@
-#ifndef MDOS_BOOT_INFO_H
-#define MDOS_BOOT_INFO_H
+#ifndef _MDOS_BOOT_INFO_H
+#define _MDOS_BOOT_INFO_H
 
 #include <mdos/types.h>
 
-#define BI_ABI __attribute__((aligned(8)))
+#define BI_ABI   __attribute__((aligned(8)))
 #define BI_MAGIC 0x4D444249UL
 
 typedef __u64 bi_physaddress_t;
@@ -15,12 +15,12 @@ typedef enum {
 
 typedef enum {
     BI_VERSION_INVALID = 0x0,
-    BI_VERSION_1 = 0x1,
+    BI_VERSION_1       = 0x1,
 } bi_version;
 
 typedef enum {
-    BI_BOOTFLAGS_EFI_BOOT = 1 << 0,
-    BI_BOOTFLAGS_BIOS_BOOT = 1 << 1,
+    BI_BOOTFLAGS_EFI_BOOT     = 1 << 0,
+    BI_BOOTFLAGS_BIOS_BOOT    = 1 << 1,
     BI_BOOTFLAGS_BOOT_PARTIAL = 1 << 2,
 } bi_flags;
 
@@ -40,8 +40,8 @@ typedef enum {
 } bi_memtype;
 
 typedef enum {
-    BI_MEMFLAG_READ = 1 << 0,
-    BI_MEMFLAG_WRITE = 1 << 1,
+    BI_MEMFLAG_READ    = 1 << 0,
+    BI_MEMFLAG_WRITE   = 1 << 1,
     BI_MEMFLAG_EXECUTE = 1 << 2,
 } bi_memflags;
 
@@ -66,7 +66,7 @@ typedef struct bi_kernelmapdesc {
     bi_virtaddress_t vaddr;/// virtual address the kernel section is mapped to
     __u64 pageCount;       /// number of 4 KiB pages the kernel section occupies
     __u32 flags;           /// bi_memflags of the kernel section
-    __u32 _pad0;           ///padding
+    __u32 _pad0;           /// padding
 } BI_ABI bi_kernelmapdesc_t;
 
 typedef struct bi_kernelmap {

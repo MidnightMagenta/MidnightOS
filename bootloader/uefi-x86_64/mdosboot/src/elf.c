@@ -36,7 +36,7 @@ static EFI_STATUS elf_get_file_info(EFI_FILE *file, elf_loadinfo_t *info, Elf64_
 
     // get and verify the elf header
     UINTN ehdrSz = sizeof(Elf64_Ehdr);
-    res = file->Read(file, &ehdrSz, ehdr);
+    res          = file->Read(file, &ehdrSz, ehdr);
     if (EFI_ERROR(res)) { return res; }
 
     res = elf_verify_ehdr(ehdr);
@@ -46,7 +46,7 @@ static EFI_STATUS elf_get_file_info(EFI_FILE *file, elf_loadinfo_t *info, Elf64_
 
     // get the program headers
     UINTN phdrBufferSize = ehdr->e_phnum * ehdr->e_phentsize;
-    res = gBS->AllocatePool(EfiLoaderData, phdrBufferSize, (void **) phdrs);
+    res                  = gBS->AllocatePool(EfiLoaderData, phdrBufferSize, (void **) phdrs);
     if (EFI_ERROR(res)) { return res; }
 
     res = file->SetPosition(file, ehdr->e_phoff);
@@ -82,15 +82,15 @@ static EFI_STATUS elf_load_file_discont(EFI_FILE *file, elf_loadinfo_t *info) {
     if (EFI_ERROR(res)) { return res; }
 
     // load the sections
-    size_t phdrIndex = 0;
+    size_t phdrIndex                 = 0;
     elf_sectioninfo_t *loadedSection = info->sections;
     while (phdrIndex < ehdr.e_phnum) {
         Elf64_Phdr *phdr = (Elf64_Phdr *) ((char *) phdrs + ehdr.e_phentsize * phdrIndex);
         if (phdr->p_type == PT_LOAD) {
             // allocate memory for the sections
             Elf64_Addr paddr = 0;
-            UINTN pageCount = (phdr->p_memsz + 0x1000 - 1) / 0x1000;
-            res = gBS->AllocatePages(AllocateAnyPages, EfiLoaderData, pageCount, &paddr);
+            UINTN pageCount  = (phdr->p_memsz + 0x1000 - 1) / 0x1000;
+            res              = gBS->AllocatePages(AllocateAnyPages, EfiLoaderData, pageCount, &paddr);
             if (EFI_ERROR(res)) { goto err_free_loadInfo; }
 
             // zero out the memory before loading
@@ -100,14 +100,14 @@ static EFI_STATUS elf_load_file_discont(EFI_FILE *file, elf_loadinfo_t *info) {
             res = file->SetPosition(file, phdr->p_offset);
             if (EFI_ERROR(res)) { goto err_free_loadInfo; }
             UINTN size = phdr->p_filesz;
-            res = file->Read(file, &size, (void *) paddr);
+            res        = file->Read(file, &size, (void *) paddr);
             if (EFI_ERROR(res)) { goto err_free_loadInfo; }
 
             // get information from the phdr
             loadedSection->pageCount = pageCount;
-            loadedSection->phys = paddr;
-            loadedSection->reqVirt = phdr->p_vaddr;
-            loadedSection->flags = phdr->p_flags;
+            loadedSection->phys      = paddr;
+            loadedSection->reqVirt   = phdr->p_vaddr;
+            loadedSection->flags     = phdr->p_flags;
 
             // increment the section info pointer
             loadedSection++;
@@ -134,16 +134,16 @@ static EFI_STATUS elf_load_file_cont(EFI_FILE *file, elf_loadinfo_t *info) {
     res = elf_get_file_info(file, info, &ehdr, &phdrs);
     if (EFI_ERROR(res)) { return res; }
 
-    UINTN pageCount = elf_get_section_size(&ehdr, phdrs);
+    UINTN pageCount       = elf_get_section_size(&ehdr, phdrs);
     Elf64_Addr loadBuffer = 0;
-    res = gBS->AllocatePages(AllocateAnyPages, EfiLoaderData, pageCount, &loadBuffer);
+    res                   = gBS->AllocatePages(AllocateAnyPages, EfiLoaderData, pageCount, &loadBuffer);
     if (EFI_ERROR(res)) { goto err_free_loadInfo; }
     ZeroMem((void *) loadBuffer, pageCount * 0x1000);
 
     // load the sections
-    size_t phdrIndex = 0;
+    size_t phdrIndex                 = 0;
     elf_sectioninfo_t *loadedSection = info->sections;
-    Elf64_Addr paddr = loadBuffer;
+    Elf64_Addr paddr                 = loadBuffer;
     while (phdrIndex < ehdr.e_phnum) {
         Elf64_Phdr *phdr = (Elf64_Phdr *) ((char *) phdrs + ehdr.e_phentsize * phdrIndex);
         if (phdr->p_type == PT_LOAD) {
@@ -151,14 +151,14 @@ static EFI_STATUS elf_load_file_cont(EFI_FILE *file, elf_loadinfo_t *info) {
             res = file->SetPosition(file, phdr->p_offset);
             if (EFI_ERROR(res)) { goto err_free_loadBuffer; }
             UINTN size = phdr->p_filesz;
-            res = file->Read(file, &size, (void *) paddr);
+            res        = file->Read(file, &size, (void *) paddr);
             if (EFI_ERROR(res)) { goto err_free_loadBuffer; }
 
             // get information from the phdr
             loadedSection->pageCount = (phdr->p_memsz + 0x1000 - 1) / 0x1000;
-            loadedSection->phys = paddr;
-            loadedSection->reqVirt = phdr->p_vaddr;
-            loadedSection->flags = phdr->p_flags;
+            loadedSection->phys      = paddr;
+            loadedSection->reqVirt   = phdr->p_vaddr;
+            loadedSection->flags     = phdr->p_flags;
 
             // increment the section info pointer
             paddr += ALIGN_UP(phdr->p_memsz, 0x1000, Elf64_Addr);
@@ -198,7 +198,7 @@ EFI_STATUS elf_load_file(EFI_FILE *file, elf_loadinfo_t *info, elf_loadtype_t lo
 void elf_free_loadinfo(elf_loadinfo_t *info) {
     if (info->sections != NULL) { gBS->FreePool(info->sections); }
     info->sectionCount = 0;
-    info->entry = 0;
+    info->entry        = 0;
 }
 
 void elf_free_sections(elf_loadinfo_t *info) {

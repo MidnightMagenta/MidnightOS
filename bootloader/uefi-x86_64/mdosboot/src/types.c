@@ -11,7 +11,7 @@ EFI_STATUS efi_get_memmap(efi_memmap_t *const map, size_t *bufferSize) {
 
     map->size += EFI_MAP_DESCRIPTOR_EXTRA;
     *bufferSize = map->size;
-    res = gBS->AllocatePool(EfiLoaderData, map->size, (void **) &map->descs);
+    res         = gBS->AllocatePool(EfiLoaderData, map->size, (void **) &map->descs);
     if (EFI_ERROR(res)) { return res; }
 
     res = gBS->GetMemoryMap(&map->size, map->descs, &map->key, &map->descSize, &map->descVersion);
@@ -27,7 +27,7 @@ EFI_STATUS efi_get_memmap_norealloc(size_t bufferSize, efi_memmap_t *const map) 
     EFI_STATUS res;
 
     map->size = bufferSize;
-    res = gBS->GetMemoryMap(&map->size, map->descs, &map->key, &map->descSize, &map->descVersion);
+    res       = gBS->GetMemoryMap(&map->size, map->descs, &map->key, &map->descSize, &map->descVersion);
     if (EFI_ERROR(res)) { return res; }
 
     return EFI_SUCCESS;
@@ -35,8 +35,8 @@ EFI_STATUS efi_get_memmap_norealloc(size_t bufferSize, efi_memmap_t *const map) 
 
 void efi_free_memmap(efi_memmap_t *const map) {
     gBS->FreePool(map->descs);
-    map->size = 0;
-    map->key = 0;
-    map->descSize = 0;
+    map->size        = 0;
+    map->key         = 0;
+    map->descSize    = 0;
     map->descVersion = 0;
 }

@@ -21,7 +21,7 @@ static EFI_STATUS open_config_file(EFI_FILE **cfg, EFI_HANDLE imageHandle) {
     }
 
     EFI_FILE *root = NULL;
-    res = espFS->OpenVolume(espFS, &root);
+    res            = espFS->OpenVolume(espFS, &root);
     if (EFI_ERROR(res) || root == NULL) {
         DBG_WARN("[%a %d] Failed to open root directory with: %lx\n\r", __func__, __LINE__, res);
         return res;
@@ -65,7 +65,7 @@ static EFI_STATUS read_config(char *cfgBuffer, UINTN cfgSize, configinfo_t *cfg)
 
     while (ptr < end) {
         // extract data
-        CHAR8 *name = (CHAR8 *) ptr;
+        CHAR8 *name   = (CHAR8 *) ptr;
         UINTN nameLen = strlena(name);
         ptr += nameLen + 1;
 
@@ -101,9 +101,9 @@ EFI_STATUS parse_config(IN EFI_HANDLE imageHandle, OUT configinfo_t *cfg) {
     if (imageHandle == NULL || cfg == NULL) { return EFI_INVALID_PARAMETER; }
     EFI_STATUS res = EFI_SUCCESS;
 
-    UINTN fileSize = 0;
+    UINTN fileSize    = 0;
     EFI_FILE *cfgFile = NULL;
-    char *cfgBuffer = NULL;
+    char *cfgBuffer   = NULL;
 
     res = open_config_file(&cfgFile, imageHandle);
     if (EFI_ERROR(res)) { return res; }

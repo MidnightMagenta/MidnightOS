@@ -1,5 +1,5 @@
-#ifndef MDOS_DBG_SERIAL_H
-#define MDOS_DBG_SERIAL_H
+#ifndef _MDOS_DBG_SERIAL_H
+#define _MDOS_DBG_SERIAL_H
 
 #include <result.h>
 

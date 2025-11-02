@@ -49,13 +49,13 @@ static EFI_STATUS bi_build_memmap(bi_memmap_t **memmap) {
 
     SetMem(*memmap, sizeof(bi_memmap_t), 0);
 
-    (*memmap)->version = BI_VERSION_1;
-    (*memmap)->descriptorSize = sizeof(bi_memdesc_t);
+    (*memmap)->version         = BI_VERSION_1;
+    (*memmap)->descriptorSize  = sizeof(bi_memdesc_t);
     (*memmap)->descriptorCount = 256;
-    (*memmap)->bufferSize = ((*memmap)->descriptorCount * (*memmap)->descriptorSize) + BI_MAP_DESCRIPTOR_EXTRA;
+    (*memmap)->bufferSize      = ((*memmap)->descriptorCount * (*memmap)->descriptorSize) + BI_MAP_DESCRIPTOR_EXTRA;
 
     bi_memdesc_t *descriptors = NULL;
-    res = gBS->AllocatePool(EfiLoaderData, (*memmap)->bufferSize, (void **) &descriptors);
+    res                       = gBS->AllocatePool(EfiLoaderData, (*memmap)->bufferSize, (void **) &descriptors);
     if (EFI_ERROR(res)) {
         gBS->FreePool(*memmap);
         *memmap = NULL;
@@ -73,14 +73,14 @@ static EFI_STATUS bi_build_kernelmap(const elf_loadinfo_t *const elfMap, bi_kern
 
     SetMem(*kernelMap, sizeof(bi_kernelmap_t), 0);
 
-    (*kernelMap)->version = BI_VERSION_1;
-    (*kernelMap)->descriptorSize = sizeof(bi_kernelmapdesc_t);
+    (*kernelMap)->version         = BI_VERSION_1;
+    (*kernelMap)->descriptorSize  = sizeof(bi_kernelmapdesc_t);
     (*kernelMap)->descriptorCount = elfMap->sectionCount;
 
     UINTN totalBytes = (*kernelMap)->descriptorSize * (*kernelMap)->descriptorCount;
 
     bi_kernelmapdesc_t *descriptors = NULL;
-    res = gBS->AllocatePool(EfiLoaderData, totalBytes, (void **) &descriptors);
+    res                             = gBS->AllocatePool(EfiLoaderData, totalBytes, (void **) &descriptors);
     if (EFI_ERROR(res)) {
         gBS->FreePool(*kernelMap);
         *kernelMap = NULL;
@@ -93,10 +93,10 @@ static EFI_STATUS bi_build_kernelmap(const elf_loadinfo_t *const elfMap, bi_kern
                 (const elf_sectioninfo_t *) ((const char *) elfMap->sections + i * sizeof(elf_sectioninfo_t));
         bi_kernelmapdesc_t *desc = (bi_kernelmapdesc_t *) ((char *) descriptors + i * sizeof(bi_kernelmapdesc_t));
 
-        desc->paddr = section->phys;
-        desc->vaddr = section->reqVirt;
+        desc->paddr     = section->phys;
+        desc->vaddr     = section->reqVirt;
         desc->pageCount = section->pageCount;
-        desc->flags = 0;// TODO: add flag handling
+        desc->flags     = 0;// TODO: add flag handling
     }
 
     (*kernelMap)->pDescriptors = (uint64_t) (UINTN) descriptors;
@@ -109,11 +109,11 @@ EFI_STATUS bi_build_bootinfo(bi_bootinfo_createinfo *createInfo, bi_bootinfo_t *
 
     SetMem(*bootInfo, sizeof(bi_bootinfo_t), 0);
 
-    (*bootInfo)->version = BI_VERSION_1;
-    (*bootInfo)->magic = BI_MAGIC;
+    (*bootInfo)->version       = BI_VERSION_1;
+    (*bootInfo)->magic         = BI_MAGIC;
     (*bootInfo)->structureType = BI_STRUCTURE_TYPE_BOOT_INFO;
-    (*bootInfo)->selfSize = sizeof(bi_bootinfo_t);
-    (*bootInfo)->flags = BI_BOOTFLAGS_EFI_BOOT;
+    (*bootInfo)->selfSize      = sizeof(bi_bootinfo_t);
+    (*bootInfo)->flags         = BI_BOOTFLAGS_EFI_BOOT;
 
     // Build sub-structures
     res = bi_build_memmap((bi_memmap_t **) &(*bootInfo)->pMemMap);
@@ -126,7 +126,7 @@ EFI_STATUS bi_build_bootinfo(bi_bootinfo_createinfo *createInfo, bi_bootinfo_t *
 
 fail_memmap:
     if ((*bootInfo)->pMemMap) {
-        void *ptr = (void *) (UINTN) (*bootInfo)->pMemMap;
+        void *ptr       = (void *) (UINTN) (*bootInfo)->pMemMap;
         bi_memmap_t *mm = (bi_memmap_t *) ptr;
         if (mm->pDescriptors) { gBS->FreePool((void *) (UINTN) mm->pDescriptors); }
         gBS->FreePool(mm);
@@ -141,9 +141,9 @@ EFI_STATUS bi_update_memmap(const efi_memmap_t *const efiMap, bi_memmap_t *memma
     if (!efiMap || !memmap || !memmap->pDescriptors) return EFI_INVALID_PARAMETER;
 
     UINT8 *base = (UINT8 *) (UINTN) memmap->pDescriptors;
-    UINT8 *end = base + memmap->bufferSize;
+    UINT8 *end  = base + memmap->bufferSize;
 
-    UINTN inCount = efiMap->size / efiMap->descSize;
+    UINTN inCount        = efiMap->size / efiMap->descSize;
     UINTN outBytesNeeded = inCount * sizeof(bi_memdesc_t);
 
     if (base + outBytesNeeded > end) { return EFI_BUFFER_TOO_SMALL; }
@@ -157,10 +157,10 @@ EFI_STATUS bi_update_memmap(const efi_memmap_t *const efiMap, bi_memmap_t *memma
 
         if ((UINT8 *) biDesc + sizeof(bi_memdesc_t) > end) { return EFI_BUFFER_TOO_SMALL; }
 
-        biDesc->base = efiDesc->PhysicalStart;
+        biDesc->base      = efiDesc->PhysicalStart;
         biDesc->pageCount = efiDesc->NumberOfPages;
-        biDesc->type = memtype_efi_to_bi(efiDesc->Type);
-        biDesc->flags = 0;
+        biDesc->type      = memtype_efi_to_bi(efiDesc->Type);
+        biDesc->flags     = 0;
     }
 
     return EFI_SUCCESS;

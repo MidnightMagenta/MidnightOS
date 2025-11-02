@@ -47,7 +47,7 @@ char toI64StrBuff[128];
 
 static const char *u64_to_str(__u64 v) {
     __u64 sizeTest = v;
-    __u8 length = 0;
+    __u8 length    = 0;
     while (sizeTest / 10 > 0) {
         sizeTest /= 10;
         length++;
@@ -60,9 +60,9 @@ static const char *u64_to_str(__u64 v) {
         toU64StrBuff[length - index] = (char) (remainder) + '0';
         index++;
     } while (v / 10 > 0);
-    __u8 remainder = (__u8) (v % 10);
+    __u8 remainder               = (__u8) (v % 10);
     toU64StrBuff[length - index] = (char) (remainder) + '0';
-    toU64StrBuff[length + 1] = '\0';
+    toU64StrBuff[length + 1]     = '\0';
     return toU64StrBuff;
 }
 
@@ -102,7 +102,7 @@ static const char *s64_to_str(__s64 v) {
         toI64StrBuff[0] = '-';
     }
     __u64 sizeTest = (__u64) (v);
-    __u8 length = 0;
+    __u8 length    = 0;
     while (sizeTest / 10 > 0) {
         sizeTest /= 10;
         length++;
@@ -115,9 +115,9 @@ static const char *s64_to_str(__s64 v) {
         toI64StrBuff[negative + length - index] = (char) (remainder) + '0';
         index++;
     }
-    __u8 remainder = (__u8) (v % 10);
+    __u8 remainder                          = (__u8) (v % 10);
     toI64StrBuff[negative + length - index] = (char) (remainder) + '0';
-    toI64StrBuff[negative + length + 1] = '\0';
+    toI64StrBuff[negative + length + 1]     = '\0';
     return toI64StrBuff;
 }
 
@@ -135,7 +135,7 @@ static size_t dbg_internal_print(const char *fmt, va_list params) {
             size_t amount = 1;
             while (fmt[amount] && fmt[amount] != '%') { amount++; }
             if (maxrem < amount) {
-                //TODO: error stuff
+                // TODO: error stuff
                 return (size_t) 0;
             }
             dbg_internal_print_str(fmt, amount);
@@ -150,7 +150,7 @@ static size_t dbg_internal_print(const char *fmt, va_list params) {
             fmt++;
             char c = (char) va_arg(params, int);
             if (maxrem < 1) {
-                //TODO: error
+                // TODO: error
                 return (size_t) 0;
             }
             dbg_internal_print_str(&c, 1);
@@ -158,84 +158,84 @@ static size_t dbg_internal_print(const char *fmt, va_list params) {
         } else if (*fmt == 's') {
             fmt++;
             const char *str = va_arg(params, const char *);
-            size_t amount = dbg_strlen(str);
+            size_t amount   = dbg_strlen(str);
             if (maxrem < amount) {
-                //TODO: error
+                // TODO: error
                 return (size_t) 0;
             }
             dbg_internal_print_str(str, amount);
             written += amount;
         } else if (*fmt == 'd' || *fmt == 'i') {
             fmt++;
-            __s32 num = (__s32) va_arg(params, __s32);
+            __s32 num       = (__s32) va_arg(params, __s32);
             const char *str = s64_to_str((__s64) num);
-            size_t amount = dbg_strlen(str);
+            size_t amount   = dbg_strlen(str);
             if (maxrem < amount) {
-                //TODO: error
+                // TODO: error
                 return (size_t) 0;
             }
             dbg_internal_print_str(str, amount);
             written += amount;
         } else if ((*fmt == 'l' && fmt[1] == 'd') || (*fmt == 'l' && fmt[1] == 'i')) {
             fmt += 2;
-            __s64 num = (__s64) va_arg(params, __s64);
+            __s64 num       = (__s64) va_arg(params, __s64);
             const char *str = s64_to_str((__s64) num);
-            size_t amount = dbg_strlen(str);
+            size_t amount   = dbg_strlen(str);
             if (maxrem < amount) {
-                //TODO: error
+                // TODO: error
                 return (size_t) 0;
             }
             dbg_internal_print_str(str, amount);
             written += amount;
         } else if (*fmt == 'u') {
             fmt++;
-            __u32 num = (__u32) va_arg(params, __u32);
+            __u32 num       = (__u32) va_arg(params, __u32);
             const char *str = u64_to_str((__u64) num);
-            size_t amount = dbg_strlen(str);
+            size_t amount   = dbg_strlen(str);
             if (maxrem < amount) {
-                //TODO: error
+                // TODO: error
                 return (size_t) 0;
             }
             dbg_internal_print_str(str, amount);
             written += amount;
         } else if ((*fmt == 'l' && fmt[1] == 'u')) {
             fmt += 2;
-            __u64 num = (__u64) va_arg(params, __u64);
+            __u64 num       = (__u64) va_arg(params, __u64);
             const char *str = u64_to_str((__u64) num);
-            size_t amount = dbg_strlen(str);
+            size_t amount   = dbg_strlen(str);
             if (maxrem < amount) {
-                //TODO: error
+                // TODO: error
                 return (size_t) 0;
             }
             dbg_internal_print_str(str, amount);
             written += amount;
         } else if (*fmt == 'x') {
             fmt++;
-            __u32 num = (__u32) va_arg(params, __u32);
+            __u32 num       = (__u32) va_arg(params, __u32);
             const char *str = u32_to_hstr(num);
-            size_t amount = dbg_strlen(str);
+            size_t amount   = dbg_strlen(str);
             if (maxrem < amount) {
-                //TODO: error
+                // TODO: error
                 return (size_t) 0;
             }
             dbg_internal_print_str(str, amount);
             written += amount;
         } else if ((*fmt == 'l' && fmt[1] == 'x')) {
             fmt += 2;
-            __u64 num = (__u64) va_arg(params, __u64);
+            __u64 num       = (__u64) va_arg(params, __u64);
             const char *str = u64_to_hstr(num);
-            size_t amount = dbg_strlen(str);
+            size_t amount   = dbg_strlen(str);
             if (maxrem < amount) {
-                //TODO: error
+                // TODO: error
                 return (size_t) 0;
             }
             dbg_internal_print_str(str, amount);
             written += amount;
         } else {
-            fmt = fmt_begun_at;
+            fmt           = fmt_begun_at;
             size_t amount = dbg_strlen(fmt);
             if (maxrem < amount) {
-                //implement errno
+                // implement errno
                 return (size_t) 0;
             }
             dbg_internal_print_str(fmt, amount);

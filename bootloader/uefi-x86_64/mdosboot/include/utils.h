@@ -3,7 +3,7 @@
 
 #include "../include/debug.h"
 
-#define ALIGN_UP(v, a, t) ((t) v + ((t) a - 1)) & (~((t) a - 1))
+#define ALIGN_UP(v, a, t)   ((t) v + ((t) a - 1)) & (~((t) a - 1))
 #define ALIGN_DOWN(v, a, t) ((t) v & ~((t) a - 1))
 
 #define EFI_TRY_RET(expr)                                                                                              \

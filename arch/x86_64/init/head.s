@@ -1,5 +1,5 @@
-.global _start 
-.global _idt 
+.global _start
+.global _idt
 .global _gdt
 .extern main
 
@@ -20,7 +20,9 @@ _start:
     jmp 1b
 
 setup_gdt:
-    lgdt gdt_desc
+    lea _gdt(%rip), %rcx
+    mov %rcx, gdt_desc+2(%rip)
+    lgdt gdt_desc(%rip)
     xor %rax, %rax
     mov $0x10, %rax
     mov %ax, %ds
@@ -34,7 +36,7 @@ setup_gdt:
     push %rdx
     retfq
 
-/* 
+/*
   Load the IDT with the ignore_int procedure
 */
 setup_idt:
@@ -49,12 +51,13 @@ setup_idt:
 
     lea _idt(%rip), %rdi
     mov $256, %rcx
-rp_sidt:
-    mov %rax, (%rdi)
+1:  mov %rax, (%rdi)
     mov %rdx, 8(%rdi)
     add $16, %rdi
-    loop rp_sidt
-    lidt idt_desc
+    loop 1b
+    lea _idt(%rip), %rcx
+    mov %rcx, idt_desc+2(%rip)
+    lidt idt_desc(%rip)
     ret
 
 ignore_int:
@@ -63,30 +66,30 @@ ignore_int:
 .section .data
 .align 8
 gdt_desc:
-    .2byte 256 * 8 - 1
-    .8byte _gdt
+    .2byte  256 * 8 - 1
+    .8byte  0
 
 .align 8
 idt_desc:
-    .2byte 256 * 16 - 1
-    .8byte _idt
+    .2byte  256 * 16 - 1
+    .8byte  0
 
 .align 0x1000
 _idt:
-    .skip 256 * 16
+    .skip   256 * 16
 
 .align 0x1000
 _gdt:
-    .8byte 0x0000000000000000
-    .8byte 0x00af9a000000ffff
-    .8byte 0x00af92000000ffff
-    .8byte 0x0000000000000000
-    .8byte 0x00aff8000000ffff
-    .8byte 0x00aff2000000ffff
-    .skip 250 * 8
+    .8byte  0x0000000000000000
+    .8byte  0x00af9a000000ffff
+    .8byte  0x00af92000000ffff
+    .8byte  0x0000000000000000
+    .8byte  0x00aff8000000ffff
+    .8byte  0x00aff2000000ffff
+    .skip   250 * 8
 
 .section .bss
 .align 0x1000
 _stack_bottom:
-    .skip 0x2000
+    .skip   0x2000
 _stack_top:

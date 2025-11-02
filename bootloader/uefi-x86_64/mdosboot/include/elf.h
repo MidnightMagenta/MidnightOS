@@ -5,19 +5,20 @@
 #include <efilib.h>
 #include <elf.h>
 
-/** 
- * \defgroup bootloader_internal Bootloader Internals 
+/**
+ * \defgroup bootloader_internal Bootloader Internals
  * @brief Internal bootloader functions.
- * 
+ *
  * Internal functions available to the bootloader.
  * They may be used to extend the bootloader,
  * but are not guaranteed to be avaiable globally.
- * 
+ *
  * @{
-*/
+ */
 
 /**
- * \brief Loaded section information containing the physical address it was loaded to, it's requested virtual address, and size in memory.
+ * \brief Loaded section information containing the physical address it was loaded to, it's requested virtual address,
+ * and size in memory.
  */
 typedef struct {
     Elf64_Addr phys;   /// The physical address into which the section was loaded
@@ -39,8 +40,9 @@ typedef struct {
  * \brief ELF program sections load strategies.
  */
 typedef enum {
-    ELF_LOAD_AUTO,/// Attempts to load sections in a contigous fashion first. If failed, falls back to discontigous
-    ELF_LOAD_CONTIG,/// Loads program sections one after another in memory in the enumeration order of program headers, into a flat image.
+    ELF_LOAD_AUTO,  /// Attempts to load sections in a contigous fashion first. If failed, falls back to discontigous
+    ELF_LOAD_CONTIG,/// Loads program sections one after another in memory in the enumeration order of program headers,
+                    /// into a flat image.
     ELF_LOAD_DISCONTIG,/// Loads program sections into any location in memory
 } elf_loadtype_t;
 

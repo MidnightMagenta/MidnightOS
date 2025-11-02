@@ -13,17 +13,17 @@
 #error "Compiler must support using MS ABI"
 #endif
 
-#define DIRECT_MAP_BASE 0xFFFF800000000000ULL
-#define BI_MEMMAP_SIZE 8192
+#define DIRECT_MAP_BASE      0xFFFF800000000000ULL
+#define BI_MEMMAP_SIZE       8192
 #define EXIT_BS_MAX_ATTEMPTS 5
 
 EFI_STATUS load_boot_bin(EFI_HANDLE imageHandle, configinfo_t *bootConfig, elf_loadinfo_t *elfInfo) {
     EFI_STATUS res = EFI_SUCCESS;
 
-    EFI_HANDLE bootPart = NULL;
+    EFI_HANDLE bootPart                         = NULL;
     EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *bootPartFs = NULL;
-    EFI_FILE *bootRoot = NULL;
-    EFI_FILE *bootBinary = NULL;
+    EFI_FILE *bootRoot                          = NULL;
+    EFI_FILE *bootBinary                        = NULL;
 
     res = parse_config(imageHandle, bootConfig);
     if (EFI_ERROR(res)) { return res; }
@@ -74,13 +74,13 @@ EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
     InitializeLib(imageHandle, systemTable);
     EFI_STATUS res = EFI_SUCCESS;
 
-    configinfo_t bootConfig = {0};
-    elf_loadinfo_t elfInfo = {0};
-    efi_memmap_t memMap = {0};
-    size_t memMapBufferSize = 0;
+    configinfo_t bootConfig       = {0};
+    elf_loadinfo_t elfInfo        = {0};
+    efi_memmap_t memMap           = {0};
+    size_t memMapBufferSize       = 0;
     EFI_PHYSICAL_ADDRESS pml4Addr = 0;
-    uint64_t *pml4 = NULL;
-    bi_bootinfo_t *bootInfo = NULL;
+    uint64_t *pml4                = NULL;
+    bi_bootinfo_t *bootInfo       = NULL;
 
     // load the boot binary
     res = load_boot_bin(imageHandle, &bootConfig, &elfInfo);
@@ -101,8 +101,8 @@ EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
 
     // create the boot info structure
     bi_bootinfo_createinfo bootInfoCreateInfo = {0};
-    bootInfoCreateInfo.elfSections = &elfInfo;
-    res = bi_build_bootinfo(&bootInfoCreateInfo, &bootInfo);
+    bootInfoCreateInfo.elfSections            = &elfInfo;
+    res                                       = bi_build_bootinfo(&bootInfoCreateInfo, &bootInfo);
     if (EFI_ERROR(res)) { goto err_free_pageTables; }
 
     // exit boot services

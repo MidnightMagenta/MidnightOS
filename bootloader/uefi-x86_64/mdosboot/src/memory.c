@@ -8,15 +8,15 @@ EFI_STATUS mem_map_page(uint64_t *pml4, EFI_VIRTUAL_ADDRESS vaddr, EFI_PHYSICAL_
     EFI_STATUS res;
     EFI_PHYSICAL_ADDRESS newPage;
     uint64_t *pdpt = NULL;
-    uint64_t *pd = NULL;
-    uint64_t *pt = NULL;
+    uint64_t *pd   = NULL;
+    uint64_t *pt   = NULL;
 
     if (!(pml4[PML4_ENTRY(vaddr)] & PAGE_PRESENT)) {
         newPage = 0;
-        res = gBS->AllocatePages(AllocateAnyPages, EfiLoaderData, 1, &newPage);
+        res     = gBS->AllocatePages(AllocateAnyPages, EfiLoaderData, 1, &newPage);
         if (EFI_ERROR(res)) { return res; }
         pml4[PML4_ENTRY(vaddr)] = newPage | PAGE_WSP;
-        uint64_t *temp = (uint64_t *) newPage;
+        uint64_t *temp          = (uint64_t *) newPage;
         ZeroMem((void *) temp, 0x1000);
     }
 
@@ -24,10 +24,10 @@ EFI_STATUS mem_map_page(uint64_t *pml4, EFI_VIRTUAL_ADDRESS vaddr, EFI_PHYSICAL_
 
     if (!(pdpt[PDPT_ENTRY(vaddr)] & PAGE_PRESENT)) {
         newPage = 0;
-        res = gBS->AllocatePages(AllocateAnyPages, EfiLoaderData, 1, &newPage);
+        res     = gBS->AllocatePages(AllocateAnyPages, EfiLoaderData, 1, &newPage);
         if (EFI_ERROR(res)) { return res; }
         pdpt[PDPT_ENTRY(vaddr)] = newPage | PAGE_WSP;
-        uint64_t *temp = (uint64_t *) newPage;
+        uint64_t *temp          = (uint64_t *) newPage;
         ZeroMem((void *) temp, 0x1000);
     }
 
@@ -35,14 +35,14 @@ EFI_STATUS mem_map_page(uint64_t *pml4, EFI_VIRTUAL_ADDRESS vaddr, EFI_PHYSICAL_
 
     if (!(pd[PD_ENTRY(vaddr)] & PAGE_PRESENT)) {
         newPage = 0;
-        res = gBS->AllocatePages(AllocateAnyPages, EfiLoaderData, 1, &newPage);
+        res     = gBS->AllocatePages(AllocateAnyPages, EfiLoaderData, 1, &newPage);
         if (EFI_ERROR(res)) { return res; }
         pd[PD_ENTRY(vaddr)] = newPage | PAGE_WSP;
-        uint64_t *temp = (uint64_t *) newPage;
+        uint64_t *temp      = (uint64_t *) newPage;
         ZeroMem((void *) temp, 0x1000);
     }
 
-    pt = (uint64_t *) (pd[PD_ENTRY(vaddr)] & ~0xFFF);
+    pt                  = (uint64_t *) (pd[PD_ENTRY(vaddr)] & ~0xFFF);
     pt[PT_ENTRY(vaddr)] = paddr | PAGE_WSP;
 
     return EFI_SUCCESS;

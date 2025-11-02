@@ -1,4 +1,5 @@
 #include <abi/boot/boot_info.h>
+#include <asm/system.h>
 #include <debug/dbg_serial.h>
 #include <debug/dbgio.h>
 
@@ -8,6 +9,6 @@ void main(bi_bootinfo_t *bootInfo) {
 
     dbg_msg("EOF");
 
-    __asm__ volatile("cli");
-    while (1) { __asm__ volatile("hlt"); }
+    cli();
+    halt_forever();
 }

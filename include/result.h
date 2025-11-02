@@ -1,5 +1,5 @@
-#ifndef MDOS_RESULT_H
-#define MDOS_RESULT_H
+#ifndef _MDOS_RESULT_H
+#define _MDOS_RESULT_H
 
 #include <mdos/types.h>
 

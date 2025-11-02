@@ -1,5 +1,5 @@
-#ifndef MDOS_DBGIO_H
-#define MDOS_DBGIO_H
+#ifndef _MDOS_DBGIO_H
+#define _MDOS_DBGIO_H
 
 #include <result.h>
 #include <stddef.h>

@@ -1,16 +1,16 @@
 #ifndef MDOSBOOT_CFGPARSE_H
 #define MDOSBOOT_CFGPARSE_H
 
-/** 
- * \defgroup bootloader_internal Bootloader Internals 
+/**
+ * \defgroup bootloader_internal Bootloader Internals
  * @brief Internal bootloader functions.
- * 
+ *
  * Internal functions available to the bootloader.
  * They may be used to extend the bootloader,
  * but are not guaranteed to be avaiable globally.
- * 
+ *
  * @{
-*/
+ */
 
 #include "../include/crc32.h"
 #include <efi.h>
@@ -33,17 +33,17 @@ typedef struct {
 
 /**
  * \brief Parses boot configuration file and returns boot config information
- * 
+ *
  * The configuration file is specified using the Midnight Boot Binary Configuration file format.
- * The configuration file must be located at the path boot/boot.cfg in the partition the bootloader 
+ * The configuration file must be located at the path boot/boot.cfg in the partition the bootloader
  * image was loaded from.
- * 
+ *
  * Required options:
- * 
+ *
  *  - BOOT_DISK - of type GUID, the GUID of the partitions on which the kernel image to load resides
- * 
+ *
  *  - BOOT_PATH - of type UTF16, the path to the kernel image to load
- * 
+ *
  * \param imageHandle EFI_HANDLE to the loaded image
  * \param cfg The returned configuration info
  */
