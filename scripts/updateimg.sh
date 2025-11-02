@@ -34,10 +34,9 @@ echo "[3/4] copying files"
 sudo rsync -a --no-owner --no-group "$FILES_DIR/" "$MNT/";
 sudo mkdir -p "$MNT/EFI/BOOT"
 sudo mkdir -p "$MNT/BOOT"
-sudo mkdir -p "$MNT/MdOS/bin"
 sudo rsync -a --no-owner --no-group "$BUILD_DIR/bootloader/BOOTX64.EFI" "$MNT/EFI/BOOT";
 sudo rsync -a --no-owner --no-group "$BUILD_DIR/bootloader/MDOSBOOT.EFI" "$MNT/BOOT";
-sudo rsync -a --no-owner --no-group "$BUILD_DIR/mdoskrnl.elf" "$MNT/MdOS/bin";
+sudo rsync -a --no-owner --no-group "$BUILD_DIR/mdoskrnl.elf" "$MNT/";
 sync
 
 echo "[4/4] cleaning up"

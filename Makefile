@@ -70,8 +70,10 @@ all: $(BUILD_DIR)/$(KERNEL_TARGET)
 rebuild: clean all
 rebuild-all: clean-all all
 
+BOOT_TYPE := uefi
+
 bootloader: $(GNU_EFI_NOTE)
-	@$(MAKE) -C bootloader BUILD_DIR="$(abspath $(BUILD_DIR)/bootloader)" INCLUDE_DIR="$(abspath ./include/)" BOOT_TYPE="uefi" ARCH="$(ARCH)" all
+	@$(MAKE) -C bootloader BUILD_DIR="$(abspath $(BUILD_DIR)/bootloader)" INCLUDE_DIR="$(abspath ./include/)" BOOT_TYPE="$(BOOT_TYPE)" ARCH="$(ARCH)" all
 
 $(GNU_EFI_NOTE):
 	@mkdir -p $(BUILD_DIR)
@@ -88,8 +90,8 @@ clean-all: clean
 	@rm -rf $(BUILD_DIR)
 
 clean:
-	@find bootloader -name "*.o" -type f -delete
-	@find bootloader -name "*.so" -type f -delete
+	@make -C bootloader BUILD_DIR="$(abspath $(BUILD_DIR)/bootloader)" \
+	INCLUDE_DIR="$(abspath ./include/)" BOOT_TYPE="uefi" ARCH="$(ARCH)" clean
 	@find $(BUILD_DIR) -name "*.o" -type f -delete
 	@find $(BUILD_DIR) -name "*.a" -type f -delete
 	@find $(BUILD_DIR) -name "*.so" -type f -delete
@@ -107,7 +109,7 @@ ESP_GUID = 0cc13370-53ec-4cdb-8c3d-4185950e2581
 
 image: $(IMAGE)
 	@mkdir -p $(FILES_DIR)/BOOT
-	@sh ./scripts/genbootcfg.sh "$(FILES_DIR)/BOOT/BOOT.CFG" "$(ESP_GUID)" "MdOS\bin\$(KERNEL_TARGET)"
+	@sh ./scripts/genbootcfg.sh "$(FILES_DIR)/BOOT/BOOT.CFG" "$(ESP_GUID)" "$(KERNEL_TARGET)"
 	@sudo sh ./scripts/updateimg.sh "$(IMAGE)" "$(BUILD_DIR)" "$(FILES_DIR)"
 
 $(IMAGE):
