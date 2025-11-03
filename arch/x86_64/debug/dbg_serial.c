@@ -3,7 +3,7 @@
 #include <mdos/types.h>
 
 #define COM1_PORT     0x3F8
-#define COM1_REG(reg) (__u16)(COM1_PORT + reg)
+#define COM1_REG(reg) (u16)(COM1_PORT + reg)
 
 #define COM_R_RX_BUFF                      0
 #define COM_W_TX_BUFF                      0
@@ -46,5 +46,5 @@ inline void dbg_serial_putc(char c) {
 
     if (c == '\n') { dbg_serial_putc('\r'); }
     while (!dbg_serial_is_tx_empty());
-    outb(COM1_REG(COM_W_TX_BUFF), (__u8) c);
+    outb(COM1_REG(COM_W_TX_BUFF), (u8) c);
 }

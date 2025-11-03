@@ -25,8 +25,8 @@ CFLAGS := -nostartfiles \
 		 			-fno-builtin \
 					-fno-tree-vectorize \
 					-fno-pic -fno-pie \
-					-I./include \
 					-I./arch/$(ARCH)/include \
+					-I./include \
 					-std=gnu23 \
 					-MMD -MP \
 					-D_MDOS_ \
@@ -124,5 +124,4 @@ include scripts/run.mk
 # misc
 
 ccdb:
-	@compiledb make -Bn all
-	@compiledb make -Bn bootloader
+	@compiledb make -Bn all bootloader

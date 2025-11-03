@@ -35,6 +35,6 @@ $(BUILD_DIR)/%.o: %.c
 $(BUILD_DIR)/%.o: %.s
 	@echo -e "Assembling: $<"
 	@mkdir -p $(@D)
-	$(AC) $(ACFLAGS) $($*-acflags) -o $@ $<
+	@$(AC) $(ACFLAGS) $($*-acflags) -o $@ $<
 
 -include $(DEP_OBJS)

@@ -3,11 +3,19 @@
 #include <debug/dbg_serial.h>
 #include <debug/dbgio.h>
 
-void main(bi_bootinfo_t *bootInfo) {
-    dbg_serial_init();
-    dbg_register_sink(dbg_serial_putc);
+#ifdef _DEBUG
+#define init_dbg_print()                                                                                               \
+    dbg_serial_init();                                                                                                 \
+    dbg_register_sink(dbg_serial_putc)
+#else
+#define init_dbg_print()
+#endif
 
-    dbg_msg("EOF");
+void main(bi_bootinfo_t *bootInfo) {
+    (void) bootInfo;
+    init_dbg_print();
+
+    dbg_print("EOF");
 
     cli();
     halt_forever();

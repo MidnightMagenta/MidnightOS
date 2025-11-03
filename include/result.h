@@ -10,6 +10,6 @@ typedef enum mdos_result {
     MDOS_RES_OUT_OF_RESOURCES,
 } mdos_result_t;
 
-#define MDOS_ERROR(v) (((__s32) v) < 0)
+#define MDOS_ERROR(v) (((s32) v) < 0)
 
 #endif

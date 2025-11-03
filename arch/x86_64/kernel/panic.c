@@ -3,7 +3,7 @@
 #include <mdos/kernel.h>
 
 void __attribute__((noreturn)) panic(const char *msg) {
-    dbg_msg("Kernel panic: %s\n", msg);
+    dbg_print("Kernel panic: %s\n", msg);
     cli();
     halt_forever();
 }

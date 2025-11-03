@@ -5,7 +5,7 @@
 
 #define inb(port)                                                                                                      \
     ({                                                                                                                 \
-        __u8 _v;                                                                                                       \
+        u8 _v;                                                                                                       \
         __asm__ volatile("inb %w1, %b0" : "=a"(_v) : "Nd"(port) : "memory");                                           \
         _v;                                                                                                            \
     })

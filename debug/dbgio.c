@@ -32,8 +32,8 @@ void dbg_sinkchr(char c) {
     }
 }
 
-static inline __u64 dbg_strlen(const char *str) {
-    __u64 len = 0;
+static inline u64 dbg_strlen(const char *str) {
+    u64 len = 0;
     while (str[len] != 0) { len++; }
     return len;
 }
@@ -45,77 +45,63 @@ char toH16StrBuff[128];
 char toH8StrBuff[128];
 char toI64StrBuff[128];
 
-static const char *u64_to_str(__u64 v) {
-    __u64 sizeTest = v;
-    __u8 length    = 0;
+static const char *u64_to_str(u64 v) {
+    u64 sizeTest = v;
+    u8  length   = 0;
     while (sizeTest / 10 > 0) {
         sizeTest /= 10;
         length++;
     }
 
-    __u8 index = 0;
+    u8 index = 0;
     do {
-        __u8 remainder = (__u8) (v % 10);
+        u8 remainder = (u8) (v % 10);
         v /= 10;
         toU64StrBuff[length - index] = (char) (remainder) + '0';
         index++;
     } while (v / 10 > 0);
-    __u8 remainder               = (__u8) (v % 10);
+    u8 remainder                 = (u8) (v % 10);
     toU64StrBuff[length - index] = (char) (remainder) + '0';
     toU64StrBuff[length + 1]     = '\0';
     return toU64StrBuff;
 }
 
-static const char *u64_to_hstr(__u64 v) {
+static const char *u64_to_hstr(u64 v) {
     static const char hexDigits[] = "0123456789ABCDEF";
     for (int i = 0; i < 16; ++i) { toH64StrBuff[15 - i] = hexDigits[(v >> (i * 4)) & 0xF]; }
     toH64StrBuff[16] = '\0';
     return toH64StrBuff;
 }
 
-static const char *u32_to_hstr(__u32 v) {
+static const char *u32_to_hstr(u32 v) {
     static const char hexDigits[] = "0123456789ABCDEF";
     for (int i = 0; i < 8; ++i) { toH32StrBuff[7 - i] = hexDigits[(v >> (i * 4)) & 0xF]; }
     toH32StrBuff[8] = '\0';
     return toH32StrBuff;
 }
 
-// static const char *u16_to_hstr(__u16 v) {
-// 	static const char hexDigits[] = "0123456789ABCDEF";
-// 	for (int i = 0; i < 4; ++i) { toH16StrBuff[3 - i] = hexDigits[(v >> (i * 4)) & 0xF]; }
-// 	toH16StrBuff[4] = '\0';
-// 	return toH16StrBuff;
-// }
-
-// static const char *u8_to_hstr(__u8 v) {
-// 	static const char hexDigits[] = "0123456789ABCDEF";
-// 	for (int i = 0; i < 2; ++i) { toH8StrBuff[1 - i] = hexDigits[(v >> (i * 4)) & 0xF]; }
-// 	toH8StrBuff[2] = '\0';
-// 	return toH8StrBuff;
-// }
-
-static const char *s64_to_str(__s64 v) {
-    __u8 negative = 0;
+static const char *s64_to_str(s64 v) {
+    u8 negative = 0;
     if (v < 0) {
         negative = 1;
         v *= -1;
         toI64StrBuff[0] = '-';
     }
-    __u64 sizeTest = (__u64) (v);
-    __u8 length    = 0;
+    u64 sizeTest = (u64) (v);
+    u8  length   = 0;
     while (sizeTest / 10 > 0) {
         sizeTest /= 10;
         length++;
     }
 
-    __u8 index = 0;
+    u8 index = 0;
     while (v / 10 > 0) {
-        __u8 remainder = (__u8) (v % 10);
+        u8 remainder = (u8) (v % 10);
         v /= 10;
         toI64StrBuff[negative + length - index] = (char) (remainder) + '0';
         index++;
     }
-    __u8 remainder                          = (__u8) (v % 10);
+    u8 remainder                            = (u8) (v % 10);
     toI64StrBuff[negative + length - index] = (char) (remainder) + '0';
     toI64StrBuff[negative + length + 1]     = '\0';
     return toI64StrBuff;
@@ -157,8 +143,8 @@ static size_t dbg_internal_print(const char *fmt, va_list params) {
             written++;
         } else if (*fmt == 's') {
             fmt++;
-            const char *str = va_arg(params, const char *);
-            size_t amount   = dbg_strlen(str);
+            const char *str    = va_arg(params, const char *);
+            size_t      amount = dbg_strlen(str);
             if (maxrem < amount) {
                 // TODO: error
                 return (size_t) 0;
@@ -167,9 +153,9 @@ static size_t dbg_internal_print(const char *fmt, va_list params) {
             written += amount;
         } else if (*fmt == 'd' || *fmt == 'i') {
             fmt++;
-            __s32 num       = (__s32) va_arg(params, __s32);
-            const char *str = s64_to_str((__s64) num);
-            size_t amount   = dbg_strlen(str);
+            s32         num    = (s32) va_arg(params, s32);
+            const char *str    = s64_to_str((s64) num);
+            size_t      amount = dbg_strlen(str);
             if (maxrem < amount) {
                 // TODO: error
                 return (size_t) 0;
@@ -178,9 +164,9 @@ static size_t dbg_internal_print(const char *fmt, va_list params) {
             written += amount;
         } else if ((*fmt == 'l' && fmt[1] == 'd') || (*fmt == 'l' && fmt[1] == 'i')) {
             fmt += 2;
-            __s64 num       = (__s64) va_arg(params, __s64);
-            const char *str = s64_to_str((__s64) num);
-            size_t amount   = dbg_strlen(str);
+            s64         num    = (s64) va_arg(params, s64);
+            const char *str    = s64_to_str((s64) num);
+            size_t      amount = dbg_strlen(str);
             if (maxrem < amount) {
                 // TODO: error
                 return (size_t) 0;
@@ -189,9 +175,9 @@ static size_t dbg_internal_print(const char *fmt, va_list params) {
             written += amount;
         } else if (*fmt == 'u') {
             fmt++;
-            __u32 num       = (__u32) va_arg(params, __u32);
-            const char *str = u64_to_str((__u64) num);
-            size_t amount   = dbg_strlen(str);
+            u32         num    = (u32) va_arg(params, u32);
+            const char *str    = u64_to_str((u64) num);
+            size_t      amount = dbg_strlen(str);
             if (maxrem < amount) {
                 // TODO: error
                 return (size_t) 0;
@@ -200,9 +186,9 @@ static size_t dbg_internal_print(const char *fmt, va_list params) {
             written += amount;
         } else if ((*fmt == 'l' && fmt[1] == 'u')) {
             fmt += 2;
-            __u64 num       = (__u64) va_arg(params, __u64);
-            const char *str = u64_to_str((__u64) num);
-            size_t amount   = dbg_strlen(str);
+            u64         num    = (u64) va_arg(params, u64);
+            const char *str    = u64_to_str((u64) num);
+            size_t      amount = dbg_strlen(str);
             if (maxrem < amount) {
                 // TODO: error
                 return (size_t) 0;
@@ -211,9 +197,9 @@ static size_t dbg_internal_print(const char *fmt, va_list params) {
             written += amount;
         } else if (*fmt == 'x') {
             fmt++;
-            __u32 num       = (__u32) va_arg(params, __u32);
-            const char *str = u32_to_hstr(num);
-            size_t amount   = dbg_strlen(str);
+            u32         num    = (u32) va_arg(params, u32);
+            const char *str    = u32_to_hstr(num);
+            size_t      amount = dbg_strlen(str);
             if (maxrem < amount) {
                 // TODO: error
                 return (size_t) 0;
@@ -222,9 +208,9 @@ static size_t dbg_internal_print(const char *fmt, va_list params) {
             written += amount;
         } else if ((*fmt == 'l' && fmt[1] == 'x')) {
             fmt += 2;
-            __u64 num       = (__u64) va_arg(params, __u64);
-            const char *str = u64_to_hstr(num);
-            size_t amount   = dbg_strlen(str);
+            u64         num    = (u64) va_arg(params, u64);
+            const char *str    = u64_to_hstr(num);
+            size_t      amount = dbg_strlen(str);
             if (maxrem < amount) {
                 // TODO: error
                 return (size_t) 0;

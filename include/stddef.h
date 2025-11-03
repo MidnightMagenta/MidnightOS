@@ -4,8 +4,10 @@
 #undef NULL
 #define NULL ((void *) 0)
 
-typedef unsigned long long size_t;
+typedef __SIZE_TYPE__ size_t;
 
-#define SIZE_MAX 18446744073709551615ULL
+#ifndef SIZE_MAX
+#define SIZE_MAX __SIZE_MAX__
+#endif
 
 #endif

@@ -1,6 +1,7 @@
 BasedOnStyle: LLVM
 AccessModifierOffset: -4
 AlignAfterOpenBracket: Align
+AlignConsecutiveDeclarations: Consecutive
 AlignConsecutiveAssignments: Consecutive
 AlignConsecutiveMacros: Consecutive
 AlignOperands: Align

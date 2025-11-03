@@ -1,1 +1,3 @@
-obj-y += $(subdir)dbgio.o
+ifeq ($(DEBUG),true)
+    obj-y += $(subdir)dbgio.o
+endif
