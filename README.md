@@ -8,12 +8,13 @@
 > [!NOTE]
 > These instructions are temporary, and may not work with future versions of the software
 
- - clone, build, and install the [signing tools](https://github.com/MidnightMagenta/MidnightSign.git)
- - build GCC with the following flags: `--target=x86_64-elf --disable-nls --enable-languages=c,c++ --without-headers --prefix=$(path_to_install_gcc)`
+ - clone, build, and install the [additional tools](https://github.com/MidnightMagenta/MdOS-tools)
+ - build GCC with the following flags: `--target=x86_64-elf --disable-nls --enable-languages=c --without-headers --prefix=$(path_to_install_gcc)`
  - build binutils with the following flags: `--target=x86_64-elf --with-sysroot --disable-nls --disable-werror --prefix=$(path_to_install_binutils)`
- - from the root directory of this project run `make gen-keys`
- - from the root directory of this project run `make all`
- - from the root directory of this project run `make run` to run the software via QEMU
+ - from the root directory of this project run `make`
+ - from the root directory of this project run `make bootloader`
+ - from the root directory of this project run `make image` to create a bootable image
+ - from the root directory of this project run `make run` to run the OS in QEMU
 
 Rebuilding the project without re-creating the disk image may be done via `make partial`
 
