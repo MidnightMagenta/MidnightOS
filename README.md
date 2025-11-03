@@ -16,6 +16,4 @@
  - from the root directory of this project run `make image` to create a bootable image
  - from the root directory of this project run `make run` to run the OS in QEMU
 
-Rebuilding the project without re-creating the disk image may be done via `make partial`
-
 This project does not support being burnt onto a bootable disk yet. Any attempt to run any build output of this project on real hardware shall be done at your own risk.
