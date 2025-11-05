@@ -1,6 +1,6 @@
 .global _start
-.global _idt
-.global _gdt
+.global idt
+.global gdt
 .extern main
 
 .section .text
@@ -20,7 +20,7 @@ _start:
     jmp 1b
 
 setup_gdt:
-    lea _gdt(%rip), %rcx
+    lea gdt(%rip), %rcx
     mov %rcx, gdt_desc+2(%rip)
     lgdt gdt_desc(%rip)
     xor %rax, %rax
@@ -49,13 +49,13 @@ setup_idt:
     or %rdi, %rax
     shr $32, %rdx
 
-    lea _idt(%rip), %rdi
+    lea idt(%rip), %rdi
     mov $256, %rcx
 1:  mov %rax, (%rdi)
     mov %rdx, 8(%rdi)
     add $16, %rdi
     loop 1b
-    lea _idt(%rip), %rcx
+    lea idt(%rip), %rcx
     mov %rcx, idt_desc+2(%rip)
     lidt idt_desc(%rip)
     ret
@@ -75,11 +75,11 @@ idt_desc:
     .8byte  0
 
 .align 0x1000
-_idt:
+idt:
     .skip   256 * 16
 
 .align 0x1000
-_gdt:
+gdt:
     .8byte  0x0000000000000000
     .8byte  0x00af9a000000ffff
     .8byte  0x00af92000000ffff

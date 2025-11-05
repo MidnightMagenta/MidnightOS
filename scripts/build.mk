@@ -32,9 +32,10 @@ $(BUILD_DIR)/%.o: %.c
 	@mkdir -p $(@D)
 	@$(CC) $(CFLAGS) $($*-cflags) -c -o $@ $<
 
-$(BUILD_DIR)/%.o: %.s
+$(BUILD_DIR)/%.o: %.S
 	@echo -e "Assembling: $<"
 	@mkdir -p $(@D)
-	@$(AC) $(ACFLAGS) $($*-acflags) -o $@ $<
+	@$(CC) $(ACFLAGS) $($*-acflags) -c -o $@ $<
+	@rm -f $(<:%.S=%.s)
 
 -include $(DEP_OBJS)

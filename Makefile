@@ -14,25 +14,28 @@ OPTIMIZE := -O0
 
 BUILD_DIR := build/$(ARCH)
 
+TMPDIR := $(BUILD_DIR)/tmp
+$(shell mkdir -p $(TMPDIR))
+export TMPDIR
+
 CFLAGS := -nostartfiles \
-					-nodefaultlibs \
-					-nostdlib \
-					-nostdinc \
-					-ffreestanding \
-					-fshort-wchar \
-					-fno-omit-frame-pointer \
-					-fno-stack-protector \
-		 			-fno-builtin \
-					-fno-tree-vectorize \
-					-fno-pic -fno-pie \
-					-I./arch/$(ARCH)/include \
-					-I./include \
-					-std=gnu23 \
-					-MMD -MP \
-					-D_MDOS_ \
-					$(OPTIMIZE)
+			-nodefaultlibs \
+			-nostdlib \
+			-nostdinc \
+			-ffreestanding \
+			-fshort-wchar \
+			-fno-omit-frame-pointer \
+			-fno-stack-protector \
+		 	-fno-builtin \
+			-fno-tree-vectorize \
+			-fno-pic -fno-pie \
+			-I./arch/$(ARCH)/include \
+			-I./include \
+			-std=gnu23 \
+			-MMD -MP \
+			$(OPTIMIZE)
 LDFLAGS := -static -Bsymbolic -nostdlib
-ACFLAGS := -c
+ACFLAGS := -x assembler-with-cpp -D_ASSEMBLY_ -MMD -MP $(ACFLAGS)
 
 ifeq ($(ARCH),x86_64)
   CFLAGS += -m64 -m80387 -msse -msse2 -mmmx \
@@ -45,7 +48,7 @@ endif
 
 ifeq ($(DEBUG),true)
   CFLAGS += -Wall -Wextra -g -D_DEBUG
-  ACFLAGS += -g
+  ACFLAGS += -g -D_DEBUG
 endif
 
 ifeq ($(VERBOSE),true)
@@ -94,6 +97,7 @@ clean:
 	INCLUDE_DIR="$(abspath ./include/)" BOOT_TYPE="uefi" ARCH="$(ARCH)" clean
 	@find $(BUILD_DIR) -name "*.o" -type f -delete
 	@find $(BUILD_DIR) -name "*.a" -type f -delete
+	@find $(BUILD_DIR) -name "*.d" -type f -delete
 	@find $(BUILD_DIR) -name "*.so" -type f -delete
 	@find $(BUILD_DIR) -name "*.efi" -type f -delete
 	@find $(BUILD_DIR) -name "*.EFI" -type f -delete
