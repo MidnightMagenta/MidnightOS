@@ -1,5 +1,5 @@
-#ifndef MDOSBOOT_TYPES_H
-#define MDOSBOOT_TYPES_H
+#ifndef NYXBOOT_TYPES_H
+#define NYXBOOT_TYPES_H
 
 #include <efi.h>
 #include <efilib.h>

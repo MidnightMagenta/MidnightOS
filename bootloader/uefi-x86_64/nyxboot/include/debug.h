@@ -1,5 +1,5 @@
-#ifndef MDOSBOOT_DEBUG_H
-#define MDOSBOOT_DEBUG_H
+#ifndef NYXBOOT_DEBUG_H
+#define NYXBOOT_DEBUG_H
 
 #include <efi.h>
 #include <efilib.h>

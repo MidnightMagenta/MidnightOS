@@ -1,7 +1,7 @@
-#ifndef _MDOS_BOOT_INFO_H
-#define _MDOS_BOOT_INFO_H
+#ifndef _NYX_BOOT_INFO_H
+#define _NYX_BOOT_INFO_H
 
-#include <mdos/types.h>
+#include <nyx/types.h>
 
 #define BI_ABI   __attribute__((aligned(8)))
 #define BI_MAGIC 0x4D444249UL
@@ -88,4 +88,4 @@ typedef struct bi_bootinfo {
     bi_physaddress_t pNext;     /// physical address of the next boot info structure
 } BI_ABI bi_bootinfo_t;
 
-#endif// !MDOS_BOOT_INFO_H
+#endif// !NYX_BOOT_INFO_H

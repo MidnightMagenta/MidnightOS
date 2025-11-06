@@ -1,5 +1,5 @@
-#ifndef MDOSBOOT_FS_H
-#define MDOSBOOT_FS_H
+#ifndef NYXBOOT_FS_H
+#define NYXBOOT_FS_H
 
 #include <efi.h>
 #include <efilib.h>

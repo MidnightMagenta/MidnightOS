@@ -59,7 +59,7 @@ endif
 GNU_EFI_DIR := bootloader/gnu-efi
 GNU_EFI_NOTE := $(BUILD_DIR)/.gnu_efi_built
 
-KERNEL_TARGET := mdoskrnl.elf
+KERNEL_TARGET := nyxos.elf
 
 obj-y := arch/$(ARCH)/ debug/
 
@@ -107,7 +107,7 @@ clean:
 # image building rules
 
 FILES_DIR := files
-IMAGE := $(BUILD_DIR)/mdos.img
+IMAGE := $(BUILD_DIR)/nyxos.img
 DISK_GUID = f953b4de-e77f-4f0b-a14e-2b29080599cf
 ESP_GUID = 0cc13370-53ec-4cdb-8c3d-4185950e2581
 

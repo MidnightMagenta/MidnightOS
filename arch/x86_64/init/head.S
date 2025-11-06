@@ -8,7 +8,7 @@ _start:
     cli
     mov %rdi, %r15
     xor %rbp, %rbp
-    mov $_stack_top, %rsp
+    lea _stack_top(%rip), %rsp
     push %rbp
     mov %rsp, %rbp
     call setup_gdt
@@ -91,5 +91,5 @@ gdt:
 .section .bss
 .align 0x1000
 _stack_bottom:
-    .skip   0x2000
+    .skip   0x1000
 _stack_top:

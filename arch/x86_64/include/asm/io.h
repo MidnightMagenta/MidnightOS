@@ -1,5 +1,5 @@
-#ifndef _MDOS_ASM_IO_H
-#define _MDOS_ASM_IO_H
+#ifndef _NYX_ASM_IO_H
+#define _NYX_ASM_IO_H
 
 #define outb(port, value) __asm__ volatile("outb %b0, %w1" ::"a"(value), "Nd"(port) : "memory");
 

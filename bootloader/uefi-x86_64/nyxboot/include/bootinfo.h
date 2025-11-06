@@ -1,5 +1,5 @@
-#ifndef MDOSBOOT_BOOTINFO_H
-#define MDOSBOOT_BOOTINFO_H
+#ifndef NYXBOOT_BOOTINFO_H
+#define NYXBOOT_BOOTINFO_H
 
 #include "../include/elf.h"
 #include "../include/types.h"

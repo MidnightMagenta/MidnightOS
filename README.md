@@ -1,4 +1,4 @@
-# MidnightOS
+# Nyx Operating System
 
 > [!CAUTION]
 > This code runs in supervisor mode, and has access to all system resources. It has not been extensively tested on real hardware. It may inadvertently cause irreversible damage to the computer. Building and running this software on real hardware shall be done only at your own risk.
@@ -8,7 +8,7 @@
 > [!NOTE]
 > These instructions are temporary, and may not work with future versions of the software
 
- - clone, build, and install the [additional tools](https://github.com/MidnightMagenta/MdOS-tools)
+ - clone, build, and install the [additional tools](https://github.com/MidnightMagenta/nyxos-tools)
  - build GCC with the following flags: `--target=x86_64-elf --disable-nls --enable-languages=c --without-headers --prefix=$(path_to_install_gcc)`
  - build binutils with the following flags: `--target=x86_64-elf --with-sysroot --disable-nls --disable-werror --prefix=$(path_to_install_binutils)`
  - from the root directory of this project run `make`

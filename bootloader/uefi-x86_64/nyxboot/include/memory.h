@@ -1,5 +1,5 @@
-#ifndef MDOSBOOT_MEMORY_H
-#define MDOSBOOT_MEMORY_H
+#ifndef NYXBOOT_MEMORY_H
+#define NYXBOOT_MEMORY_H
 
 #include <efi.h>
 #include <efilib.h>

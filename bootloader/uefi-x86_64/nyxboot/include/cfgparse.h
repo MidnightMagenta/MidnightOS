@@ -1,5 +1,5 @@
-#ifndef MDOSBOOT_CFGPARSE_H
-#define MDOSBOOT_CFGPARSE_H
+#ifndef NYXBOOT_CFGPARSE_H
+#define NYXBOOT_CFGPARSE_H
 
 /**
  * \defgroup bootloader_internal Bootloader Internals

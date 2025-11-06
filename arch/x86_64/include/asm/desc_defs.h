@@ -1,0 +1,27 @@
+#ifndef _NYX_DESC_DEFS_H
+#define _NYX_DESC_DEFS_H
+
+#include <nyx/types.h>
+
+struct idt_bits {
+    u16 ist : 3, zero : 5, type : 5, dpl : 2, p : 1;
+} __attribute__((packed));
+
+struct idt_data {
+    u16             vector;
+    u16             segment;
+    struct idt_bits bits;
+    const void     *addr;
+};
+
+struct gate_struct {
+    u16             offset0;
+    u16             segment;
+    struct idt_bits bits;
+    u16             offset1;
+    u32             offset2;
+    u32             reserved;
+} __attribute__((packed));
+typedef struct gate_struct gate_desc;
+
+#endif

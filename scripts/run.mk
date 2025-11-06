@@ -18,7 +18,8 @@ EMU_BASE_FLAGS = -drive file=$(IMAGE),format=raw \
 				-drive if=pflash,format=raw,unit=0,file="$(OVMF_BINS)/OVMF_CODE-pure-efi.fd",readonly=on \
 				-drive if=pflash,format=raw,unit=1,file="$(OVMF_BINS)/OVMF_VARS-pure-efi.fd" \
 				-net none \
-				-machine q35 
+				-machine q35 \
+				-nographic
 
 EMU_DBG_FLAGS = -s -S -d int,guest_errors,cpu_reset -no-reboot -no-shutdown -D tmp/qemu.log
 

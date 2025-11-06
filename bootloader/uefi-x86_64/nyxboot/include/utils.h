@@ -1,5 +1,5 @@
-#ifndef MDOSBOOT_UTILS_H
-#define MDOSBOOT_UTILS_H
+#ifndef NYXBOOT_UTILS_H
+#define NYXBOOT_UTILS_H
 
 #include "../include/debug.h"
 
