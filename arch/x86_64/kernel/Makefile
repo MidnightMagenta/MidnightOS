@@ -1,1 +1,1 @@
-obj-y += $(subdir)panic.o
+obj-y += $(subdir)panic.o $(subdir)idt.o $(subdir)traps.o

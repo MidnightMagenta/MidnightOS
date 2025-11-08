@@ -1,4 +1,5 @@
 #include "../include/bootinfo.h"
+#include "efilib.h"
 
 static bi_memtype memtype_efi_to_bi(EFI_MEMORY_TYPE efiType) {
     switch (efiType) {
@@ -109,11 +110,15 @@ EFI_STATUS bi_build_bootinfo(bi_bootinfo_createinfo *createInfo, bi_bootinfo_t *
 
     SetMem(*bootInfo, sizeof(bi_bootinfo_t), 0);
 
-    (*bootInfo)->version       = BI_VERSION_1;
-    (*bootInfo)->magic         = BI_MAGIC;
-    (*bootInfo)->structureType = BI_STRUCTURE_TYPE_BOOT_INFO;
-    (*bootInfo)->selfSize      = sizeof(bi_bootinfo_t);
-    (*bootInfo)->flags         = BI_BOOTFLAGS_EFI_BOOT;
+    (*bootInfo)->head.version       = BI_VERSION_1;
+    (*bootInfo)->head.structureType = BI_STRUCTURE_TYPE_BOOT_INFO;
+    (*bootInfo)->head.pNext         = (bi_physaddress_t) NULL;
+    (*bootInfo)->magic[0]           = BI_MAGIC0;
+    (*bootInfo)->magic[1]           = BI_MAGIC1;
+    (*bootInfo)->magic[2]           = BI_MAGIC2;
+    (*bootInfo)->magic[3]           = BI_MAGIC3;
+    (*bootInfo)->selfSize           = sizeof(bi_bootinfo_t);
+    (*bootInfo)->flags              = BI_BOOTFLAGS_EFI_BOOT;
 
     // Build sub-structures
     res = bi_build_memmap((bi_memmap_t **) &(*bootInfo)->pMemMap);
@@ -126,8 +131,8 @@ EFI_STATUS bi_build_bootinfo(bi_bootinfo_createinfo *createInfo, bi_bootinfo_t *
 
 fail_memmap:
     if ((*bootInfo)->pMemMap) {
-        void *ptr       = (void *) (UINTN) (*bootInfo)->pMemMap;
-        bi_memmap_t *mm = (bi_memmap_t *) ptr;
+        void        *ptr = (void *) (UINTN) (*bootInfo)->pMemMap;
+        bi_memmap_t *mm  = (bi_memmap_t *) ptr;
         if (mm->pDescriptors) { gBS->FreePool((void *) (UINTN) mm->pDescriptors); }
         gBS->FreePool(mm);
     }

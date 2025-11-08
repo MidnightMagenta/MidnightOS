@@ -16,6 +16,6 @@
 
 EFI_STATUS mem_map_page(uint64_t *pml4, EFI_VIRTUAL_ADDRESS vaddr, EFI_PHYSICAL_ADDRESS paddr);
 EFI_STATUS mem_map_pages(uint64_t *pml4, EFI_VIRTUAL_ADDRESS vaddr, EFI_PHYSICAL_ADDRESS paddr, size_t pageCount);
-void mem_free_tables(uint64_t *pml4);
+void       mem_free_tables(uint64_t *pml4);
 
 #endif

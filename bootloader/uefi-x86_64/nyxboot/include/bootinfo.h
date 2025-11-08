@@ -6,8 +6,12 @@
 #include <efi.h>
 #include <efilib.h>
 
-#define BI_ABI   __attribute__((aligned(8)))
-#define BI_MAGIC 0x4D444249UL
+#define BI_ABI    __attribute__((aligned(8)))
+#define BI_MAGIC  {0x4E, 0x42, 0x36, 0x34}
+#define BI_MAGIC0 0x4E
+#define BI_MAGIC1 0x42
+#define BI_MAGIC2 0x36
+#define BI_MAGIC3 0x34
 
 typedef UINT64 bi_physaddress_t;
 typedef UINT64 bi_virtaddress_t;
@@ -49,46 +53,50 @@ typedef enum {
 } bi_memflags;
 
 typedef struct bi_memdesc {
-    bi_physaddress_t base;/// base physical address of the region
-    UINT64 pageCount;     /// number of 4 KiB pages occupied by the region
-    UINT32 type;          /// bi_memtype of the memory region
-    UINT32 flags;         /// bi_memflags of the memory region
+    bi_physaddress_t base;     /// base physical address of the region
+    UINT64           pageCount;/// number of 4 KiB pages occupied by the region
+    UINT32           type;     /// bi_memtype of the memory region
+    UINT32           flags;    /// bi_memflags of the memory region
 } BI_ABI bi_memdesc_t;
 
 typedef struct bi_memmap {
-    UINT32 version;               /// version of this structure
-    UINT32 _pad0;                 /// padding
-    UINT64 bufferSize;            /// size of the pDescriptors buffer in bytes
-    UINT64 descriptorSize;        /// size of one descriptor in the descriptor array in bytes
-    UINT64 descriptorCount;       /// number of descriptors in the descriptor array
-    bi_physaddress_t pDescriptors;/// physical address of a bi_memdesc_t array
+    UINT32           version;        /// version of this structure
+    UINT32           _pad0;          /// padding
+    UINT64           bufferSize;     /// size of the pDescriptors buffer in bytes
+    UINT64           descriptorSize; /// size of one descriptor in the descriptor array in bytes
+    UINT64           descriptorCount;/// number of descriptors in the descriptor array
+    bi_physaddress_t pDescriptors;   /// physical address of a bi_memdesc_t array
 } BI_ABI bi_memmap_t;
 
 typedef struct bi_kernelmapdesc {
-    bi_physaddress_t paddr;/// physical address the kernel section was loaded into
-    bi_virtaddress_t vaddr;/// virtual address the kernel section is mapped to
-    UINT64 pageCount;      /// number of 4 KiB pages the kernel section occupies
-    UINT32 flags;          /// bi_memflags of the kernel section
-    UINT32 _pad0;          /// padding
+    bi_physaddress_t paddr;    /// physical address the kernel section was loaded into
+    bi_virtaddress_t vaddr;    /// virtual address the kernel section is mapped to
+    UINT64           pageCount;/// number of 4 KiB pages the kernel section occupies
+    UINT32           flags;    /// bi_memflags of the kernel section
+    UINT32           _pad0;    /// padding
 } BI_ABI bi_kernelmapdesc_t;
 
 typedef struct bi_kernelmap {
-    UINT32 version;               /// version of this structure
-    UINT32 _pad0;                 /// padding
-    UINT64 descriptorSize;        /// size of one descriptor in the descriptor array in bytes
-    UINT64 descriptorCount;       /// number of kernel section descriptors in the descriptor array
-    bi_physaddress_t pDescriptors;/// physical address of a bi_kernelmapdesc_t array
+    UINT32           version;        /// version of this structure
+    UINT32           _pad0;          /// padding
+    UINT64           descriptorSize; /// size of one descriptor in the descriptor array in bytes
+    UINT64           descriptorCount;/// number of kernel section descriptors in the descriptor array
+    bi_physaddress_t pDescriptors;   /// physical address of a bi_kernelmapdesc_t array
 } BI_ABI bi_kernelmap_t;
 
+typedef struct bi_head_struct {
+    UINT32           structureType;
+    UINT32           version;
+    bi_physaddress_t pNext;
+} BI_ABI bi_head;
+
 typedef struct bi_bootinfo {
-    UINT32 magic;               /// must be BI_MAGIC (0x4D444249ULL)
-    UINT32 structureType;       /// must be BI_STRUCTURE_TYPE_BOOT_INFO
-    UINT32 version;             /// version of this structure. Does not apply to following strucures
-    UINT32 flags;               /// additional boot information flags
-    UINT64 selfSize;            /// size of this structure
+    bi_head          head;      // structure type must be BI_STRUCTURE_TYPE_BOOT_INFO
+    UINT8            magic[4];  /// must be BI_MAGIC (0x4D444249ULL)
+    UINT32           flags;     /// additional boot information flags
+    UINT64           selfSize;  /// size of this structure
     bi_physaddress_t pMemMap;   /// physical address of bi_memmap_t
     bi_physaddress_t pKernelMap;/// physical address of bi_kernelmap_t
-    bi_physaddress_t pNext;     /// physical address of the next boot info structure
 } BI_ABI bi_bootinfo_t;
 
 typedef struct {

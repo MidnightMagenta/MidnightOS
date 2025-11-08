@@ -73,11 +73,7 @@ gdt_desc:
 idt_desc:
     .2byte  256 * 16 - 1
     .8byte  0
-
-.align 0x1000
-idt:
-    .skip   256 * 16
-
+    
 .align 0x1000
 gdt:
     .8byte  0x0000000000000000

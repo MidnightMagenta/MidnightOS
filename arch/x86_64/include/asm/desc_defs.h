@@ -2,10 +2,16 @@
 #define _NYX_DESC_DEFS_H
 
 #include <nyx/types.h>
+#include <nyx/compiler.h>
+
+struct desc_ptr {
+    u16 size;
+    u64 base;
+} __packed;
 
 struct idt_bits {
     u16 ist : 3, zero : 5, type : 5, dpl : 2, p : 1;
-} __attribute__((packed));
+} __packed;
 
 struct idt_data {
     u16             vector;
@@ -21,7 +27,14 @@ struct gate_struct {
     u16             offset1;
     u32             offset2;
     u32             reserved;
-} __attribute__((packed));
+} __packed;
 typedef struct gate_struct gate_desc;
+
+enum {
+    GATE_INTERRUPT = 0xE,
+    GATE_TRAP      = 0xF,
+    GATE_CALL      = 0xC,
+    GATE_TASK      = 0x5,
+};
 
 #endif

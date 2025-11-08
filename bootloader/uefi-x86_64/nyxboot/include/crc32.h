@@ -5,6 +5,7 @@
 #include <stdint.h>
 
 typedef uint32_t crc32_t;
+
 crc32_t crc32(const void *data, size_t length, crc32_t init);
 
 #endif

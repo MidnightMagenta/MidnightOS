@@ -22,8 +22,8 @@
  * \param filesystem Returned EFI_SIMPLE_FILE_SYSTEM_PROTOCOL for the partition
  * \return The status of the function
  */
-EFI_STATUS find_filesystem_for_guid(IN EFI_GUID *guid,
-                                    OUT EFI_HANDLE *handle,
+EFI_STATUS find_filesystem_for_guid(IN EFI_GUID                          *guid,
+                                    OUT EFI_HANDLE                       *handle,
                                     OUT EFI_SIMPLE_FILE_SYSTEM_PROTOCOL **filesystem);
 
 /**
@@ -33,8 +33,8 @@ EFI_STATUS find_filesystem_for_guid(IN EFI_GUID *guid,
  * \param filesystem Returned EFI_SIMPLE_FILE_SYSTEM_PROTOCOL for the partition
  * \return The status of the function
  */
-EFI_STATUS find_filesystem_with_file(IN CHAR16 *path,
-                                     OUT EFI_HANDLE *handle,
+EFI_STATUS find_filesystem_with_file(IN CHAR16                            *path,
+                                     OUT EFI_HANDLE                       *handle,
                                      OUT EFI_SIMPLE_FILE_SYSTEM_PROTOCOL **filesystem);
 
 /**
@@ -48,11 +48,11 @@ EFI_STATUS find_filesystem_with_file(IN CHAR16 *path,
  * \return The status of the function
  */
 EFI_STATUS open_file(IN OPTIONAL EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *filesystem,
-                     IN OPTIONAL EFI_FILE *root,
-                     IN CHAR16 *path,
-                     IN UINT64 openMode,
-                     IN OPTIONAL UINT64 attributes,
-                     OUT EFI_FILE **file);
+                     IN OPTIONAL EFI_FILE                        *root,
+                     IN CHAR16                                   *path,
+                     IN UINT64                                    openMode,
+                     IN OPTIONAL UINT64                           attributes,
+                     OUT EFI_FILE                               **file);
 
 
 /**

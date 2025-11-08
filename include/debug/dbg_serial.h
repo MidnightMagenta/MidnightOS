@@ -1,9 +1,9 @@
 #ifndef _NYX_DBG_SERIAL_H
 #define _NYX_DBG_SERIAL_H
 
-#include <result.h>
+#include <nyx/result.h>
 
-nyx_result_t dbg_serial_init();
-void dbg_serial_putc(char c);
+nyx_result dbg_serial_init();
+void         dbg_serial_putc(char c);
 
 #endif

@@ -1,1 +1,1 @@
-obj-y += $(subdir)debug/ $(subdir)init/ $(subdir)kernel/
+obj-y += $(subdir)debug/ $(subdir)init/ $(subdir)kernel/ $(subdir)entry/

@@ -18,16 +18,16 @@
 
 typedef struct {
     EFI_GUID bootPartUUID;
-    CHAR16 *bootBinPath;
+    CHAR16  *bootBinPath;
 } configinfo_t;
 
 static const uint8_t MDBC_Magic[4] = {'M', 'B', 'C', 'F'};
 
 typedef struct {
-    uint8_t magic[4];
-    crc32_t crc32;
-    uint8_t version;
-    uint8_t pad[7];
+    uint8_t  magic[4];
+    crc32_t  crc32;
+    uint8_t  version;
+    uint8_t  pad[7];
     uint64_t dataOffset;
 } __attribute__((packed)) mdbc_header_t;
 

@@ -5,11 +5,11 @@ EFI_STATUS mem_map_page(uint64_t *pml4, EFI_VIRTUAL_ADDRESS vaddr, EFI_PHYSICAL_
     if ((vaddr % 0x1000) != 0) { return EFI_INVALID_PARAMETER; }
     if ((paddr % 0x1000) != 0) { return EFI_INVALID_PARAMETER; }
 
-    EFI_STATUS res;
+    EFI_STATUS           res;
     EFI_PHYSICAL_ADDRESS newPage;
-    uint64_t *pdpt = NULL;
-    uint64_t *pd   = NULL;
-    uint64_t *pt   = NULL;
+    uint64_t            *pdpt = NULL;
+    uint64_t            *pd   = NULL;
+    uint64_t            *pt   = NULL;
 
     if (!(pml4[PML4_ENTRY(vaddr)] & PAGE_PRESENT)) {
         newPage = 0;

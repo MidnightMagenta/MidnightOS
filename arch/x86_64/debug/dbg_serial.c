@@ -20,7 +20,7 @@
 
 static bool dbg_serial_initialized = false;
 
-nyx_result_t dbg_serial_init() {
+nyx_result dbg_serial_init() {
     outb(COM1_REG(COM_RW_INTERUPT_ENABLE_REG), 0x00);
     outb(COM1_REG(COM_RW_LINE_CONTROL_REG), 0x80);
     outb(COM1_REG(COM_RW_LEAST_SIGNIFICANT_BYTE_BAUD), 0x03);

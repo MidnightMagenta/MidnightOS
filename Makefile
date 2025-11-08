@@ -14,10 +14,6 @@ OPTIMIZE := -O0
 
 BUILD_DIR := build/$(ARCH)
 
-TMPDIR := $(BUILD_DIR)/tmp
-$(shell mkdir -p $(TMPDIR))
-export TMPDIR
-
 CFLAGS := -nostartfiles \
 			-nodefaultlibs \
 			-nostdlib \
@@ -65,10 +61,12 @@ obj-y := arch/$(ARCH)/ debug/
 
 # build rules
 
-.PHONY: all rebuild rebuild-all bootloader clean clean-all image ccdb
+.PHONY: all rebuild rebuild-all kernel bootloader clean clean-all image ccdb
 .NOTPARALLEL: rebuild rebuild-all
 
-all: $(BUILD_DIR)/$(KERNEL_TARGET)
+all: kernel bootloader
+
+kernel: $(BUILD_DIR)/$(KERNEL_TARGET)
 
 rebuild: clean all
 rebuild-all: clean-all all
@@ -128,4 +126,4 @@ include scripts/run.mk
 # misc
 
 ccdb:
-	@compiledb make -Bn all bootloader
+	@compiledb make -Bn all

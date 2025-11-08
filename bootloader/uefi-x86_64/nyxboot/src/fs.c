@@ -15,17 +15,17 @@ static BOOLEAN match_node_guid(EFI_DEVICE_PATH_PROTOCOL *dp, EFI_GUID *guid) {
     return FALSE;
 }
 
-EFI_STATUS find_filesystem_for_guid(IN EFI_GUID *guid,
-                                    OUT EFI_HANDLE *handle,
+EFI_STATUS find_filesystem_for_guid(IN EFI_GUID                          *guid,
+                                    OUT EFI_HANDLE                       *handle,
                                     OUT EFI_SIMPLE_FILE_SYSTEM_PROTOCOL **filesystem) {
     if (guid == NULL) { return EFI_INVALID_PARAMETER; }
     if (CompareGuid(guid, &NullGuid) == 0) { return EFI_INVALID_PARAMETER; }
     if (handle == NULL) { return EFI_INVALID_PARAMETER; }
     if (filesystem == NULL) { return EFI_INVALID_PARAMETER; }
 
-    EFI_HANDLE *handles = NULL;
-    UINTN handleCount   = 0;
-    EFI_STATUS res;
+    EFI_HANDLE *handles     = NULL;
+    UINTN       handleCount = 0;
+    EFI_STATUS  res;
 
     res = gBS->LocateHandleBuffer(ByProtocol, &gEfiSimpleFileSystemProtocolGuid, NULL, &handleCount, &handles);
     if (EFI_ERROR(res)) { return res; }
@@ -52,13 +52,13 @@ EFI_STATUS find_filesystem_for_guid(IN EFI_GUID *guid,
     return EFI_NOT_FOUND;
 }
 
-EFI_STATUS find_filesystem_with_file(IN CHAR16 *path,
-                                     OUT EFI_HANDLE *handle,
+EFI_STATUS find_filesystem_with_file(IN CHAR16                            *path,
+                                     OUT EFI_HANDLE                       *handle,
                                      OUT EFI_SIMPLE_FILE_SYSTEM_PROTOCOL **filesystem) {
     if (path == NULL || handle == NULL || filesystem == NULL) { return EFI_INVALID_PARAMETER; }
     EFI_HANDLE *handles;
-    UINTN handleCount;
-    EFI_STATUS res;
+    UINTN       handleCount;
+    EFI_STATUS  res;
 
     res = gBS->LocateHandleBuffer(ByProtocol, &gEfiSimpleFileSystemProtocolGuid, NULL, &handleCount, &handles);
     if (EFI_ERROR(res)) { return res; }
@@ -97,11 +97,11 @@ EFI_STATUS find_filesystem_with_file(IN CHAR16 *path,
 }
 
 EFI_STATUS open_file(IN OPTIONAL EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *filesystem,
-                     IN OPTIONAL EFI_FILE *root,
-                     IN CHAR16 *path,
-                     IN UINT64 openMode,
-                     IN OPTIONAL UINT64 attributes,
-                     OUT EFI_FILE **file) {
+                     IN OPTIONAL EFI_FILE                        *root,
+                     IN CHAR16                                   *path,
+                     IN UINT64                                    openMode,
+                     IN OPTIONAL UINT64                           attributes,
+                     OUT EFI_FILE                               **file) {
     if (root == NULL) {
         if (filesystem == NULL) { return EFI_INVALID_PARAMETER; }
         filesystem->OpenVolume(filesystem, &root);
@@ -114,9 +114,9 @@ EFI_STATUS get_file_size(IN EFI_FILE *file, OUT UINTN *fileSize) {
     if (file == NULL || fileSize == NULL) { return EFI_INVALID_PARAMETER; }
     EFI_STATUS res;
 
-    UINTN fileInfoBufferSize = SIZE_OF_EFI_FILE_INFO + 200;
-    EFI_FILE_INFO *fileInfo  = NULL;
-    res                      = gBS->AllocatePool(EfiLoaderData, fileInfoBufferSize, (void **) &fileInfo);
+    UINTN          fileInfoBufferSize = SIZE_OF_EFI_FILE_INFO + 200;
+    EFI_FILE_INFO *fileInfo           = NULL;
+    res                               = gBS->AllocatePool(EfiLoaderData, fileInfoBufferSize, (void **) &fileInfo);
     if (EFI_ERROR(res)) {
         DBG_MSG("[%a %d] Failed to get file info with: %lx\n\r", __func__, __LINE__, res);
         file->Close(file);

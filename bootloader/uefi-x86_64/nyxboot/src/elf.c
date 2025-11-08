@@ -75,22 +75,22 @@ static EFI_STATUS elf_get_file_info(EFI_FILE *file, elf_loadinfo_t *info, Elf64_
 static EFI_STATUS elf_load_file_discont(EFI_FILE *file, elf_loadinfo_t *info) {
     EFI_STATUS res = EFI_SUCCESS;
 
-    Elf64_Ehdr ehdr;
+    Elf64_Ehdr  ehdr;
     Elf64_Phdr *phdrs;
 
     res = elf_get_file_info(file, info, &ehdr, &phdrs);
     if (EFI_ERROR(res)) { return res; }
 
     // load the sections
-    size_t phdrIndex                 = 0;
+    size_t             phdrIndex     = 0;
     elf_sectioninfo_t *loadedSection = info->sections;
     while (phdrIndex < ehdr.e_phnum) {
         Elf64_Phdr *phdr = (Elf64_Phdr *) ((char *) phdrs + ehdr.e_phentsize * phdrIndex);
         if (phdr->p_type == PT_LOAD) {
             // allocate memory for the sections
-            Elf64_Addr paddr = 0;
-            UINTN pageCount  = (phdr->p_memsz + 0x1000 - 1) / 0x1000;
-            res              = gBS->AllocatePages(AllocateAnyPages, EfiLoaderData, pageCount, &paddr);
+            Elf64_Addr paddr     = 0;
+            UINTN      pageCount = (phdr->p_memsz + 0x1000 - 1) / 0x1000;
+            res                  = gBS->AllocatePages(AllocateAnyPages, EfiLoaderData, pageCount, &paddr);
             if (EFI_ERROR(res)) { goto err_free_loadInfo; }
 
             // zero out the memory before loading
@@ -128,22 +128,22 @@ err_free_loadInfo:
 static EFI_STATUS elf_load_file_cont(EFI_FILE *file, elf_loadinfo_t *info) {
     EFI_STATUS res = EFI_SUCCESS;
 
-    Elf64_Ehdr ehdr;
+    Elf64_Ehdr  ehdr;
     Elf64_Phdr *phdrs;
 
     res = elf_get_file_info(file, info, &ehdr, &phdrs);
     if (EFI_ERROR(res)) { return res; }
 
-    UINTN pageCount       = elf_get_section_size(&ehdr, phdrs);
+    UINTN      pageCount  = elf_get_section_size(&ehdr, phdrs);
     Elf64_Addr loadBuffer = 0;
     res                   = gBS->AllocatePages(AllocateAnyPages, EfiLoaderData, pageCount, &loadBuffer);
     if (EFI_ERROR(res)) { goto err_free_loadInfo; }
     ZeroMem((void *) loadBuffer, pageCount * 0x1000);
 
     // load the sections
-    size_t phdrIndex                 = 0;
+    size_t             phdrIndex     = 0;
     elf_sectioninfo_t *loadedSection = info->sections;
-    Elf64_Addr paddr                 = loadBuffer;
+    Elf64_Addr         paddr         = loadBuffer;
     while (phdrIndex < ehdr.e_phnum) {
         Elf64_Phdr *phdr = (Elf64_Phdr *) ((char *) phdrs + ehdr.e_phentsize * phdrIndex);
         if (phdr->p_type == PT_LOAD) {
