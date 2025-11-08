@@ -1,3 +1,3 @@
-#include "entry.hs"
+#include "entry.asmh"
 
 ENTRY_NECODE(int3)

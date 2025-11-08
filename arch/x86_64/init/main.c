@@ -1,6 +1,8 @@
+#include "asm/cpu.h"
 #include <abi/boot/boot_info.h>
 #include <asm/idt.h>
 #include <asm/system.h>
+#include <asm/traps.h>
 #include <debug/dbg_serial.h>
 #include <debug/dbgio.h>
 
@@ -12,11 +14,14 @@
 #define init_dbg_print()
 #endif
 
+extern void dbg_start(const struct int_info *);
+
 void main(bi_bootinfo_t *bootInfo) {
     (void) bootInfo;
     init_dbg_print();
 
     idt_setup_early_traps();
+    traps_register_dbg_hook(dbg_start);
 
     __asm__ volatile("int3");
 

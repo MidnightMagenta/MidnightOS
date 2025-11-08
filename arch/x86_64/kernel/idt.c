@@ -1,9 +1,8 @@
 #include "asm/desc_defs.h"
 #include <asm/desc.h>
 #include <asm/idt.h>
-#include <asm/traps.h>
-#include <nyx/utils.h>
 #include <nyx/linkage.h>
+#include <nyx/utils.h>
 
 #define IDT_ENTRIES  256
 #define IDT_TAB_SIZE IDT_ENTRIES * sizeof(gate_desc)
@@ -25,12 +24,15 @@
             .bits.p    = 1,                                                                                            \
     }
 
+#define ISR_PTR(func) extern void func()
+
 // FIXME: kernel CS should be a definition
 #define INTG(_vector, _addr) GATE(_vector, _addr, 0, GATE_INTERRUPT, DPL0, 0x08)
 #define TRPG(_vcetor, _addr) GATE(_vector, _addr, 0, GATE_TRAP, DPL0, 0x08)
 
 gate_desc idt[IDT_ENTRIES] __page_aligned_bss;
 
+ISR_PTR(int3);
 static const struct idt_data early_idt[] = {
         INTG(3, int3),
 };

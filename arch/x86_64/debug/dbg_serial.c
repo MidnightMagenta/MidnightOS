@@ -48,3 +48,14 @@ inline void dbg_serial_putc(char c) {
     while (!dbg_serial_is_tx_empty());
     outb(COM1_REG(COM_W_TX_BUFF), (u8) c);
 }
+
+inline static bool dbg_serial_is_rx_avail() { return inb(COM1_REG(COM_R_LINE_STATUS_REG)) & 0x1; }
+
+char dbg_serial_getc() {
+    if (!dbg_serial_initialized) {
+        if (NYX_ERROR(dbg_serial_init())) { return 0; }
+    }
+
+    while (!dbg_serial_is_rx_avail());
+    return inb(COM1_REG(COM_R_RX_BUFF));
+}

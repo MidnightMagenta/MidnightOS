@@ -1,8 +1,8 @@
 #ifndef _NYX_CPU_H
 #define _NYX_CPU_H
 
-#include <nyx/types.h>
 #include <nyx/compiler.h>
+#include <nyx/types.h>
 
 struct gp_regs {
     u64 rax;

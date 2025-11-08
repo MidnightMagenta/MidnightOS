@@ -1,8 +1,8 @@
 #ifndef _NYX_DESC_DEFS_H
 #define _NYX_DESC_DEFS_H
 
-#include <nyx/types.h>
 #include <nyx/compiler.h>
+#include <nyx/types.h>
 
 struct desc_ptr {
     u16 size;

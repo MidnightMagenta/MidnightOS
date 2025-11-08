@@ -4,6 +4,7 @@
 #include <nyx/result.h>
 
 nyx_result dbg_serial_init();
-void         dbg_serial_putc(char c);
+void       dbg_serial_putc(char c);
+char       dbg_serial_getc();
 
 #endif

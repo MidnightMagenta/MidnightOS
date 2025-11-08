@@ -7,8 +7,8 @@
 typedef void (*dbg_charsink_t)(char);
 
 nyx_result dbg_register_sink(dbg_charsink_t sink);
-void         dbg_unregister_sink(dbg_charsink_t sink);
-void         dbg_sinkchr(char c);
+void       dbg_unregister_sink(dbg_charsink_t sink);
+void       dbg_sinkchr(char c);
 
 size_t dbg_msg(const char *fmt, ...);
 

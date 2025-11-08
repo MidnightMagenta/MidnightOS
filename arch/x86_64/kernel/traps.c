@@ -1,5 +1,13 @@
 #include <asm/cpu.h>
-#include <asm/traps.h>
+#include <asm/idtentry.h>
 #include <debug/dbgio.h>
+#include <stddef.h>
 
-DEFINE_IRQENTRY(int3) { dbg_print("Test irq3: %d\n", info->frame.rip); }
+void (*dbg_hook)(const struct int_info *) = NULL;
+void traps_register_dbg_hook(void (*hook)(const struct int_info *)) {
+    if (hook) { dbg_hook = hook; }
+}
+
+DEFINE_IDTENTRY(int3) {
+    if (dbg_hook) { dbg_hook(info); }
+}
