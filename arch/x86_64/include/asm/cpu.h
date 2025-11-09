@@ -11,7 +11,6 @@ struct gp_regs {
     u64 rdx;
     u64 rsi;
     u64 rdi;
-    u64 rbp;
     u64 r8;
     u64 r9;
     u64 r10;
@@ -20,6 +19,8 @@ struct gp_regs {
     u64 r13;
     u64 r14;
     u64 r15;
+    u64 rbp;
+    u64 rsp;
 } __packed;
 
 struct int_frame {

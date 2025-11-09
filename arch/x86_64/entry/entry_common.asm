@@ -5,6 +5,8 @@
 ; Push all general-purpose registers
 ; ------------------------------------------------------------
 %macro PUSH_REGS 0
+    push rsp
+    push rbp
     push r15
     push r14
     push r13
@@ -13,7 +15,6 @@
     push r10
     push r9
     push r8
-    push rbp
     push rdi
     push rsi
     push rdx
@@ -32,7 +33,6 @@
     pop rdx
     pop rsi
     pop rdi
-    pop rbp
     pop r8
     pop r9
     pop r10
@@ -41,9 +41,10 @@
     pop r13
     pop r14
     pop r15
+    pop rbp
+    pop rsp
 %endmacro
 
-; Aliases to match the C macro interface
 %define PUSH_REGS() PUSH_REGS
 %define POP_REGS()  POP_REGS
 

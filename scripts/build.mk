@@ -35,7 +35,6 @@ $(BUILD_DIR)/%.o: %.c
 $(BUILD_DIR)/%.o: %.asm
 	@echo -e "Assembling: $<"
 	@mkdir -p $(@D)
-	@$(AC) $(ACFLAGS) -i$(dir $<) -o $@ $< > $*
 	@$(AC) $(ACFLAGS) -i$(dir $<) -MD "$(@:.o=.d)" -o $@ $<
 
 $(BUILD_DIR)/%.o: %.S
