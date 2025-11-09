@@ -31,25 +31,27 @@ CFLAGS := -nostartfiles \
 			-MMD -MP \
 			$(OPTIMIZE)
 LDFLAGS := -static -Bsymbolic -nostdlib
-ACFLAGS := -x assembler-with-cpp -D_ASSEMBLY_ -MMD -MP $(ACFLAGS)
+ACFLAGS := 
 
 ifeq ($(ARCH),x86_64)
-  CFLAGS += -m64 -m80387 -msse -msse2 -mmmx \
-						-mno-sse3 -mno-sse4 -mno-avx -mno-avx2 -mno-avx512f \
-						-mcmodel=kernel -mno-red-zone
+    AC := nasm
+    ACFLAGS := -f elf64 -i$(abspath ./include) -i$(abspath ./arch/$(ARCH)/include)
+    CFLAGS += -m64 -m80387 -msse -msse2 -mmmx \
+				-mno-sse3 -mno-sse4 -mno-avx -mno-avx2 -mno-avx512f \
+				-mcmodel=kernel -mno-red-zone
 else
-  $(error Unsuported architecture $(ARCH))
-  # TODO: implement other arches
+    $(error Unsuported architecture $(ARCH))
+    # TODO: implement other arches
 endif
 
 ifeq ($(DEBUG),true)
-  CFLAGS += -Wall -Wextra -g -D_DEBUG
-  ACFLAGS += -g -D_DEBUG
+    CFLAGS += -Wall -Wextra -g -D_DEBUG
+    ACFLAGS += -g -d_DEBUG
 endif
 
 ifeq ($(VERBOSE),true)
-  CFLAGS += -Wconversion -Wsign-conversion -Wundef -Wcast-align -Wshift-overflow \
-	  				-Wdouble-promotion -Wpedantic -Werror
+    CFLAGS += -Wconversion -Wsign-conversion -Wundef -Wcast-align -Wshift-overflow \
+	  			-Wdouble-promotion -Wpedantic -Werror
 endif
 
 GNU_EFI_DIR := bootloader/gnu-efi

@@ -32,9 +32,9 @@
 
 gate_desc idt[IDT_ENTRIES] __page_aligned_bss;
 
-ISR_PTR(int3);
+ISR_PTR(dbg_entry);
 static const struct idt_data early_idt[] = {
-        INTG(3, int3),
+        INTG(3, dbg_entry),
 };
 
 static void idt_setup_from_table(gate_desc *idt, const struct idt_data *table, int size) {

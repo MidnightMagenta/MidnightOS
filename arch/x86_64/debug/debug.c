@@ -1,6 +1,7 @@
 #include "debug/dbg_serial.h"
 #include <asm/cpu.h>
 #include <debug/dbgio.h>
+#include <asm/idtentry.h>
 
 static int dbg_strcmp(char *str1, char *str2) {
     size_t i   = 0;
@@ -32,4 +33,10 @@ void dbg_start(const struct int_info *info) {
             dbg_msg("Error: Unknown command\n");
         }
     }
+}
+
+DEFINE_IDTENTRY_RAW(dbg_entry) {
+#ifdef _DEBUG
+    dbg_start(info);
+#endif
 }
