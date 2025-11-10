@@ -55,9 +55,10 @@ char *dbg_strchr(const char *str, int c) {
 }
 
 enum dbg_exec_res {
-    DBG_SUCCESS     = 0,
-    DBG_CONTINUE    = 1,
-    DBG_UNKNOWN_CMD = 2,
+    DBG_SUCCESS,
+    DBG_CONTINUE,
+    DBG_UNKNOWN_CMD,
+    DBG_INVALID_PARAMS,
 };
 
 void dbg_getcmd(char *cmd, unsigned long *size) {
@@ -96,11 +97,61 @@ int dbg_parsecmd(char *buff, char *argv[], int max_args) {
     return argc;
 }
 
-int do_continue(int __unused argc, char __unused **argv, const struct int_info __unused *info) { return DBG_CONTINUE; }
+#define DBG_DEFINE_COMMAND(func) int dbg_do_##func(int argc, char **argv, const struct int_info *info)
+#define DBG_DEFINE_COMMAND_PU(func)                                                                                    \
+    int dbg_do_##func(int __unused argc, char __unused **argv, const struct int_info __unused *info)
 
-int do_placeholder(int __unused argc, char __unused **argv, const struct int_info __unused *info) {
+DBG_DEFINE_COMMAND_PU(cntn) { return DBG_CONTINUE; }
+
+DBG_DEFINE_COMMAND(reg) {
+    struct {
+        const char   *name;
+        unsigned long value;
+    } regs[] = {
+            {"rax", info->regs.rax},  {"rbx", info->regs.rbx}, {"rcx", info->regs.rcx},  {"rdx", info->regs.rdx},
+            {"rsi", info->regs.rsi},  {"rdi", info->regs.rdi}, {"rsp", info->frame.rsp}, {"rbp", info->regs.rbp},
+            {"r8", info->regs.r8},    {"r9", info->regs.r9},   {"r10", info->regs.r10},  {"r11", info->regs.r11},
+            {"r12", info->regs.r12},  {"r13", info->regs.r13}, {"r14", info->regs.r14},  {"r15", info->regs.r15},
+            {"rip", info->frame.rip}, {"cs", info->frame.cs},  {"ss", info->frame.ss},   {"rflags", info->frame.rflags},
+    };
+
+    if (argc == 0) {
+        unsigned long count = ARRAY_SIZE(regs);
+        for (size_t i = 0; i < count; i++) {
+            dbg_msg("%s: 0x%lx ", regs[i].name, regs[i].value);
+            if ((i + 1) % 4 == 0 || i == count - 1) dbg_msg("\n");
+        }
+    } else if (argc == 1) {
+        for (size_t i = 0; i < ARRAY_SIZE(regs); i++) {
+            if (dbg_strcmp(argv[0], regs[i].name) == 0) {
+                dbg_msg("0x%lx\n", regs[i].value);
+                return DBG_SUCCESS;
+            }
+        }
+
+        dbg_msg("Unknown register %s\n", argv[0]);
+        return DBG_INVALID_PARAMS;
+    } else {
+        return DBG_INVALID_PARAMS;
+    }
     return DBG_SUCCESS;
 }
+
+DBG_DEFINE_COMMAND_PU(hardware_bp) {
+    dbg_msg("Unimplemented\n");
+    return DBG_SUCCESS;
+}
+
+DBG_DEFINE_COMMAND_PU(step) {
+    dbg_msg("Unimplemented\n");
+    return DBG_SUCCESS;
+}
+
+DBG_DEFINE_COMMAND_PU(dumphex) {
+    dbg_msg("Unimplemented\n");
+    return DBG_SUCCESS;
+}
+
 
 struct dbg_cmd {
     const char *name;
@@ -110,36 +161,39 @@ struct dbg_cmd {
 #define DBG_CMD(name, func) {name, func}
 
 static const struct dbg_cmd cmd_table[] = {
-        DBG_CMD("c", do_continue),    DBG_CMD("reg", do_placeholder), DBG_CMD("hbp", do_placeholder),
-        DBG_CMD("s", do_placeholder), DBG_CMD("x", do_placeholder),
+        DBG_CMD("c", dbg_do_cntn), DBG_CMD("reg", dbg_do_reg),   DBG_CMD("hbp", dbg_do_hardware_bp),
+        DBG_CMD("s", dbg_do_step), DBG_CMD("x", dbg_do_dumphex),
 };
 
 int dbg_exec(int argc, char **argv, const struct int_info *info) {
     if (argc == 0) { return DBG_UNKNOWN_CMD; }
 
     for (unsigned int i = 0; i < ARRAY_SIZE(cmd_table); i++) {
-        if (dbg_strcmp(argv[0], cmd_table[i].name) == 0) { return cmd_table[i].func(argc, argv, info); }
+        if (dbg_strcmp(argv[0], cmd_table[i].name) == 0) { return cmd_table[i].func(--argc, ++argv, info); }
     }
 
     return DBG_UNKNOWN_CMD;
 }
 
-void dbg_main(const struct int_info *info) {
+char  cmd_buffer[256];
+char *argv_buffer[8];
+void  dbg_main(const struct int_info *info) {
     dbg_msg("\nDebug exception\n");
-    char cmd[256];
+
     while (1) {
         dbg_msg("/> ");
 
         unsigned long size = 256;
-        dbg_getcmd(cmd, &size);
+        dbg_getcmd(cmd_buffer, &size);
         if (size == 0) { continue; }
 
-        char *argv[8];
-        int   argc = dbg_parsecmd(cmd, argv, 8);
+        int argc = dbg_parsecmd(cmd_buffer, argv_buffer, 8);
 
-        int res = dbg_exec(argc, argv, info);
+        int res = dbg_exec(argc, argv_buffer, info);
         if (res == DBG_UNKNOWN_CMD) {
             dbg_msg("Error: Unknown command\n");
+        } else if (res == DBG_INVALID_PARAMS) {
+            dbg_msg("Error: Invalid parameter\n");
         } else if (res == DBG_CONTINUE) {
             return;
         }
