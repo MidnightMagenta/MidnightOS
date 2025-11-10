@@ -160,6 +160,8 @@ struct dbg_cmd {
 
 #define DBG_CMD(name, func) {name, func}
 
+// array containing literals used to invoke the command
+// and a poiner to a function which executes the command
 static const struct dbg_cmd cmd_table[] = {
         DBG_CMD("c", dbg_do_cntn), DBG_CMD("reg", dbg_do_reg),   DBG_CMD("hbp", dbg_do_hardware_bp),
         DBG_CMD("s", dbg_do_step), DBG_CMD("x", dbg_do_dumphex),
@@ -200,7 +202,7 @@ void  dbg_main(const struct int_info *info) {
     }
 }
 
-DEFINE_IDTENTRY_RAW(dbg_entry) {
+DEFINE_IDTENTRY(dbg_entry) {
 #ifdef _DEBUG
     dbg_main(info);
 #endif
