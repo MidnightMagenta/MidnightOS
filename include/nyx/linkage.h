@@ -2,8 +2,8 @@
 #define _NYX_LINKAGE_H
 
 #include "compiler.h"
+#include <asm/sizes.h>
 
-//FIXME: generic page size
-#define __page_aligned_bss __section(".bss") __align(4096)
+#define __page_aligned_bss __section(".bss") __align(PAGE_SIZE)
 
 #endif

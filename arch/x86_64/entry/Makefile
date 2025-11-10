@@ -1,1 +1,1 @@
-obj-y += $(subdir)entry.o
+obj-y += 

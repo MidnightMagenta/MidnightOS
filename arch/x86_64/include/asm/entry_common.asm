@@ -72,11 +72,11 @@
 %if %2 = 0
     add rsp, 8
 %endif
-    iretq
+    iret
 %endmacro
 
 ; Convenience wrappers
-%define ENTRY_NECODE(sym) ENTRY sym, 0
+%define ENTRY_NOECODE(sym) ENTRY sym, 0
 %define ENTRY_ECODE(sym)  ENTRY sym, 1
 
 %endif

@@ -13,5 +13,6 @@
 #define __visible
 #endif
 
+#define __unused __attribute__((unused))
 
 #endif
