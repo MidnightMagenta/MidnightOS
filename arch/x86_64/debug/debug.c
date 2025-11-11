@@ -26,8 +26,10 @@ long dbg_atol(const char *s) {
     switch (*s) {
         case '-':
             neg = 1;
+            break;
         case '+':
             s++;
+            break;
     }
 
     // Check for hexadecimal prefix
@@ -98,6 +100,8 @@ char *dbg_strchr(const char *str, int c) {
     if (*str == c) { res = (char *) str; }
     return res;
 }
+
+#include "disasm.h"
 
 enum dbg_exec_res {
     DBG_SUCCESS,
@@ -318,6 +322,7 @@ DBG_DEFINE_COMMAND_PU(dumphex) {
     }
 
     if (base == NULL) { base = (unsigned char *) dbg_atol(argv[0]); }
+    if (base == 0) { return DBG_INVALID_PARAMS; }
     unsigned char *limit = (unsigned char *) ((unsigned long) base + dbg_atol(argv[1]));
 
     int c = 0;
@@ -337,6 +342,41 @@ DBG_DEFINE_COMMAND_PU(dumphex) {
     return DBG_SUCCESS;
 }
 
+static char dbg_disasm_buffer[256];
+
+/**
+    @brief disassemble instructions
+    Command: cmd [addr] [count]
+    Disassembles [count] instructions starting at [addr]
+*/
+DBG_DEFINE_COMMAND(disassembly) {
+    if (argc != 2) { return DBG_INVALID_PARAMS; }
+
+    DBG_REGS_ARRAY
+    unsigned long base = 0;
+
+    for (size_t i = 0; i < ARRAY_SIZE(regs); i++) {
+        if (dbg_strcmp(argv[0], regs[i].name) == 0) {
+            base = (unsigned long) regs[i].value;
+            break;
+        }
+    }
+
+    if (base == 0) { base = (unsigned long) dbg_atol(argv[0]); }
+    if (base == 0) { return DBG_INVALID_PARAMS; }
+
+    int instCount = dbg_atol(argv[1]);
+    if (instCount == 0) { return DBG_INVALID_PARAMS; }
+
+    for (int i = 0; i < instCount; i++) {
+        unsigned long next = disasm(base, dbg_disasm_buffer);
+        dbg_msg("0x%lx: %s\n", base, dbg_disasm_buffer);
+        base = next;
+    }
+
+    return DBG_SUCCESS;
+}
+
 struct dbg_cmd {
     const char *name;
     int (*func)(int argc, char **argv, const struct int_info *info);
@@ -346,10 +386,9 @@ struct dbg_cmd {
 
 // array containing literals used to invoke the command
 // and a pointer to a function which executes the command
-static const struct dbg_cmd cmd_table[] = {
-        DBG_CMD("c", dbg_do_cntn), DBG_CMD("reg", dbg_do_reg),   DBG_CMD("hbp", dbg_do_hardware_bp),
-        DBG_CMD("s", dbg_do_step), DBG_CMD("x", dbg_do_dumphex),
-};
+static const struct dbg_cmd cmd_table[] = {DBG_CMD("c", dbg_do_cntn),          DBG_CMD("reg", dbg_do_reg),
+                                           DBG_CMD("hbp", dbg_do_hardware_bp), DBG_CMD("s", dbg_do_step),
+                                           DBG_CMD("x", dbg_do_dumphex),       DBG_CMD("disasm", dbg_do_disassembly)};
 
 int dbg_exec(int argc, char **argv, const struct int_info *info) {
     if (argc == 0) { return DBG_UNKNOWN_CMD; }
@@ -371,6 +410,9 @@ void dbg_main(struct int_info *info) {
     } else {
         info->frame.rflags &= ~((u64) 1 << 8);
     }
+
+    disasm(info->frame.rip, dbg_disasm_buffer);
+    dbg_msg("0x%lx: %s\n", info->frame.rip, dbg_disasm_buffer);
 
     stepping = false;
     while (1) {
