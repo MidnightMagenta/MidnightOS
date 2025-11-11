@@ -102,6 +102,7 @@ char *dbg_strchr(const char *str, int c) {
 enum dbg_exec_res {
     DBG_SUCCESS,
     DBG_CONTINUE,
+    DBG_STEP,
     DBG_UNKNOWN_CMD,
     DBG_INVALID_PARAMS,
 };
@@ -202,15 +203,26 @@ DBG_DEFINE_COMMAND(reg) {
     return DBG_SUCCESS;
 }
 
+/**
+    @brief sets a hardware breakpoint in one of the debug registers
+    Command: hbp [address] [reg] [type]
+    Allowed values of the [reg] parameter are: dr0, dr1, dr2, and dr3
+    Allowed values of the [type] parameter are:
+     - ex - break on execute
+     - ma - break on any 1 byte memory access
+     - m2 - break on any 2 byte memory access
+     - m4 - break on any 4 byte memory access
+     - m8 - break on any 8 byte memory access
+*/
 DBG_DEFINE_COMMAND_PU(hardware_bp) {
     dbg_msg("Unimplemented\n");
     return DBG_SUCCESS;
 }
 
-DBG_DEFINE_COMMAND_PU(step) {
-    dbg_msg("Unimplemented\n");
-    return DBG_SUCCESS;
-}
+/**
+    @brief single steps the next instruction using the hardware single stepping capabilites
+*/
+DBG_DEFINE_COMMAND_PU(step) { return DBG_STEP; }
 
 /**
     @brief Prints the [size] bytes of memory at [base]. Both size and base must be specified
@@ -273,10 +285,16 @@ int dbg_exec(int argc, char **argv, const struct int_info *info) {
 
 static char  cmd_buffer[256];
 static char *argv_buffer[8];
+static bool  stepping = false;
 
-void dbg_main(const struct int_info *info) {
-    dbg_msg("\nDebug exception\n");
+void dbg_main(struct int_info *info) {
+    if (!stepping) {
+        dbg_msg("\nDebug exception\n");
+    } else {
+        info->frame.rflags &= ~((u64) 1 << 8);
+    }
 
+    stepping = false;
     while (1) {
         dbg_msg("/> ");
 
@@ -295,6 +313,10 @@ void dbg_main(const struct int_info *info) {
                 dbg_msg("Error: Invalid parameter\n");
                 break;
             case DBG_CONTINUE:
+                return;
+            case DBG_STEP:
+                info->frame.rflags |= 1 << 8;
+                stepping = true;
                 return;
             default:
                 continue;
