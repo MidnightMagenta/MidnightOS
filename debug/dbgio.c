@@ -1,20 +1,20 @@
 #include <debug/dbgio.h>
-#include <mdos/types.h>
+#include <nyx/types.h>
 #include <stdarg.h>
 #include <stddef.h>
 
 #define DBG_MAX_CHARSINKS 4
 static dbg_charsink_t sinks[DBG_MAX_CHARSINKS];
 
-mdos_result_t dbg_register_sink(dbg_charsink_t sink) {
+nyx_result dbg_register_sink(dbg_charsink_t sink) {
     for (size_t i = 0; i < DBG_MAX_CHARSINKS; i++) {
         if (sinks[i] == NULL) {
             sinks[i] = sink;
-            return MDOS_RES_SUCCESS;
+            return NYX_RES_SUCCESS;
         }
     }
 
-    return MDOS_RES_OUT_OF_RESOURCES;
+    return NYX_RES_OUT_OF_RESOURCES;
 }
 
 void dbg_unregister_sink(dbg_charsink_t sink) {
@@ -78,6 +78,13 @@ static const char *u32_to_hstr(u32 v) {
     for (int i = 0; i < 8; ++i) { toH32StrBuff[7 - i] = hexDigits[(v >> (i * 4)) & 0xF]; }
     toH32StrBuff[8] = '\0';
     return toH32StrBuff;
+}
+
+static const char *u8_to_hstr(u8 v) {
+    static const char hexDigits[] = "0123456789ABCDEF";
+    for (int i = 0; i < 2; ++i) { toH8StrBuff[1 - i] = hexDigits[(v >> (i * 4)) & 0xF]; }
+    toH8StrBuff[8] = '\0';
+    return toH8StrBuff;
 }
 
 static const char *s64_to_str(s64 v) {
@@ -188,6 +195,17 @@ static size_t dbg_internal_print(const char *fmt, va_list params) {
             fmt += 2;
             u64         num    = (u64) va_arg(params, u64);
             const char *str    = u64_to_str((u64) num);
+            size_t      amount = dbg_strlen(str);
+            if (maxrem < amount) {
+                // TODO: error
+                return (size_t) 0;
+            }
+            dbg_internal_print_str(str, amount);
+            written += amount;
+        } else if (*fmt == 'b') {
+            fmt++;
+            u32         num    = (u32) va_arg(params, u32);
+            const char *str    = u8_to_hstr(num);
             size_t      amount = dbg_strlen(str);
             if (maxrem < amount) {
                 // TODO: error

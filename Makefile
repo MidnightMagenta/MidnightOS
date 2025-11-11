@@ -9,63 +9,70 @@ LD := $(PREFIX)ld
 AC := $(PREFIX)as
 
 DEBUG := true
+DEBUGER := true
 VERBOSE := false
 OPTIMIZE := -O0
 
 BUILD_DIR := build/$(ARCH)
 
 CFLAGS := -nostartfiles \
-					-nodefaultlibs \
-					-nostdlib \
-					-nostdinc \
-					-ffreestanding \
-					-fshort-wchar \
-					-fno-omit-frame-pointer \
-					-fno-stack-protector \
-		 			-fno-builtin \
-					-fno-tree-vectorize \
-					-fno-pic -fno-pie \
-					-I./arch/$(ARCH)/include \
-					-I./include \
-					-std=gnu23 \
-					-MMD -MP \
-					-D_MDOS_ \
-					$(OPTIMIZE)
+			-nodefaultlibs \
+			-nostdlib \
+			-nostdinc \
+			-ffreestanding \
+			-fshort-wchar \
+			-fno-omit-frame-pointer \
+			-fno-stack-protector \
+		 	-fno-builtin \
+			-fno-tree-vectorize \
+			-fno-pic -fno-pie \
+			-I./arch/$(ARCH)/include \
+			-I./include \
+			-std=gnu23 \
+			-MMD -MP \
+			$(OPTIMIZE)
 LDFLAGS := -static -Bsymbolic -nostdlib
-ACFLAGS := -c
+ACFLAGS := 
 
 ifeq ($(ARCH),x86_64)
-  CFLAGS += -m64 -m80387 -msse -msse2 -mmmx \
-						-mno-sse3 -mno-sse4 -mno-avx -mno-avx2 -mno-avx512f \
-						-mcmodel=kernel -mno-red-zone
+    AC := nasm
+    ACFLAGS := -f elf64 -i$(abspath ./include) -i$(abspath ./arch/$(ARCH)/include)
+    CFLAGS += -m64 -m80387 -msse -msse2 -mmmx \
+				-mno-sse3 -mno-sse4 -mno-avx -mno-avx2 -mno-avx512f \
+				-mcmodel=kernel -mno-red-zone
 else
-  $(error Unsuported architecture $(ARCH))
-  # TODO: implement other arches
+    $(error Unsuported architecture $(ARCH))
+    # TODO: implement other arches
 endif
 
 ifeq ($(DEBUG),true)
-  CFLAGS += -Wall -Wextra -g -D_DEBUG
-  ACFLAGS += -g
+    CFLAGS += -Wall -Wextra -g -D_DEBUG
+    ACFLAGS += -g -d_DEBUG
+    ifeq ($(DEBUGER), true)
+        CFLAGS += -D_DEBUGER_START
+    endif
 endif
 
 ifeq ($(VERBOSE),true)
-  CFLAGS += -Wconversion -Wsign-conversion -Wundef -Wcast-align -Wshift-overflow \
-	  				-Wdouble-promotion -Wpedantic -Werror
+    CFLAGS += -Wconversion -Wsign-conversion -Wundef -Wcast-align -Wshift-overflow \
+	  			-Wdouble-promotion -Wpedantic -Werror
 endif
 
 GNU_EFI_DIR := bootloader/gnu-efi
 GNU_EFI_NOTE := $(BUILD_DIR)/.gnu_efi_built
 
-KERNEL_TARGET := mdoskrnl.elf
+KERNEL_TARGET := nyxos.elf
 
 obj-y := arch/$(ARCH)/ debug/
 
 # build rules
 
-.PHONY: all rebuild rebuild-all bootloader clean clean-all image ccdb
+.PHONY: all rebuild rebuild-all kernel bootloader clean clean-all image ccdb
 .NOTPARALLEL: rebuild rebuild-all
 
-all: $(BUILD_DIR)/$(KERNEL_TARGET)
+all: kernel bootloader
+
+kernel: $(BUILD_DIR)/$(KERNEL_TARGET)
 
 rebuild: clean all
 rebuild-all: clean-all all
@@ -94,6 +101,7 @@ clean:
 	INCLUDE_DIR="$(abspath ./include/)" BOOT_TYPE="uefi" ARCH="$(ARCH)" clean
 	@find $(BUILD_DIR) -name "*.o" -type f -delete
 	@find $(BUILD_DIR) -name "*.a" -type f -delete
+	@find $(BUILD_DIR) -name "*.d" -type f -delete
 	@find $(BUILD_DIR) -name "*.so" -type f -delete
 	@find $(BUILD_DIR) -name "*.efi" -type f -delete
 	@find $(BUILD_DIR) -name "*.EFI" -type f -delete
@@ -103,7 +111,7 @@ clean:
 # image building rules
 
 FILES_DIR := files
-IMAGE := $(BUILD_DIR)/mdos.img
+IMAGE := $(BUILD_DIR)/nyxos.img
 DISK_GUID = f953b4de-e77f-4f0b-a14e-2b29080599cf
 ESP_GUID = 0cc13370-53ec-4cdb-8c3d-4185950e2581
 
@@ -124,4 +132,4 @@ include scripts/run.mk
 # misc
 
 ccdb:
-	@compiledb make -Bn all bootloader
+	@compiledb make -Bn all

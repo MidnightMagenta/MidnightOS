@@ -35,8 +35,8 @@ sudo rsync -a --no-owner --no-group "$FILES_DIR/" "$MNT/";
 sudo mkdir -p "$MNT/EFI/BOOT"
 sudo mkdir -p "$MNT/BOOT"
 sudo rsync -a --no-owner --no-group "$BUILD_DIR/bootloader/BOOTX64.EFI" "$MNT/EFI/BOOT";
-sudo rsync -a --no-owner --no-group "$BUILD_DIR/bootloader/MDOSBOOT.EFI" "$MNT/BOOT";
-sudo rsync -a --no-owner --no-group "$BUILD_DIR/mdoskrnl.elf" "$MNT/";
+sudo rsync -a --no-owner --no-group "$BUILD_DIR/bootloader/NYXBOOT.EFI" "$MNT/BOOT";
+sudo rsync -a --no-owner --no-group "$BUILD_DIR/nyxos.elf" "$MNT/";
 sync
 
 echo "[4/4] cleaning up"

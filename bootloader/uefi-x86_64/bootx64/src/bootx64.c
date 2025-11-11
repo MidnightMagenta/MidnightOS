@@ -1,7 +1,7 @@
 #include <efi.h>
 #include <efilib.h>
 
-// load necessary drivers and call mdosboot.efi
+// load necessary drivers and call nyxboot.efi
 
 EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
     EFI_STATUS status;
@@ -24,11 +24,11 @@ EFI_STATUS efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
         status = fs->OpenVolume(fs, &root);
         if (EFI_ERROR(status)) { continue; }
 
-        status = root->Open(root, &file, L"\\BOOT\\MDOSBOOT.EFI", EFI_FILE_MODE_READ, EFI_FILE_READ_ONLY);
+        status = root->Open(root, &file, L"\\BOOT\\NYXBOOT.EFI", EFI_FILE_MODE_READ, EFI_FILE_READ_ONLY);
         if (EFI_ERROR(status)) { continue; }
 
         EFI_HANDLE newImageHandle;
-        EFI_DEVICE_PATH_PROTOCOL *path = FileDevicePath(handles[i], L"\\BOOT\\MDOSBOOT.EFI");
+        EFI_DEVICE_PATH_PROTOCOL *path = FileDevicePath(handles[i], L"\\BOOT\\NYXBOOT.EFI");
 
         status = gBS->LoadImage(FALSE, imageHandle, path, NULL, 0, &newImageHandle);
         if (EFI_ERROR(status)) {

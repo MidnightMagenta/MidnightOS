@@ -32,9 +32,15 @@ $(BUILD_DIR)/%.o: %.c
 	@mkdir -p $(@D)
 	@$(CC) $(CFLAGS) $($*-cflags) -c -o $@ $<
 
-$(BUILD_DIR)/%.o: %.s
+$(BUILD_DIR)/%.o: %.asm
 	@echo -e "Assembling: $<"
 	@mkdir -p $(@D)
-	@$(AC) $(ACFLAGS) $($*-acflags) -o $@ $<
+	@$(AC) $(ACFLAGS) -i$(dir $<) -MD "$(@:.o=.d)" -o $@ $<
+
+$(BUILD_DIR)/%.o: %.S
+	@echo -e "Assembling: $<"
+	@mkdir -p $(@D)
+	@$(CC) -x assembler-with-cpp -D_ASSEMBLY_ $(CFLAGS) $($*-acflags) -c -o $@ $<
+	@rm -f $(<:%.S=%.s)
 
 -include $(DEP_OBJS)

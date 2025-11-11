@@ -14,6 +14,6 @@ BOOT_DISK = GUID{$BOOT_DISK_GUID}
 BOOT_PATH = UTF16{$BOOT_PATH}
 EOF
 
-mdostools-mkcfg -i "$TMP_FILE" -o "$OUT_PATH"
+nyxtools-mkcfg -i "$TMP_FILE" -o "$OUT_PATH"
 
 rm -f "$TMP_FILE"

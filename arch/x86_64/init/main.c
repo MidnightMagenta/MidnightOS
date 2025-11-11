@@ -1,22 +1,20 @@
 #include <abi/boot/boot_info.h>
+#include <asm/idt.h>
 #include <asm/system.h>
-#include <debug/dbg_serial.h>
-#include <debug/dbgio.h>
+#include <nyx/compiler.h>
+#include <debug/debug.h>
 
+void main(bi_bootinfo_t __unused *bootInfo) {
 #ifdef _DEBUG
-#define init_dbg_print()                                                                                               \
-    dbg_serial_init();                                                                                                 \
-    dbg_register_sink(dbg_serial_putc)
-#else
-#define init_dbg_print()
-#endif
-
-void main(bi_bootinfo_t *bootInfo) {
-    (void) bootInfo;
     init_dbg_print();
+#endif
+    idt_setup_early_traps();
+
+#if defined(_DEBUG) && defined(_DEBUGER_START)
+    breakpoint();
+#endif
 
     dbg_print("EOF");
 
-    cli();
-    halt_forever();
+    exit();
 }

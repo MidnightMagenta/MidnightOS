@@ -30,7 +30,7 @@ DBG_FLAGS = -ex "symbol-file $(BUILD_DIR)/$(KERNEL_TARGET)" \
 .PHONY += run run-info run-debug
 
 run:
-	$(EMU) $(EMU_BASE_FLAGS)
+	$(EMU) $(EMU_BASE_FLAGS) -nographic
 
 run-info:
 	@mkdir -p ./tmp
