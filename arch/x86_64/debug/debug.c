@@ -213,9 +213,87 @@ DBG_DEFINE_COMMAND(reg) {
      - m2 - break on any 2 byte memory access
      - m4 - break on any 4 byte memory access
      - m8 - break on any 8 byte memory access
+    "hbp 0 [reg] 0" clears the break condition in the selected debug register
 */
+
+enum {
+    DBG_NONE,
+    DBG_DR0,
+    DBG_DR1,
+    DBG_DR2,
+    DBG_DR3,
+};
+
+enum {
+    DBG_ACCESS_NONE,
+    DBG_ACCESS_EX,
+    DBG_ACCESS_MA,
+};
+
 DBG_DEFINE_COMMAND_PU(hardware_bp) {
-    dbg_msg("Unimplemented\n");
+    if (argc != 3) { return DBG_INVALID_PARAMS; }
+    unsigned long bp = dbg_atol(argv[0]);
+
+    int reg    = DBG_NONE;
+    int access = DBG_ACCESS_NONE;
+
+    if (dbg_strcmp(argv[1], "dr0") == 0) {
+        reg = DBG_DR0;
+    } else if (dbg_strcmp(argv[1], "dr1") == 0) {
+        reg = DBG_DR1;
+    } else if (dbg_strcmp(argv[1], "dr2") == 0) {
+        reg = DBG_DR2;
+    } else if (dbg_strcmp(argv[1], "dr3") == 0) {
+        reg = DBG_DR3;
+    }
+
+    if (reg == DBG_NONE) {
+        dbg_msg("Invalid register %s\n", argv[1]);
+        return DBG_INVALID_PARAMS;
+    }
+
+    if (dbg_strcmp(argv[2], "0") == 0) {
+        access = DBG_ACCESS_NONE;
+    } else if (dbg_strcmp(argv[2], "ex") == 0) {
+        access = DBG_ACCESS_EX;
+    } else if (dbg_strcmp(argv[2], "ma") == 0) {
+        access = DBG_ACCESS_MA;
+    }
+
+    unsigned long dr7;
+    __asm__ volatile("mov %%dr7, %0" : "=r"(dr7));
+
+    int enable_bit = (reg - 1) * 2 + 1; // DR0: 1, DR1: 3, DR2: 5, DR3: 7
+    int type_bit   = 16 + (reg - 1) * 4;// DR0: 16, DR1: 20, DR2: 24, DR3: 28
+
+    if (access == DBG_ACCESS_NONE && bp == 0) {
+        dr7 &= ~((1UL << (enable_bit - 1)) | (1UL << enable_bit) | (3UL << type_bit) | (3UL << (type_bit + 2)));
+    } else {
+        switch (reg) {
+            case DBG_DR0:
+                __asm__ volatile("mov %0, %%dr0" ::"r"(bp) : "memory");
+                break;
+            case DBG_DR1:
+                __asm__ volatile("mov %0, %%dr1" ::"r"(bp) : "memory");
+                break;
+            case DBG_DR2:
+                __asm__ volatile("mov %0, %%dr2" ::"r"(bp) : "memory");
+                break;
+            case DBG_DR3:
+                __asm__ volatile("mov %0, %%dr3" ::"r"(bp) : "memory");
+                break;
+            default:
+                return DBG_INVALID_PARAMS;
+        }
+
+        dr7 |= (1UL << enable_bit);
+        dr7 &= ~(3UL << type_bit);
+        dr7 &= ~(3UL << (type_bit + 2));
+
+        if (access == DBG_ACCESS_MA) { dr7 |= (3UL << type_bit); }
+    }
+
+    __asm__ volatile("mov %0, %%dr7" ::"r"(dr7) : "memory");
     return DBG_SUCCESS;
 }
 
