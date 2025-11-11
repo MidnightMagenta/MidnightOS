@@ -1,17 +1,20 @@
 #ifndef _NYX_DEBUG_H
 #define _NYX_DEBUG_H
 
+#ifdef _DEBUG
 #include <debug/dbg_serial.h>
 #include <debug/dbgio.h>
 
-#ifdef _DEBUG
 #define init_dbg_print()                                                                                               \
     dbg_serial_init();                                                                                                 \
     dbg_register_sink(dbg_serial_putc)
+
+#define dbg_print(fmt, ...) dbg_msg(fmt, ##__VA_ARGS__)
+
 #else
 #define init_dbg_print()
+#define dbg_print(fmt, ...)
 #endif
-
 
 #define breakpoint() __asm__ volatile("int3")
 

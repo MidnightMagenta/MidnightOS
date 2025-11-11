@@ -1,5 +1,5 @@
 #include <asm/system.h>
-#include <debug/dbgio.h>
+#include <debug/debug.h>
 #include <nyx/kernel.h>
 
 void __noreturn panic(const char *msg) {

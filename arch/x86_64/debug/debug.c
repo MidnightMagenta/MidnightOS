@@ -101,8 +101,6 @@ char *dbg_strchr(const char *str, int c) {
     return res;
 }
 
-#include "disasm.h"
-
 enum {
     DBG_SUCCESS,
     DBG_CONTINUE,
@@ -142,17 +140,13 @@ int dbg_parsecmd(char *buff, char *argv[], int max_args) {
     int argc = 0;
 
     while (*buff && argc < max_args) {
-        // find first non whitespace char
         while (dbg_isspace(*buff)) { buff++; }
 
-        // if the non whitespace char is \0, don't continue parsing
         if (!*buff) { break; }
 
         argv[argc++] = buff;
-        // find the end of the argument
         while (*buff && !dbg_isspace(*buff)) { buff++; }
 
-        // and finally add a null terminator to the end of the argument
         if (*buff) { *buff++ = 0; }
     }
 
@@ -160,8 +154,9 @@ int dbg_parsecmd(char *buff, char *argv[], int max_args) {
 }
 
 #define DBG_DEFINE_COMMAND(func) int dbg_do_##func(int argc, char **argv, const struct int_info *info)
-#define DBG_DEFINE_COMMAND_PU(func)                                                                                    \
-    int dbg_do_##func(int __unused argc, char __unused **argv, const struct int_info __unused *info)
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 
 #define DBG_REGS_ARRAY                                                                                                 \
     struct {                                                                                                           \
@@ -178,10 +173,15 @@ int dbg_parsecmd(char *buff, char *argv[], int max_args) {
                     {"ss", info->frame.ss},   {"rflags", info->frame.rflags},                                          \
     };
 
-DBG_DEFINE_COMMAND_PU(cntn) { return DBG_CONTINUE; }
+/**
+    Command: c
+    Continues execution
+*/
+DBG_DEFINE_COMMAND(cntn) { return DBG_CONTINUE; }
 
-/** @brief Prints the value of the specified register. If none are specified, prints all registers
+/**
     Command: reg [register]
+    Prints the value of the specified register. If none are specified, prints all registers
 */
 DBG_DEFINE_COMMAND(reg) {
     DBG_REGS_ARRAY
@@ -208,8 +208,8 @@ DBG_DEFINE_COMMAND(reg) {
 }
 
 /**
-    @brief sets a hardware breakpoint in one of the debug registers
     Command: hbp [address] [reg] [type]
+    Sets a hardware breakpoint at [address] using the debug register specified in [reg]
     Allowed values of the [reg] parameter are: dr0, dr1, dr2, and dr3
     Allowed values of the [type] parameter are:
      - ex - break on execute
@@ -234,7 +234,7 @@ enum {
     DBG_ACCESS_MA,
 };
 
-DBG_DEFINE_COMMAND_PU(hardware_bp) {
+DBG_DEFINE_COMMAND(hardware_bp) {
     if (argc != 3) { return DBG_INVALID_PARAMS; }
     unsigned long bp = dbg_atol(argv[0]);
 
@@ -302,15 +302,16 @@ DBG_DEFINE_COMMAND_PU(hardware_bp) {
 }
 
 /**
-    @brief single steps the next instruction using the hardware single stepping capabilites
+    Command: s
+    Single steps the next instruction using the hardware single stepping capabilites
 */
-DBG_DEFINE_COMMAND_PU(step) { return DBG_STEP; }
+DBG_DEFINE_COMMAND(step) { return DBG_STEP; }
 
 /**
-    @brief Prints the [size] bytes of memory at [base]. Both size and base must be specified
     Command: x [base] [size]
+    Prints the [size] bytes of memory at [base]. Both size and base must be specified
 */
-DBG_DEFINE_COMMAND_PU(dumphex) {
+DBG_DEFINE_COMMAND(dumphex) {
     DBG_REGS_ARRAY
     unsigned char *base = NULL;
 
@@ -342,13 +343,14 @@ DBG_DEFINE_COMMAND_PU(dumphex) {
     return DBG_SUCCESS;
 }
 
-static char dbg_disasm_buffer[128];
+#include "disasm.h"
 
 /**
-    @brief disassemble instructions
     Command: cmd [addr] [count]
     Disassembles [count] instructions starting at [addr]
 */
+
+static char dbg_disasm_buffer[128];
 DBG_DEFINE_COMMAND(disassembly) {
     if (argc != 2) { return DBG_INVALID_PARAMS; }
 
@@ -377,7 +379,11 @@ DBG_DEFINE_COMMAND(disassembly) {
     return DBG_SUCCESS;
 }
 
-DBG_DEFINE_COMMAND_PU(help) {
+/**
+    Command: help
+    Prints a list of available command
+*/
+DBG_DEFINE_COMMAND(help) {
     dbg_msg("c -=- continue execution\n");
     dbg_msg("s -=- single step instructions\n");
     dbg_msg("reg [register] -=- print contents of a register\n");
@@ -388,16 +394,16 @@ DBG_DEFINE_COMMAND_PU(help) {
     return DBG_SUCCESS;
 }
 
-struct dbg_cmd {
-    const char *name;
-    int (*func)(int argc, char **argv, const struct int_info *info);
-};
+#pragma GCC diagnostic pop
 
 #define DBG_CMD(name, func) {name, func}
 
 // array containing literals used to invoke the command
 // and a pointer to a function which executes the command
-static const struct dbg_cmd cmd_table[] = {
+static const struct {
+    const char *name;
+    int (*func)(int argc, char **argv, const struct int_info *info);
+} cmd_table[] = {
         DBG_CMD("c", dbg_do_cntn),          DBG_CMD("s", dbg_do_step),    DBG_CMD("reg", dbg_do_reg),
         DBG_CMD("hbp", dbg_do_hardware_bp), DBG_CMD("x", dbg_do_dumphex), DBG_CMD("disasm", dbg_do_disassembly),
         DBG_CMD("help", dbg_do_help),
@@ -443,9 +449,7 @@ void dbg_main(struct int_info *info) {
                 break;
         }
 
-        if (breakCondition != 0) {
-            dbg_msg("\nDebug exception\nBreakpoint %d at address 0x%lx\n", breakCondition - 1, dr);
-        }
+        if (breakCondition != 0) { dbg_msg("\nBreakpoint %d at address 0x%lx\n", breakCondition - 1, dr); }
     } else {
         info->frame.rflags &= ~((unsigned long) 1 << 8);
     }
@@ -483,9 +487,6 @@ void dbg_main(struct int_info *info) {
     }
 }
 
-DEFINE_IDTENTRY(dbg_entry) {
-#ifdef _DEBUG
-    dbg_main(info);
-#endif
-}
+DEFINE_IDTENTRY(dbg_entry) { dbg_main(info); }
+
 #endif

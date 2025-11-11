@@ -1,3 +1,4 @@
+#ifdef _DEBUG
 #include <debug/dbgio.h>
 #include <nyx/types.h>
 #include <stdarg.h>
@@ -260,3 +261,5 @@ size_t dbg_msg(const char *fmt, ...) {
     va_end(params);
     return written;
 }
+
+#endif

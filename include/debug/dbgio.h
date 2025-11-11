@@ -12,9 +12,4 @@ void       dbg_sinkchr(char c);
 
 size_t dbg_msg(const char *fmt, ...);
 
-#ifdef _DEBUG
-#define dbg_print(fmt, ...) dbg_msg(fmt, ##__VA_ARGS__)
-#else
-#define dbg_print(fmt, ...)
-#endif
 #endif
