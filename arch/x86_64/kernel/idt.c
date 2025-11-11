@@ -34,6 +34,7 @@ gate_desc idt[IDT_ENTRIES] __page_aligned_bss;
 
 ISR_PTR(dbg_entry);
 static const struct idt_data early_idt[] = {
+        INTG(1, dbg_entry),
         INTG(3, dbg_entry),
 };
 

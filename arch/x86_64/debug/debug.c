@@ -3,6 +3,7 @@
 #include <asm/idtentry.h>
 #include <debug/dbgio.h>
 #include <nyx/utils.h>
+#include <stddef.h>
 
 static unsigned long dbg_strlen(const char *str) {
     size_t len = 0;
@@ -108,7 +109,19 @@ enum dbg_exec_res {
 void dbg_getcmd(char *cmd, unsigned long *size) {
     unsigned long i = 0;
     while (i < *size) {
-        cmd[i] = dbg_serial_getc();
+        char c = dbg_serial_getc();
+        
+        if (c == '\b' || c == 127) {
+            if (i > 0) {
+                i--;
+                dbg_serial_putc('\b');
+                dbg_serial_putc(' ');
+                dbg_serial_putc('\b');
+            }
+            continue;
+        }
+        
+        cmd[i] = c;
         dbg_serial_putc(cmd[i] == '\r' ? '\n' : cmd[i]);
         if (cmd[i] == '\n' || cmd[i] == '\r') {
             cmd[i++] = '\0';
@@ -147,6 +160,9 @@ int dbg_parsecmd(char *buff, char *argv[], int max_args) {
 
 DBG_DEFINE_COMMAND_PU(cntn) { return DBG_CONTINUE; }
 
+/** @brief Prints the value of the specified register. If none are specified, prints all registers
+    Command: reg [register]
+*/
 DBG_DEFINE_COMMAND(reg) {
     struct {
         const char   *name;
@@ -191,10 +207,33 @@ DBG_DEFINE_COMMAND_PU(step) {
     return DBG_SUCCESS;
 }
 
+/** @brief Prints the [size] bytes of memory at [base]. Both size and base must be specified
+    Command: x [base] [size]
+*/
 DBG_DEFINE_COMMAND_PU(dumphex) {
     if (argc != 2) { return DBG_INVALID_PARAMS; }
 
-    unsigned char *base  = (unsigned char *) dbg_atol(argv[0]);
+    struct {
+        const char   *name;
+        unsigned long value;
+    } regs[] = {
+            {"rax", info->regs.rax},  {"rbx", info->regs.rbx}, {"rcx", info->regs.rcx},  {"rdx", info->regs.rdx},
+            {"rsi", info->regs.rsi},  {"rdi", info->regs.rdi}, {"rsp", info->frame.rsp}, {"rbp", info->regs.rbp},
+            {"r8", info->regs.r8},    {"r9", info->regs.r9},   {"r10", info->regs.r10},  {"r11", info->regs.r11},
+            {"r12", info->regs.r12},  {"r13", info->regs.r13}, {"r14", info->regs.r14},  {"r15", info->regs.r15},
+            {"rip", info->frame.rip}, {"cs", info->frame.cs},  {"ss", info->frame.ss},   {"rflags", info->frame.rflags},
+    };
+
+    unsigned char *base = NULL;
+
+    for (size_t i = 0; i < ARRAY_SIZE(regs); i++) {
+        if (dbg_strcmp(argv[0], regs[i].name) == 0) {
+            base = (unsigned char *) regs[i].value;
+            break;
+        }
+    }
+
+    if (base == NULL) { base = (unsigned char *) dbg_atol(argv[0]); }
     unsigned char *limit = (unsigned char *) ((unsigned long) base + dbg_atol(argv[1]));
 
     int c = 0;
@@ -203,7 +242,7 @@ DBG_DEFINE_COMMAND_PU(dumphex) {
         dbg_msg("0x%b ", *base++);
         c++;
         if (c == 8) { dbg_msg(" "); }
-        if (c == 16) {
+        if (c == 16 && base < limit) {
             dbg_msg("\n0x%lx: ", base);
             c = 0;
         }
@@ -213,7 +252,6 @@ DBG_DEFINE_COMMAND_PU(dumphex) {
 
     return DBG_SUCCESS;
 }
-
 
 struct dbg_cmd {
     const char *name;
