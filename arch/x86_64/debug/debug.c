@@ -14,6 +14,50 @@ static unsigned long dbg_strlen(const char *str) {
 
 int dbg_isspace(int c) { return c == ' ' || (unsigned) c - '\t' < 5; }
 
+int dbg_isdigit(int c) { return (unsigned) c - '0' < 10; }
+
+long dbg_atol(const char *s) {
+    long n    = 0;
+    int  neg  = 0;
+    int  base = 10;
+
+    while (dbg_isspace(*s)) s++;
+    switch (*s) {
+        case '-':
+            neg = 1;
+        case '+':
+            s++;
+    }
+
+    // Check for hexadecimal prefix
+    if (s[0] == '0' && (s[1] == 'x' || s[1] == 'X')) {
+        base = 16;
+        s += 2;
+    }
+
+    if (base == 16) {
+        while (*s) {
+            int digit;
+            if (dbg_isdigit(*s)) {
+                digit = *s - '0';
+            } else if (*s >= 'a' && *s <= 'f') {
+                digit = *s - 'a' + 10;
+            } else if (*s >= 'A' && *s <= 'F') {
+                digit = *s - 'A' + 10;
+            } else {
+                break;
+            }
+            n = n * 16 + digit;
+            s++;
+        }
+        return neg ? -n : n;
+    } else {
+        /* Compute n as a negative number to avoid overflow on LONG_MIN */
+        while (dbg_isdigit(*s)) n = 10 * n - (*s++ - '0');
+        return neg ? n : -n;
+    }
+}
+
 static int dbg_strcmp(const char *str1, const char *str2) {
     size_t i   = 0;
     size_t res = 0;
@@ -148,7 +192,25 @@ DBG_DEFINE_COMMAND_PU(step) {
 }
 
 DBG_DEFINE_COMMAND_PU(dumphex) {
-    dbg_msg("Unimplemented\n");
+    if (argc != 2) { return DBG_INVALID_PARAMS; }
+
+    unsigned char *base  = (unsigned char *) dbg_atol(argv[0]);
+    unsigned char *limit = (unsigned char *) ((unsigned long) base + dbg_atol(argv[1]));
+
+    int c = 0;
+    dbg_msg("0x%lx: ", base);
+    while (base < limit) {
+        dbg_msg("0x%b ", *base++);
+        c++;
+        if (c == 8) { dbg_msg(" "); }
+        if (c == 16) {
+            dbg_msg("\n0x%lx: ", base);
+            c = 0;
+        }
+    }
+
+    dbg_msg("\n");
+
     return DBG_SUCCESS;
 }
 
@@ -192,12 +254,17 @@ void  dbg_main(const struct int_info *info) {
         int argc = dbg_parsecmd(cmd_buffer, argv_buffer, 8);
 
         int res = dbg_exec(argc, argv_buffer, info);
-        if (res == DBG_UNKNOWN_CMD) {
-            dbg_msg("Error: Unknown command\n");
-        } else if (res == DBG_INVALID_PARAMS) {
-            dbg_msg("Error: Invalid parameter\n");
-        } else if (res == DBG_CONTINUE) {
-            return;
+        switch (res) {
+            case DBG_UNKNOWN_CMD:
+                dbg_msg("Error: Unknown command\n");
+                break;
+            case DBG_INVALID_PARAMS:
+                dbg_msg("Error: Invalid parameter\n");
+                break;
+            case DBG_CONTINUE:
+                return;
+            default:
+                continue;
         }
     }
 }

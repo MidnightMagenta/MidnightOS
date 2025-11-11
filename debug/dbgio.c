@@ -80,6 +80,13 @@ static const char *u32_to_hstr(u32 v) {
     return toH32StrBuff;
 }
 
+static const char *u8_to_hstr(u8 v) {
+    static const char hexDigits[] = "0123456789ABCDEF";
+    for (int i = 0; i < 2; ++i) { toH8StrBuff[1 - i] = hexDigits[(v >> (i * 4)) & 0xF]; }
+    toH8StrBuff[8] = '\0';
+    return toH8StrBuff;
+}
+
 static const char *s64_to_str(s64 v) {
     u8 negative = 0;
     if (v < 0) {
@@ -188,6 +195,17 @@ static size_t dbg_internal_print(const char *fmt, va_list params) {
             fmt += 2;
             u64         num    = (u64) va_arg(params, u64);
             const char *str    = u64_to_str((u64) num);
+            size_t      amount = dbg_strlen(str);
+            if (maxrem < amount) {
+                // TODO: error
+                return (size_t) 0;
+            }
+            dbg_internal_print_str(str, amount);
+            written += amount;
+        } else if (*fmt == 'b') {
+            fmt++;
+            u32         num    = (u32) va_arg(params, u32);
+            const char *str    = u8_to_hstr(num);
             size_t      amount = dbg_strlen(str);
             if (maxrem < amount) {
                 // TODO: error
