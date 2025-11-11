@@ -110,7 +110,7 @@ void dbg_getcmd(char *cmd, unsigned long *size) {
     unsigned long i = 0;
     while (i < *size) {
         char c = dbg_serial_getc();
-        
+
         if (c == '\b' || c == 127) {
             if (i > 0) {
                 i--;
@@ -120,7 +120,7 @@ void dbg_getcmd(char *cmd, unsigned long *size) {
             }
             continue;
         }
-        
+
         cmd[i] = c;
         dbg_serial_putc(cmd[i] == '\r' ? '\n' : cmd[i]);
         if (cmd[i] == '\n' || cmd[i] == '\r') {
@@ -158,23 +158,28 @@ int dbg_parsecmd(char *buff, char *argv[], int max_args) {
 #define DBG_DEFINE_COMMAND_PU(func)                                                                                    \
     int dbg_do_##func(int __unused argc, char __unused **argv, const struct int_info __unused *info)
 
+#define DBG_REGS_ARRAY                                                                                                 \
+    struct {                                                                                                           \
+        const char   *name;                                                                                            \
+        unsigned long value;                                                                                           \
+    } regs[] =                                                                                                         \
+            {                                                                                                          \
+                    {"rax", info->regs.rax},  {"rbx", info->regs.rbx},        {"rcx", info->regs.rcx},                 \
+                    {"rdx", info->regs.rdx},  {"rsi", info->regs.rsi},        {"rdi", info->regs.rdi},                 \
+                    {"rsp", info->frame.rsp}, {"rbp", info->regs.rbp},        {"r8", info->regs.r8},                   \
+                    {"r9", info->regs.r9},    {"r10", info->regs.r10},        {"r11", info->regs.r11},                 \
+                    {"r12", info->regs.r12},  {"r13", info->regs.r13},        {"r14", info->regs.r14},                 \
+                    {"r15", info->regs.r15},  {"rip", info->frame.rip},       {"cs", info->frame.cs},                  \
+                    {"ss", info->frame.ss},   {"rflags", info->frame.rflags},                                          \
+    };
+
 DBG_DEFINE_COMMAND_PU(cntn) { return DBG_CONTINUE; }
 
 /** @brief Prints the value of the specified register. If none are specified, prints all registers
     Command: reg [register]
 */
 DBG_DEFINE_COMMAND(reg) {
-    struct {
-        const char   *name;
-        unsigned long value;
-    } regs[] = {
-            {"rax", info->regs.rax},  {"rbx", info->regs.rbx}, {"rcx", info->regs.rcx},  {"rdx", info->regs.rdx},
-            {"rsi", info->regs.rsi},  {"rdi", info->regs.rdi}, {"rsp", info->frame.rsp}, {"rbp", info->regs.rbp},
-            {"r8", info->regs.r8},    {"r9", info->regs.r9},   {"r10", info->regs.r10},  {"r11", info->regs.r11},
-            {"r12", info->regs.r12},  {"r13", info->regs.r13}, {"r14", info->regs.r14},  {"r15", info->regs.r15},
-            {"rip", info->frame.rip}, {"cs", info->frame.cs},  {"ss", info->frame.ss},   {"rflags", info->frame.rflags},
-    };
-
+    DBG_REGS_ARRAY
     if (argc == 0) {
         unsigned long count = ARRAY_SIZE(regs);
         for (size_t i = 0; i < count; i++) {
@@ -207,23 +212,12 @@ DBG_DEFINE_COMMAND_PU(step) {
     return DBG_SUCCESS;
 }
 
-/** @brief Prints the [size] bytes of memory at [base]. Both size and base must be specified
+/**
+    @brief Prints the [size] bytes of memory at [base]. Both size and base must be specified
     Command: x [base] [size]
 */
 DBG_DEFINE_COMMAND_PU(dumphex) {
-    if (argc != 2) { return DBG_INVALID_PARAMS; }
-
-    struct {
-        const char   *name;
-        unsigned long value;
-    } regs[] = {
-            {"rax", info->regs.rax},  {"rbx", info->regs.rbx}, {"rcx", info->regs.rcx},  {"rdx", info->regs.rdx},
-            {"rsi", info->regs.rsi},  {"rdi", info->regs.rdi}, {"rsp", info->frame.rsp}, {"rbp", info->regs.rbp},
-            {"r8", info->regs.r8},    {"r9", info->regs.r9},   {"r10", info->regs.r10},  {"r11", info->regs.r11},
-            {"r12", info->regs.r12},  {"r13", info->regs.r13}, {"r14", info->regs.r14},  {"r15", info->regs.r15},
-            {"rip", info->frame.rip}, {"cs", info->frame.cs},  {"ss", info->frame.ss},   {"rflags", info->frame.rflags},
-    };
-
+    DBG_REGS_ARRAY
     unsigned char *base = NULL;
 
     for (size_t i = 0; i < ARRAY_SIZE(regs); i++) {
@@ -261,7 +255,7 @@ struct dbg_cmd {
 #define DBG_CMD(name, func) {name, func}
 
 // array containing literals used to invoke the command
-// and a poiner to a function which executes the command
+// and a pointer to a function which executes the command
 static const struct dbg_cmd cmd_table[] = {
         DBG_CMD("c", dbg_do_cntn), DBG_CMD("reg", dbg_do_reg),   DBG_CMD("hbp", dbg_do_hardware_bp),
         DBG_CMD("s", dbg_do_step), DBG_CMD("x", dbg_do_dumphex),
@@ -277,9 +271,10 @@ int dbg_exec(int argc, char **argv, const struct int_info *info) {
     return DBG_UNKNOWN_CMD;
 }
 
-char  cmd_buffer[256];
-char *argv_buffer[8];
-void  dbg_main(const struct int_info *info) {
+static char  cmd_buffer[256];
+static char *argv_buffer[8];
+
+void dbg_main(const struct int_info *info) {
     dbg_msg("\nDebug exception\n");
 
     while (1) {
