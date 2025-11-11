@@ -6,7 +6,8 @@
 #define sti() __asm__ volatile("sti")
 
 
-#define halt_forever()                                                                                                 \
+#define exit()                                                                                                         \
+    cli();                                                                                                             \
     while (1) { hlt(); }
 
 #endif

@@ -1,3 +1,4 @@
+#ifdef _DEBUG
 #include "debug/dbg_serial.h"
 #include <asm/cpu.h>
 #include <asm/idtentry.h>
@@ -487,3 +488,4 @@ DEFINE_IDTENTRY(dbg_entry) {
     dbg_main(info);
 #endif
 }
+#endif

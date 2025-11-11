@@ -5,5 +5,5 @@
 void __noreturn panic(const char *msg) {
     dbg_print("Kernel panic: %s\n", msg);
     cli();
-    halt_forever();
+    exit();
 }

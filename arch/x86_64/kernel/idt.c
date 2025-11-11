@@ -27,15 +27,19 @@
 #define ISR_PTR(func) extern void func()
 
 // FIXME: kernel CS should be a definition
+#ifdef _DEBUG
 #define INTG(_vector, _addr) GATE(_vector, _addr, 0, GATE_INTERRUPT, DPL0, 0x08)
 #define TRPG(_vcetor, _addr) GATE(_vector, _addr, 0, GATE_TRAP, DPL0, 0x08)
+#endif
 
 gate_desc idt[IDT_ENTRIES] __page_aligned_bss;
 
 ISR_PTR(dbg_entry);
 static const struct idt_data early_idt[] = {
+#ifdef _DEBUG
         INTG(1, dbg_entry),
         INTG(3, dbg_entry),
+#endif
 };
 
 static void idt_setup_from_table(gate_desc *idt, const struct idt_data *table, int size) {

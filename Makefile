@@ -9,6 +9,7 @@ LD := $(PREFIX)ld
 AC := $(PREFIX)as
 
 DEBUG := true
+DEBUGER := true
 VERBOSE := false
 OPTIMIZE := -O0
 
@@ -47,6 +48,9 @@ endif
 ifeq ($(DEBUG),true)
     CFLAGS += -Wall -Wextra -g -D_DEBUG
     ACFLAGS += -g -d_DEBUG
+    ifeq ($(DEBUGER), true)
+        CFLAGS += -D_DEBUGER_START
+    endif
 endif
 
 ifeq ($(VERBOSE),true)

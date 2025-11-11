@@ -1,3 +1,4 @@
+#ifdef _DEBUG
 #include <asm/io.h>
 #include <debug/dbg_serial.h>
 #include <nyx/types.h>
@@ -59,3 +60,4 @@ char dbg_serial_getc() {
     while (!dbg_serial_is_rx_avail());
     return inb(COM1_REG(COM_R_RX_BUFF));
 }
+#endif
