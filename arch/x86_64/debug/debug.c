@@ -5,13 +5,13 @@
 #include <nyx/utils.h>
 #include <stddef.h>
 
-static unsigned long dbg_strlen(const char *str) {
-    size_t len = 0;
-    if (str) {
-        while (str[len] != '\0') { len++; }
-    }
-    return len;
-}
+// static unsigned long dbg_strlen(const char *str) {
+//     size_t len = 0;
+//     if (str) {
+//         while (str[len] != '\0') { len++; }
+//     }
+//     return len;
+// }
 
 int dbg_isspace(int c) { return c == ' ' || (unsigned) c - '\t' < 5; }
 
@@ -26,10 +26,9 @@ long dbg_atol(const char *s) {
     switch (*s) {
         case '-':
             neg = 1;
-            break;
+            [[fallthrough]];
         case '+':
             s++;
-            break;
     }
 
     // Check for hexadecimal prefix
@@ -103,7 +102,7 @@ char *dbg_strchr(const char *str, int c) {
 
 #include "disasm.h"
 
-enum dbg_exec_res {
+enum {
     DBG_SUCCESS,
     DBG_CONTINUE,
     DBG_STEP,
@@ -342,7 +341,7 @@ DBG_DEFINE_COMMAND_PU(dumphex) {
     return DBG_SUCCESS;
 }
 
-static char dbg_disasm_buffer[256];
+static char dbg_disasm_buffer[128];
 
 /**
     @brief disassemble instructions
@@ -377,6 +376,17 @@ DBG_DEFINE_COMMAND(disassembly) {
     return DBG_SUCCESS;
 }
 
+DBG_DEFINE_COMMAND_PU(help) {
+    dbg_msg("c -=- continue execution\n");
+    dbg_msg("s -=- single step instructions\n");
+    dbg_msg("reg [register] -=- print contents of a register\n");
+    dbg_msg("hbp [addr] [reg] [cond] -=- set a hardware breakpoint\n");
+    dbg_msg("x [addr] [count] -=- print [count] bytes at [addr]\n");
+    dbg_msg("disasm [addr] [count] -=- disassemble [count] instructions at [addr]\n");
+    dbg_msg("help -=- print this message\n");
+    return DBG_SUCCESS;
+}
+
 struct dbg_cmd {
     const char *name;
     int (*func)(int argc, char **argv, const struct int_info *info);
@@ -386,9 +396,11 @@ struct dbg_cmd {
 
 // array containing literals used to invoke the command
 // and a pointer to a function which executes the command
-static const struct dbg_cmd cmd_table[] = {DBG_CMD("c", dbg_do_cntn),          DBG_CMD("reg", dbg_do_reg),
-                                           DBG_CMD("hbp", dbg_do_hardware_bp), DBG_CMD("s", dbg_do_step),
-                                           DBG_CMD("x", dbg_do_dumphex),       DBG_CMD("disasm", dbg_do_disassembly)};
+static const struct dbg_cmd cmd_table[] = {
+        DBG_CMD("c", dbg_do_cntn),          DBG_CMD("s", dbg_do_step),    DBG_CMD("reg", dbg_do_reg),
+        DBG_CMD("hbp", dbg_do_hardware_bp), DBG_CMD("x", dbg_do_dumphex), DBG_CMD("disasm", dbg_do_disassembly),
+        DBG_CMD("help", dbg_do_help),
+};
 
 int dbg_exec(int argc, char **argv, const struct int_info *info) {
     if (argc == 0) { return DBG_UNKNOWN_CMD; }
@@ -406,9 +418,35 @@ static bool  stepping = false;
 
 void dbg_main(struct int_info *info) {
     if (!stepping) {
-        dbg_msg("\nDebug exception\n");
+        unsigned long dr6;
+        unsigned long dr;
+        int           breakCondition = 0;
+        __asm__ volatile("mov %%dr6, %0" : "=r"(dr6));
+
+        switch (dr6 & 0xF) {
+            case 0b0001:
+                __asm__ volatile("mov %%dr0, %0" : "=r"(dr));
+                breakCondition = 1;
+                break;
+            case 0b0010:
+                __asm__ volatile("mov %%dr1, %0" : "=r"(dr));
+                breakCondition = 2;
+                break;
+            case 0b0100:
+                __asm__ volatile("mov %%dr2, %0" : "=r"(dr));
+                breakCondition = 3;
+                break;
+            case 0b1000:
+                __asm__ volatile("mov %%dr3, %0" : "=r"(dr));
+                breakCondition = 4;
+                break;
+        }
+
+        if (breakCondition != 0) {
+            dbg_msg("\nDebug exception\nBreakpoint %d at address 0x%lx\n", breakCondition - 1, dr);
+        }
     } else {
-        info->frame.rflags &= ~((u64) 1 << 8);
+        info->frame.rflags &= ~((unsigned long) 1 << 8);
     }
 
     disasm(info->frame.rip, dbg_disasm_buffer);
@@ -435,7 +473,7 @@ void dbg_main(struct int_info *info) {
             case DBG_CONTINUE:
                 return;
             case DBG_STEP:
-                info->frame.rflags |= 1 << 8;
+                info->frame.rflags |= ((unsigned long) 1 << 8);
                 stepping = true;
                 return;
             default:
