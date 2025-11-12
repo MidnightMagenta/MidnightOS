@@ -262,6 +262,8 @@ DBG_DEFINE_COMMAND(hardware_bp) {
         access = DBG_ACCESS_EX;
     } else if (dbg_strcmp(argv[2], "ma") == 0) {
         access = DBG_ACCESS_MA;
+    } else {
+        return DBG_INVALID_PARAMS;
     }
 
     unsigned long dr7;
