@@ -6,6 +6,7 @@ PREFIX := $(ARCH)-$(BIN_TARGET)-
 
 CC := $(PREFIX)gcc
 LD := $(PREFIX)ld
+AR := $(PREFIX)ar
 AC := $(PREFIX)as
 
 DEBUG := true
@@ -14,6 +15,7 @@ VERBOSE := false
 OPTIMIZE := -O0
 
 BUILD_DIR := build/$(ARCH)
+LIB_DIR := $(BUILD_DIR)/libs
 
 CFLAGS := -nostartfiles \
 			-nodefaultlibs \
@@ -31,7 +33,7 @@ CFLAGS := -nostartfiles \
 			-std=gnu23 \
 			-MMD -MP \
 			$(OPTIMIZE)
-LDFLAGS := -static -Bsymbolic -nostdlib
+LDFLAGS := -static -Bsymbolic -nostdlib -L$(LIB_DIR)
 ACFLAGS := 
 
 ifeq ($(ARCH),x86_64)
@@ -62,9 +64,10 @@ GNU_EFI_DIR := bootloader/gnu-efi
 GNU_EFI_NOTE := $(BUILD_DIR)/.gnu_efi_built
 
 KERNEL_TARGET := nyxos.elf
+KLIB_TARGET := libnyx.a
 
 obj-y := arch/$(ARCH)/ debug/
-
+lib-y := lib/
 # build rules
 
 .PHONY: all rebuild rebuild-all kernel bootloader clean clean-all image ccdb

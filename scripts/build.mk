@@ -20,12 +20,21 @@ endef
 $(eval $(call include-tree,$(filter %/,$(obj-y))))
 obj-y := $(filter-out %/,$(obj-y))
 
-KERNEL_OBJS := $(patsubst %.o,$(BUILD_DIR)/%.o,$(obj-y))
-DEP_OBJS := $(KERNEL_OBJS:.o=.d)
+$(eval $(call include-tree,$(filter %/,$(lib-y))))
+lib-y := $(filter-out %/,$(lib-y))
 
-$(BUILD_DIR)/$(KERNEL_TARGET): $(KERNEL_OBJS)
+KERNEL_OBJS := $(patsubst %.o,$(BUILD_DIR)/%.o,$(obj-y))
+KLIB_OBJS := $(patsubst %.o,$(BUILD_DIR)/%.o,$(lib-y))
+
+$(BUILD_DIR)/$(KERNEL_TARGET): $(KERNEL_OBJS) $(LIB_DIR)/$(KLIB_TARGET)
 	@echo -e "\e[1;32mLinking:\e[0m $@"
-	@$(LD) $(LDFLAGS) -T link/$(ARCH)-link.ld -o $@ $^
+	@mkdir -p $(@D)
+	@$(LD) $(LDFLAGS) -T link/$(ARCH)-link.ld -lnyx -o $@ $^
+
+$(LIB_DIR)/$(KLIB_TARGET): $(KLIB_OBJS)
+	@echo -e "\e[1;32mLinking:\e[0m $@"
+	@mkdir -p $(@D)
+	$(AR) rcs $@ $^
 
 $(BUILD_DIR)/%.o: %.c
 	@echo -e "Compiling: $<"
@@ -42,5 +51,7 @@ $(BUILD_DIR)/%.o: %.S
 	@mkdir -p $(@D)
 	@$(CC) -x assembler-with-cpp -D_ASSEMBLY_ $(CFLAGS) $($*-acflags) -c -o $@ $<
 	@rm -f $(<:%.S=%.s)
+
+DEP_OBJS := $(KERNEL_OBJS:.o=.d) $(KLIB_OBJS:.o=.d)
 
 -include $(DEP_OBJS)

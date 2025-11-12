@@ -1,0 +1,1 @@
+lib-y += $(subdir)string.o
