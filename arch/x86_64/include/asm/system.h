@@ -5,7 +5,7 @@
 #define cli() __asm__ volatile("cli" ::: "memory")
 #define sti() __asm__ volatile("sti" ::: "memory")
 
-#define exit()                                                                                                         \
+#define _exit(status)                                                                                                  \
     cli();                                                                                                             \
     while (1) { hlt(); }
 

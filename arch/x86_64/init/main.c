@@ -16,5 +16,5 @@ void main(bi_bootinfo_t __unused *bootInfo) {
 
     dbg_print("EOF");
 
-    exit();
+    _exit(0);
 }
