@@ -4,7 +4,7 @@
 #include <stddef.h>
 
 int    memcmp(const void *a, const void *b, size_t num);
-void  *memcpy(void *restrict dst, void *restrict src, size_t num);
+void  *memcpy(void *restrict dst, const void *restrict src, size_t num);
 void  *memset(void *ptr, int v, size_t num);
 int    strcmp(const char *a, const char *b);
 char  *strcpy(char *restrict dst, char *restrict src);

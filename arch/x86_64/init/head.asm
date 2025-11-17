@@ -4,7 +4,7 @@ global gdt
 extern idt
 extern main
 
-section .text
+section .init.text
 _start:
     cli
     mov r15, rdi
@@ -97,8 +97,8 @@ gdt:
 ; ------------------------------------------------------------
 ; BSS / Stack Section
 ; ------------------------------------------------------------
-section .bss
+section .init.bss
 align 0x1000
 _stack_bottom:
-    resb 0x1000
+    resb 0x2000
 _stack_top:

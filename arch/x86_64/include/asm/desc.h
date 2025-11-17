@@ -3,6 +3,7 @@
 
 #include <asm/desc_defs.h>
 #include <nyx/types.h>
+#include <string.h>
 
 static inline void load_idt(const struct desc_ptr *ptr) { __asm__ volatile("lidt %0" ::"m"(*ptr)); }
 static inline void load_gdt(const struct desc_ptr *ptr) { __asm__ volatile("lgdt %0" ::"m"(*ptr)); }
@@ -23,7 +24,7 @@ static inline void idt_init_desc(gate_desc *gate, const struct idt_data *d) {
 }
 
 static inline void write_idt_entry(gate_desc *idt, int vector, const gate_desc *gate) {
-    __builtin_memcpy(&idt[vector], gate, sizeof(*gate));// FIXME: proper memcpy please
+    memcpy(&idt[vector], gate, sizeof(*gate));// FIXME: proper memcpy please
 }
 
 #endif
