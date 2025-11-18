@@ -1,6 +1,7 @@
 #ifdef _DEBUG
 #include <asm/io.h>
 #include <debug/dbg_serial.h>
+#include <nyx/errno.h>
 #include <nyx/types.h>
 
 #define COM1_PORT     0x3F8
@@ -21,7 +22,9 @@
 
 static bool dbg_serial_initialized = false;
 
-nyx_status dbg_serial_init() {
+int dbg_serial_init() {
+    if (dbg_serial_initialized) { return 0; }
+
     outb(COM1_REG(COM_RW_INTERUPT_ENABLE_REG), 0x00);
     outb(COM1_REG(COM_RW_LINE_CONTROL_REG), 0x80);
     outb(COM1_REG(COM_RW_LEAST_SIGNIFICANT_BYTE_BAUD), 0x03);
@@ -31,18 +34,18 @@ nyx_status dbg_serial_init() {
     outb(COM1_REG(COM_RW_MODEM_CONTROL_REG), 0x1E);
 
     outb(COM1_REG(COM_W_TX_BUFF), 0xAE);
-    if (inb(COM1_REG(COM_R_RX_BUFF)) != 0xAE) { return NYX_RES_INIT_FAIL; }
+    if (inb(COM1_REG(COM_R_RX_BUFF)) != 0xAE) { return -ENODEV; }
 
     outb(COM1_REG(COM_RW_MODEM_CONTROL_REG), 0x0F);
     dbg_serial_initialized = true;
-    return NYX_RES_SUCCESS;
+    return 0;
 }
 
 inline static bool dbg_serial_is_tx_empty() { return inb(COM1_REG(COM_R_LINE_STATUS_REG)) & 0x20; }
 
 inline void dbg_serial_putc(char c) {
     if (!dbg_serial_initialized) {
-        if (NYX_ERROR(dbg_serial_init())) { return; }
+        if (dbg_serial_init() < 0) { return; }
     }
 
     if (c == '\n') { dbg_serial_putc('\r'); }
@@ -54,7 +57,7 @@ inline static bool dbg_serial_is_rx_avail() { return inb(COM1_REG(COM_R_LINE_STA
 
 char dbg_serial_getc() {
     if (!dbg_serial_initialized) {
-        if (NYX_ERROR(dbg_serial_init())) { return 0; }
+        if (dbg_serial_init() < 0) { return 0; }
     }
 
     while (!dbg_serial_is_rx_avail());

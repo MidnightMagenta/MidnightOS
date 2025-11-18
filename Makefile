@@ -66,7 +66,7 @@ GNU_EFI_NOTE := $(BUILD_DIR)/.gnu_efi_built
 KERNEL_TARGET := nyxos.elf
 KLIB_TARGET := libnyx.a
 
-obj-y := arch/$(ARCH)/ debug/
+obj-y := arch/$(ARCH)/ debug/ mm/
 lib-y := lib/
 # build rules
 

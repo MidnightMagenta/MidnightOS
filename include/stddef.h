@@ -1,5 +1,5 @@
-#ifndef _NYX_STDDEF_H
-#define _NYX_STDDEF_H
+#ifndef _STDDEF_H
+#define _STDDEF_H
 
 #undef NULL
 #define NULL ((void *) 0)

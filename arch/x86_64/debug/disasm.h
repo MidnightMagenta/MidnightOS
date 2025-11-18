@@ -1,5 +1,5 @@
-#ifndef _NYX_DISASM_H
-#define _NYX_DISASM_H
+#ifndef _DISASM_H
+#define _DISASM_H
 
 /* Universal Disassembler Function Library
  * https://gitlab.com/bztsrc/udisasm

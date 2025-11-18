@@ -1,5 +1,5 @@
-#ifndef _NYX_CPU_H
-#define _NYX_CPU_H
+#ifndef _CPU_H
+#define _CPU_H
 
 #include <nyx/compiler.h>
 #include <nyx/types.h>

@@ -1,5 +1,5 @@
-#ifndef _NYX_DESC_DEFS_H
-#define _NYX_DESC_DEFS_H
+#ifndef _DESC_DEFS_H
+#define _DESC_DEFS_H
 
 #include <nyx/compiler.h>
 #include <nyx/types.h>

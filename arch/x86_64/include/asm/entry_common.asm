@@ -1,5 +1,5 @@
-%ifndef _NYX_ENTRY_SH
-%define _NYX_ENTRY_SH
+%ifndef _ENTRY_SH
+%define _ENTRY_SH
 
 ; ------------------------------------------------------------
 ; Push all general-purpose registers

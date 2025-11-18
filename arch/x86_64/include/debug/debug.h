@@ -1,5 +1,5 @@
-#ifndef _NYX_DEBUG_H
-#define _NYX_DEBUG_H
+#ifndef _DEBUG_H
+#define _DEBUG_H
 
 #ifdef _DEBUG
 #include <debug/dbg_serial.h>

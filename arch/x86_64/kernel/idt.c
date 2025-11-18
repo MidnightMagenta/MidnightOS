@@ -1,6 +1,7 @@
 #include "asm/desc_defs.h"
 #include <asm/desc.h>
 #include <asm/idt.h>
+#include <nyx/init.h>
 #include <nyx/linkage.h>
 #include <nyx/utils.h>
 
@@ -51,4 +52,4 @@ static void idt_setup_from_table(gate_desc *idt, const struct idt_data *table, i
     }
 }
 
-void idt_setup_early_traps() { idt_setup_from_table(idt, early_idt, ARRAY_SIZE(early_idt)); }
+void __init idt_setup_early_traps() { idt_setup_from_table(idt, early_idt, ARRAY_SIZE(early_idt)); }

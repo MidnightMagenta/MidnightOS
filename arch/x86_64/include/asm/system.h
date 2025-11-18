@@ -1,5 +1,5 @@
-#ifndef _NYX_SYSTEM_H
-#define _NYX_SYSTEM_H
+#ifndef _SYSTEM_H
+#define _SYSTEM_H
 
 #define hlt() __asm__ volatile("hlt" ::: "memory")
 #define cli() __asm__ volatile("cli" ::: "memory")

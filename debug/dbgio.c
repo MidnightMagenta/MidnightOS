@@ -1,5 +1,6 @@
 #ifdef _DEBUG
 #include <debug/dbgio.h>
+#include <nyx/errno.h>
 #include <nyx/types.h>
 #include <stdarg.h>
 #include <stddef.h>
@@ -7,15 +8,15 @@
 #define DBG_MAX_CHARSINKS 4
 static dbg_charsink_t sinks[DBG_MAX_CHARSINKS];
 
-nyx_status dbg_register_sink(dbg_charsink_t sink) {
+int dbg_register_sink(dbg_charsink_t sink) {
     for (size_t i = 0; i < DBG_MAX_CHARSINKS; i++) {
         if (sinks[i] == NULL) {
             sinks[i] = sink;
-            return NYX_RES_SUCCESS;
+            return 0;
         }
     }
 
-    return NYX_RES_OUT_OF_RESOURCES;
+    return -EBUSY;
 }
 
 void dbg_unregister_sink(dbg_charsink_t sink) {

@@ -1,5 +1,5 @@
-#ifndef _NYX_BOOT_INFO_H
-#define _NYX_BOOT_INFO_H
+#ifndef _BOOT_INFO_H
+#define _BOOT_INFO_H
 
 #include <nyx/types.h>
 

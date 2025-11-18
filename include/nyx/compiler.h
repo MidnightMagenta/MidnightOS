@@ -1,5 +1,5 @@
-#ifndef _NYX_COMPILER_H
-#define _NYX_COMPILER_H
+#ifndef _COMPILER_H
+#define _COMPILER_H
 
 #define __packed        __attribute__((packed))
 #define __align(a)      __attribute__((aligned(a)))
