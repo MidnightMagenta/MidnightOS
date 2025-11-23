@@ -3,7 +3,7 @@ CXX ?= g++
 FLEX ?= flex
 BISON ?= bison
 
-CFLAGS := -O0 -g -MP -MMD
+CFLAGS := -O3 -MP -MMD
 CXXFLAGS := $(CFLAGS)
 CPPFLAGS :=
 LDFLAGS := -lfl

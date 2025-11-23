@@ -1,16 +1,17 @@
 #ifndef _MBUILD_EVAL_H
 #define _MBUILD_EVAL_H
 
+#include <filesystem>
+#include <set>
 #include <string>
 #include <unordered_map>
-#include <set>
 
-struct ListState{
+struct ListState {
     std::set<std::string> data;
 };
 
 extern std::unordered_map<std::string, ListState> g_lists;
 
-int eval(std::string dir);
+int eval(std::filesystem::path dir);
 
 #endif
